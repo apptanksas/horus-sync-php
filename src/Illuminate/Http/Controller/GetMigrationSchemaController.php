@@ -22,7 +22,7 @@ class GetMigrationSchemaController extends Controller
         try {
             return $this->responseSuccess($this->repository->getSchema());
         } catch (\Throwable $e) {
-            throw $e;
+            report($e);
             return $this->responseServerError();
         }
     }

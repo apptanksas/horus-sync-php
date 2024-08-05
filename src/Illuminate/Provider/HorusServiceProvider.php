@@ -29,7 +29,6 @@ class HorusServiceProvider extends ServiceProvider
     protected function registerRoutes(): void
     {
         Route::group([
-            'as' => 'horus.',
             'prefix' => "sync",
             'namespace' => 'AppTank\Horus\Illuminate\Http\Controller',
         ], function () {

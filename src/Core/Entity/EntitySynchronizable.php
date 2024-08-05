@@ -2,7 +2,7 @@
 
 namespace AppTank\Horus\Core\Entity;
 
-use Illuminate\Support\Str;
+use AppTank\Horus\Core\Util\StringUtil;
 
 /**
  * Class EntitySynchronizable
@@ -11,6 +11,14 @@ use Illuminate\Support\Str;
  */
 abstract class EntitySynchronizable
 {
+
+    const PARAM_ID = "id";
+    const PARAM_SYNC_OWNER_ID = "sync_owner_id";
+    const PARAM_SYNC_HASH = "sync_hash";
+    const PARAM_SYNC_CREATED_AT = "sync_created_at";
+    const PARAM_SYNC_UPDATED_AT = "sync_updated_at";
+    const PARAM_SYNC_DELETED_AT = "sync_deleted_at";
+
     public string $entityName;
     public int $versionNumber;
 
@@ -35,25 +43,25 @@ abstract class EntitySynchronizable
     protected static function baseParameters(): array
     {
         return [
-            SyncParameter::createPrimaryKeyString("id", 1),
-            SyncParameter::createInt("sync_owner_id", 1),
-            SyncParameter::createString("sync_hash", 1),
-            SyncParameter::createTimestamp("sync_created_at", 1),
-            SyncParameter::createTimestamp("sync_updated_at", 1),
-            SyncParameter::createTimestamp("sync_deleted_at", 1),
+            SyncParameter::createPrimaryKeyString(self::PARAM_ID, 1),
+            SyncParameter::createString(self::PARAM_SYNC_OWNER_ID, 1),
+            SyncParameter::createString(self::PARAM_SYNC_HASH, 1),
+            SyncParameter::createTimestamp(self::PARAM_SYNC_CREATED_AT, 1),
+            SyncParameter::createTimestamp(self::PARAM_SYNC_UPDATED_AT, 1),
+            SyncParameter::createTimestamp(self::PARAM_SYNC_DELETED_AT, 1),
         ];
     }
 
     /**
      * @return SyncParameter[]
      */
-    abstract protected static function parameters(): array;
+    abstract public static function parameters(): array;
 
     /**
      *  Get the entity name
      * @return string
      */
-    abstract protected static function getEntityName(): string;
+    abstract public static function getEntityName(): string;
 
     /**
      * Get the version number
@@ -72,15 +80,25 @@ abstract class EntitySynchronizable
          */
         $class = get_called_class();
         $parameters = array_merge(self::baseParameters(), $class::parameters());
+        $filterParameters = [self::PARAM_SYNC_DELETED_AT];
 
+        /**
+         * @var $parameter SyncParameter
+         */
         foreach ($parameters as $parameter) {
+
+            if (in_array($parameter->name, $filterParameters)) {
+                continue;
+            }
+
             $attribute = [];
             $attribute["name"] = $parameter->name;
             $attribute["version"] = $parameter->version;
-            $attribute["type"] = Str::snake(strtolower($parameter->type->name));
+            $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
+            $attribute["nullable"] = $parameter->isNullable;
 
             if ($parameter->type == SyncParameterType::RELATION_ONE_TO_MANY) {
-                $attribute["related"] = $parameter->classNameRelated::schema();
+                $attribute["related"] = array_map(fn($classRelated) => $classRelated::schema(), $parameter->related);
             }
 
             $attributes[] = $attribute;

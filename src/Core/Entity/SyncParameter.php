@@ -5,50 +5,75 @@ namespace AppTank\Horus\Core\Entity;
 
 class SyncParameter
 {
+    /**
+     * @param string $name
+     * @param SyncParameterType $type
+     * @param int $version
+     * @param bool $isNullable
+     * @param array|string[] $related
+     */
     public function __construct(
         public string            $name,
         public SyncParameterType $type,
         public int               $version = 1,
-        public ?string           $classNameRelated = null
+        public bool              $isNullable = false,
+        public array             $related = []
     )
     {
-        if ($this->classNameRelated != null && !class_exists($this->classNameRelated)) {
-            throw new \InvalidArgumentException("ClassName related [$classNameRelated] not exists!");
+        $this->validateRelated();
+    }
+
+    public static function createPrimaryKeyInteger(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_INTEGER, $version, $isNullable);
+    }
+
+    public static function createPrimaryKeyString(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_STRING, $version, $isNullable);
+    }
+
+    public static function createInt(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::INT, $version, $isNullable);
+    }
+
+    public static function createFloat(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::FLOAT, $version, $isNullable);
+    }
+
+    public static function createBoolean(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::BOOLEAN, $version, $isNullable);
+    }
+
+    public static function createString(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::STRING, $version, $isNullable);
+    }
+
+    public static function createTimestamp(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::TIMESTAMP, $version, $isNullable);
+    }
+
+    public static function createRelationOneToMany(string $name, array $relatedClass, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::RELATION_ONE_TO_MANY, $version, $isNullable, $relatedClass);
+    }
+
+    // ------------------------------------------------------------------------
+    // Validations
+    // ------------------------------------------------------------------------
+
+    public function validateRelated(): void
+    {
+        foreach ($this->related as $related) {
+            if ($related != null && !class_exists($related)) {
+                throw new \InvalidArgumentException("ClassName related [$related] not exists!");
+            }
         }
     }
 
-    public static function createPrimaryKeyInteger(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_INTEGER, $version);
-    }
-
-    public static function createPrimaryKeyString(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_STRING, $version);
-    }
-
-    public static function createInt(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::INT, $version);
-    }
-
-    public static function createFloat(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::FLOAT, $version);
-    }
-
-    public static function createString(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::STRING, $version);
-    }
-
-    public static function createTimestamp(string $name, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::TIMESTAMP, $version);
-    }
-
-    public static function createRelationOneToMany(string $name, string $className, int $version)
-    {
-        return new SyncParameter($name, SyncParameterType::RELATION_ONE_TO_MANY, $version, $className);
-    }
 }

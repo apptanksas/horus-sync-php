@@ -2,17 +2,19 @@
 
 namespace AppTank\Horus\Core\Entity;
 
-enum SyncParameterType
+enum SyncParameterType: string
 {
-    case PRIMARY_KEY_INTEGER;
-    case PRIMARY_KEY_STRING;
+    case PRIMARY_KEY_INTEGER = "primary_key_integer";
+    case PRIMARY_KEY_STRING = "primary_key_string";
 
-    case INT;
+    case INT = "int";
 
-    case FLOAT;
+    case FLOAT = "float";
 
-    case STRING;
-    case TIMESTAMP;
-    case RELATION_ONE_TO_MANY;
+    case BOOLEAN = "boolean";
+
+    case STRING = "string";
+    case TIMESTAMP = "timestamp";
+    case RELATION_ONE_TO_MANY = "relation_one_to_many";
 
 }
