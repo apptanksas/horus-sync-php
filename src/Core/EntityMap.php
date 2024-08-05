@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Domain;
+namespace AppTank\Horus\Core;
 
 readonly class EntityMap
 {

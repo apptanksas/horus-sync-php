@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Infrastructure\Console;
+namespace AppTank\Horus\Illuminate\Console;
 
 
 use Illuminate\Console\GeneratorCommand;

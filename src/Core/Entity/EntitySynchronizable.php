@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Domain\Entity;
+namespace AppTank\Horus\Core\Entity;
 
 use Illuminate\Support\Str;
 

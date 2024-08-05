@@ -1,8 +1,8 @@
 <?php
 
-namespace AppTank\Horus\Domain;
+namespace AppTank\Horus\Core;
 
-use AppTank\Horus\Domain\Trait\EnumList;
+use AppTank\Horus\Core\Trait\EnumList;
 
 enum SyncAction
 {

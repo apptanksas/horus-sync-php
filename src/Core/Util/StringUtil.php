@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Domain\Util;
+namespace AppTank\Horus\Core\Util;
 
 class StringUtil
 {

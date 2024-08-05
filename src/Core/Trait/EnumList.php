@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Domain\Trait;
+namespace AppTank\Horus\Core\Trait;
 
 trait EnumList
 {

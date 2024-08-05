@@ -1,8 +1,8 @@
 <?php
 
-namespace AppTank\Horus\Domain\Trait;
+namespace AppTank\Horus\Core\Trait;
 
-use AppTank\Horus\Domain\Util\StringUtil;
+use AppTank\Horus\Core\Util\StringUtil;
 
 trait ArrayConvertible
 {
