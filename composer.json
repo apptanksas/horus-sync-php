@@ -1,0 +1,47 @@
+{
+  "name": "apptank/horus-sync",
+  "description": "App Mobile data sync library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "John Ospina",
+      "email": "johnospina.apptank@gmail.com"
+    }
+  ],
+  "keywords": [
+    "mobile",
+    "sync",
+    "laravel",
+    "data-sync"
+  ],
+  "require": {
+    "illuminate/support": "^11.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5.1|^10.5",
+    "mockery/mockery": "^1.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "AppTank\\Horus\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AppTank\\Horus\\": "tests"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "AppTank\\Horus\\HorusServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true
+    }
+  }
+}
