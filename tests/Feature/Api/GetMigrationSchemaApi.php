@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Api;
 
-use AppTank\Horus\Core\Entity\EntitySynchronizable;
 use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use AppTank\Horus\RouteName;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeIEntity;
 
 class GetMigrationSchemaApi extends ApiTestCase
 {
@@ -32,7 +32,7 @@ class GetMigrationSchemaApi extends ApiTestCase
         $this->repository = new StaticMigrationSchemaRepository();
 
         HorusContainer::initialize([
-            ParentFakeEntity::class
+            ParentFakeIEntity::class
         ]);
     }
 
@@ -42,12 +42,13 @@ class GetMigrationSchemaApi extends ApiTestCase
 
         $response->assertOk();
         $response->assertJsonStructure(self::JSON_SCHEMA);
-        $response->assertJson([ParentFakeEntity::schema()]);
+        $response->assertJson([ParentFakeIEntity::schema()]);
 
         foreach ($response->json()[0]["attributes"] as $attribute) {
-            if ($attribute["name"] == EntitySynchronizable::PARAM_SYNC_DELETED_AT) {
-                $this->assertTrue(false, "The " . EntitySynchronizable::PARAM_SYNC_DELETED_AT . " attribute should not be present in the schema");
+            if ($attribute["name"] == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
+                $this->assertTrue(false, "The " . EntitySynchronizable::ATTR_SYNC_DELETED_AT . " attribute should not be present in the schema");
             }
         }
+        $this->assertFalse(true);
     }
 }

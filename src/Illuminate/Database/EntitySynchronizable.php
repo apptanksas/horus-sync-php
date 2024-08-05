@@ -1,23 +1,27 @@
 <?php
 
-namespace AppTank\Horus\Core\Entity;
+namespace AppTank\Horus\Illuminate\Database;
 
+use AppTank\Horus\Core\Entity\IEntitySynchronizable;
+use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Util\StringUtil;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class EntitySynchronizable
  * The methods getEntityName and getVersionNumber must be implemented in the child class and they are static because
  * they are called from the schema method without create instance.
  */
-abstract class EntitySynchronizable
+abstract class EntitySynchronizable extends Model implements IEntitySynchronizable
 {
 
-    const PARAM_ID = "id";
-    const PARAM_SYNC_OWNER_ID = "sync_owner_id";
-    const PARAM_SYNC_HASH = "sync_hash";
-    const PARAM_SYNC_CREATED_AT = "sync_created_at";
-    const PARAM_SYNC_UPDATED_AT = "sync_updated_at";
-    const PARAM_SYNC_DELETED_AT = "sync_deleted_at";
+    const ATTR_ID = "id";
+    const ATTR_SYNC_OWNER_ID = "sync_owner_id";
+    const ATTR_SYNC_HASH = "sync_hash";
+    const ATTR_SYNC_CREATED_AT = "sync_created_at";
+    const ATTR_SYNC_UPDATED_AT = "sync_updated_at";
+    const ATTR_SYNC_DELETED_AT = "sync_deleted_at";
 
     public string $entityName;
     public int $versionNumber;
@@ -27,14 +31,13 @@ abstract class EntitySynchronizable
      */
     protected array $parameters;
 
-
-    public function __construct(
-        array $parameters
-    )
+    public function __construct(array $attributes = [])
     {
-        $this->versionNumber = self::getVersionNumber();
-        $this->entityName = self::getVersionNumber();
-        $this->parameters = $parameters;
+        parent::__construct($attributes);
+
+        $this->entityName = static::getEntityName();
+        $this->versionNumber = static::getVersionNumber();
+        $this->parameters = static::parameters();
     }
 
     /**
@@ -43,44 +46,33 @@ abstract class EntitySynchronizable
     protected static function baseParameters(): array
     {
         return [
-            SyncParameter::createPrimaryKeyString(self::PARAM_ID, 1),
-            SyncParameter::createString(self::PARAM_SYNC_OWNER_ID, 1),
-            SyncParameter::createString(self::PARAM_SYNC_HASH, 1),
-            SyncParameter::createTimestamp(self::PARAM_SYNC_CREATED_AT, 1),
-            SyncParameter::createTimestamp(self::PARAM_SYNC_UPDATED_AT, 1),
-            SyncParameter::createTimestamp(self::PARAM_SYNC_DELETED_AT, 1),
+            SyncParameter::createPrimaryKeyString(self::ATTR_ID, 1),
+            SyncParameter::createString(self::ATTR_SYNC_OWNER_ID, 1),
+            SyncParameter::createString(self::ATTR_SYNC_HASH, 1),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_CREATED_AT, 1),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_UPDATED_AT, 1),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, 1),
         ];
+    }
+
+
+    final public static function getTableName(): string
+    {
+        return static::getEntityName() . "_sync_entity";
     }
 
     /**
      * @return SyncParameter[]
      */
-    abstract public static function parameters(): array;
-
-    /**
-     *  Get the entity name
-     * @return string
-     */
-    abstract public static function getEntityName(): string;
-
-    /**
-     * Get the version number
-     * @return int
-     */
-    abstract protected static function getVersionNumber(): int;
-
-    /**
-     * @return SyncParameter[]
-     */
-    static function schema(): array
+    public static function schema(): array
     {
         $attributes = [];
         /**
-         * @var $class EntitySynchronizable
+         * @var $class IEntitySynchronizable
          */
         $class = get_called_class();
         $parameters = array_merge(self::baseParameters(), $class::parameters());
-        $filterParameters = [self::PARAM_SYNC_DELETED_AT];
+        $filterParameters = [self::ATTR_SYNC_DELETED_AT];
 
         /**
          * @var $parameter SyncParameter
@@ -110,4 +102,5 @@ abstract class EntitySynchronizable
             "current_version" => $class::getVersionNumber()
         ];
     }
+
 }

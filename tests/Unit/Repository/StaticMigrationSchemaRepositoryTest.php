@@ -4,7 +4,7 @@ namespace Tests\Unit\Repository;
 
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeIEntity;
 use PHPUnit\Framework\TestCase;
 
 class StaticMigrationSchemaRepositoryTest extends TestCase
@@ -19,7 +19,7 @@ class StaticMigrationSchemaRepositoryTest extends TestCase
         $this->repository = new StaticMigrationSchemaRepository();
 
         HorusContainer::initialize([
-            ParentFakeEntity::class
+            ParentFakeIEntity::class
         ]);
     }
 

@@ -2,10 +2,10 @@
 
 namespace Tests\_Stubs;
 
-use AppTank\Horus\Core\Entity\EntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
-class ChildFakeEntity extends EntitySynchronizable
+class ChildFakeIEntity extends EntitySynchronizable
 {
 
     const ATTR_PRIMARY_INT_VALUE = "primary_int_value";
@@ -36,7 +36,7 @@ class ChildFakeEntity extends EntitySynchronizable
         return "child_fake_entity";
     }
 
-    protected static function getVersionNumber(): int
+    public static function getVersionNumber(): int
     {
         return 5;
     }

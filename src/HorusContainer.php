@@ -2,12 +2,13 @@
 
 namespace AppTank\Horus;
 
-use AppTank\Horus\Core\Entity\EntitySynchronizable;
 
 class HorusContainer
 {
 
     private static ?self $instance = null;
+
+    private ?string $connectionName = null;
 
     /**
      * @param string[] $entities Array of EntitySynchronizable class names
@@ -27,6 +28,19 @@ class HorusContainer
         return self::$instance;
     }
 
+    // --------------------------------
+    // SETT
+    // --------------------------------
+
+    public function setConnectionName(string $connectionName): void
+    {
+        $this->connectionName = $connectionName;
+    }
+
+    // --------------------------------
+    // GETTERS
+    // --------------------------------
+
 
     public static function getInstance(): HorusContainer
     {
@@ -39,6 +53,11 @@ class HorusContainer
     public function getEntities(): array
     {
         return $this->entities;
+    }
+
+    public function getConnectionName(): ?string
+    {
+        return $this->connectionName;
     }
 
 }

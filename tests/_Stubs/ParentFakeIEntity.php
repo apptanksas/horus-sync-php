@@ -2,10 +2,10 @@
 
 namespace Tests\_Stubs;
 
-use AppTank\Horus\Core\Entity\EntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
-class ParentFakeEntity extends EntitySynchronizable
+class ParentFakeIEntity extends EntitySynchronizable
 {
 
     const ATTR_NAME = "name";
@@ -24,7 +24,7 @@ class ParentFakeEntity extends EntitySynchronizable
         return [
             SyncParameter::createString(self::ATTR_NAME, self::VERSION_NAME),
             SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_COLOR),
-            SyncParameter::createRelationOneToMany(self::ATTR_CHILDREN, [ChildFakeEntity::class], self::VERSION_CHILDREN)
+            SyncParameter::createRelationOneToMany(self::ATTR_CHILDREN, [ChildFakeIEntity::class], self::VERSION_CHILDREN)
         ];
     }
 
@@ -33,7 +33,7 @@ class ParentFakeEntity extends EntitySynchronizable
         return "parent_fake_entity";
     }
 
-    protected static function getVersionNumber(): int
+    public static function getVersionNumber(): int
     {
         return 2;
     }

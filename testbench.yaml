@@ -1,2 +1,4 @@
 providers:
   - AppTank\Horus\Illuminate\Provider\HorusServiceProvider
+migrations:
+  - database/migrations

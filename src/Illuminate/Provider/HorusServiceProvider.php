@@ -15,6 +15,7 @@ class HorusServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerCommands();
+        $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
     }
 
     public function register()
