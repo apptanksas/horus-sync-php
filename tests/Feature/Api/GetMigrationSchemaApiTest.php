@@ -8,7 +8,7 @@ use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use AppTank\Horus\RouteName;
 use Tests\_Stubs\ParentFakeEntity;
 
-class GetMigrationSchemaApi extends ApiTestCase
+class GetMigrationSchemaApiTest extends ApiTestCase
 {
     private const JSON_SCHEMA = [
         '*' => [
@@ -49,6 +49,5 @@ class GetMigrationSchemaApi extends ApiTestCase
                 $this->assertTrue(false, "The " . EntitySynchronizable::ATTR_SYNC_DELETED_AT . " attribute should not be present in the schema");
             }
         }
-        $this->assertFalse(true);
     }
 }
