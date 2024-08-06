@@ -2,14 +2,15 @@
 
 namespace AppTank\Horus\Core;
 
-use AppTank\Horus\Core\Trait\EnumList;
 
-enum SyncAction
+use AppTank\Horus\Core\Trait\EnumIterator;
+
+enum SyncAction: string
 {
-    use EnumList;
+    use EnumIterator;
 
-    case READ;
-    case INSERT;
-    case UPDATE;
-    case DELETE;
+    case READ = "R";
+    case INSERT = "I";
+    case UPDATE = "U";
+    case DELETE = "D";
 }

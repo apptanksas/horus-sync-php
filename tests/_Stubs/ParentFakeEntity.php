@@ -5,7 +5,7 @@ namespace Tests\_Stubs;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
-class ParentFakeIEntity extends EntitySynchronizable
+class ParentFakeEntity extends EntitySynchronizable
 {
 
     const ATTR_NAME = "name";

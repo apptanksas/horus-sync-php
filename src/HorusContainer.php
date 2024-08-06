@@ -10,6 +10,8 @@ class HorusContainer
 
     private ?string $connectionName = null;
 
+    private bool $usesUUIDs = false;
+
     /**
      * @param string[] $entities Array of EntitySynchronizable class names
      */
@@ -37,6 +39,11 @@ class HorusContainer
         $this->connectionName = $connectionName;
     }
 
+    public function usesUUID(): void
+    {
+        $this->usesUUIDs = true;
+    }
+
     // --------------------------------
     // GETTERS
     // --------------------------------
@@ -59,5 +66,11 @@ class HorusContainer
     {
         return $this->connectionName;
     }
+
+    public function isUsesUUID(): bool
+    {
+        return $this->usesUUIDs;
+    }
+
 
 }

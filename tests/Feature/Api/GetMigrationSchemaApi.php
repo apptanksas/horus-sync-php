@@ -6,7 +6,7 @@ use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use AppTank\Horus\RouteName;
-use Tests\_Stubs\ParentFakeIEntity;
+use Tests\_Stubs\ParentFakeEntity;
 
 class GetMigrationSchemaApi extends ApiTestCase
 {
@@ -32,7 +32,7 @@ class GetMigrationSchemaApi extends ApiTestCase
         $this->repository = new StaticMigrationSchemaRepository();
 
         HorusContainer::initialize([
-            ParentFakeIEntity::class
+            ParentFakeEntity::class
         ]);
     }
 
@@ -42,7 +42,7 @@ class GetMigrationSchemaApi extends ApiTestCase
 
         $response->assertOk();
         $response->assertJsonStructure(self::JSON_SCHEMA);
-        $response->assertJson([ParentFakeIEntity::schema()]);
+        $response->assertJson([ParentFakeEntity::schema()]);
 
         foreach ($response->json()[0]["attributes"] as $attribute) {
             if ($attribute["name"] == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {

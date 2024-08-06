@@ -8,6 +8,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+
+/**
+ * Create migration schema for all entities synchronizable
+ */
 return new class extends Migration {
     /**
      * Run the migrations.
@@ -21,7 +25,8 @@ return new class extends Migration {
          */
         foreach ($container->getEntities() as $entityClass) {
             $tableName = $entityClass::getTableName();
-            Schema::create($tableName, function (Blueprint $table) use ($entityClass, $tableName) {
+
+            $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName) {
                 $parameters = $entityClass::parameters();
                 foreach ($parameters as $parameter) {
                     if (Schema::hasColumn($tableName, $parameter->name)) {
@@ -29,7 +34,15 @@ return new class extends Migration {
                     }
                     $this->createColumn($table, $parameter);
                 }
-            });
+            };
+
+            // if connection name is null, use default connection
+            if (is_null($container->getConnectionName())) {
+                Schema::create($tableName, $callbackCreateTable);
+                continue;
+            }
+
+            Schema::connection($container->getConnectionName())->create($tableName, $callbackCreateTable);
         }
     }
 
@@ -45,8 +58,15 @@ return new class extends Migration {
          */
         foreach ($container->getEntities() as $entityClass) {
             $tableName = $entityClass::getTableName();
+
+            if (is_null($container->getConnectionName())) {
+                Schema::connection($container->getConnectionName())->dropIfExists($tableName);
+                continue;
+            }
             Schema::dropIfExists($tableName);
         }
+
+
     }
 
     private function createColumn(Blueprint $table, SyncParameter $parameter): void
