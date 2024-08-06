@@ -27,7 +27,7 @@ return new class extends Migration {
             $tableName = $entityClass::getTableName();
 
             $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName) {
-                $parameters = $entityClass::parameters();
+                $parameters = array_merge(EntitySynchronizable::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (Schema::hasColumn($tableName, $parameter->name)) {
                         continue;
@@ -71,6 +71,12 @@ return new class extends Migration {
 
     private function createColumn(Blueprint $table, SyncParameter $parameter): void
     {
+
+        if ($parameter->name == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
+            $table->softDeletes(EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+            return;
+        }
+
         match ($parameter->type) {
             SyncParameterType::PRIMARY_KEY_INTEGER => $table->id($parameter->name),
             SyncParameterType::PRIMARY_KEY_UUID => $table->uuid($parameter->name),
@@ -78,7 +84,7 @@ return new class extends Migration {
             SyncParameterType::INT => $table->integer($parameter->name),
             SyncParameterType::FLOAT => $table->float($parameter->name),
             SyncParameterType::BOOLEAN => $table->boolean($parameter->name),
-            SyncParameterType::STRING => $table->string($parameter->name),
+            SyncParameterType::STRING => $table->string($parameter->name, 255),
             SyncParameterType::JSON => $table->json($parameter->name),
             SyncParameterType::TEXT => $table->text($parameter->name),
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),

@@ -2,8 +2,6 @@
 
 namespace AppTank\Horus\Core;
 
-use Illuminate\Support\Str;
-
 class Hasher
 {
     const ALGORITHM = "sha256";
@@ -16,9 +14,15 @@ class Hasher
             $data = array_combine(array_values($data), array_values($data));
         }
 
+        // Validate is data are primitive types
+        foreach ($data as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                throw new \InvalidArgumentException("Data key [$value] must be primitive types");
+            }
+        }
+
         // Sort the array by key
         ksort($data);
-        $inputString = join("", $data);
         return hash(self::ALGORITHM, join("", $data));
     }
 

@@ -6,7 +6,7 @@ use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\_Stubs\ChildFakeIEntity;
+use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\TestCase;
 
@@ -19,8 +19,9 @@ class MigrationTest extends TestCase
     function setUp(): void
     {
         HorusContainer::initialize([
-            ParentFakeEntity::class,
-            ChildFakeIEntity::class
+            ParentFakeEntity::class => [
+                ChildFakeEntity::class
+            ]
         ]);
 
         parent::setUp();
@@ -29,7 +30,7 @@ class MigrationTest extends TestCase
     function testMigrations()
     {
         $this->assertDatabaseEmpty(ParentFakeEntity::getTableName());
-        $this->assertDatabaseEmpty(ChildFakeIEntity::getTableName());
+        $this->assertDatabaseEmpty(ChildFakeEntity::getTableName());
         $this->assertDatabaseEmpty(SyncQueueActionModel::TABLE_NAME);
     }
 
@@ -44,7 +45,7 @@ class MigrationTest extends TestCase
     {
         $this->artisan('migrate:rollback');
         $this->expectException(QueryException::class);
-        $this->assertDatabaseEmpty(ChildFakeIEntity::getTableName());
+        $this->assertDatabaseEmpty(ChildFakeEntity::getTableName());
     }
 
     function testRollbackMigrationSyncQueueAction()

@@ -5,7 +5,7 @@ namespace Tests\_Stubs;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
-class ChildFakeIEntity extends EntitySynchronizable
+class ChildFakeEntity extends EntitySynchronizable
 {
 
     const ATTR_PRIMARY_INT_VALUE = "primary_int_value";
@@ -15,6 +15,8 @@ class ChildFakeIEntity extends EntitySynchronizable
     const ATTR_STRING_VALUE = "string_value";
     const ATTR_BOOLEAN_VALUE = "boolean_value";
     const ATTR_TIMESTAMP_VALUE = "timestamp_value";
+
+    const FK_PARENT_ID = "parent_id";
 
     const VERSION_ATTRIBUTES = 5;
 
@@ -27,7 +29,8 @@ class ChildFakeIEntity extends EntitySynchronizable
             SyncParameter::createFloat(self::ATTR_FLOAT_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createString(self::ATTR_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createBoolean(self::ATTR_BOOLEAN_VALUE, self::VERSION_ATTRIBUTES),
-            SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES)
+            SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES),
+            SyncParameter::createString(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES)
         ];
     }
 

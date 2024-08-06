@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Util\StringUtil;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class EntitySynchronizable
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 abstract class EntitySynchronizable extends Model implements IEntitySynchronizable
 {
+
+    use SoftDeletes;
 
     const ATTR_ID = "id";
     const ATTR_SYNC_OWNER_ID = "sync_owner_id";
@@ -40,10 +43,15 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
         $this->parameters = static::parameters();
     }
 
+    public function getDeletedAtColumn(): string
+    {
+        return self::ATTR_SYNC_DELETED_AT;
+    }
+
     /**
      * @return SyncParameter[]
      */
-    protected static function baseParameters(): array
+    public static function baseParameters(): array
     {
         return [
             SyncParameter::createPrimaryKeyString(self::ATTR_ID, 1),

@@ -7,11 +7,11 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Support\Facades\DB;
 
-class EloquentQueueActionRepository implements QueueActionRepository
+readonly class EloquentQueueActionRepository implements QueueActionRepository
 {
 
     public function __construct(
-        private readonly ?string $connectionName = null,
+        private ?string $connectionName = null,
     )
     {
 
@@ -42,7 +42,7 @@ class EloquentQueueActionRepository implements QueueActionRepository
         return [
             SyncQueueActionModel::ATTR_ACTION => $queueAction->action->value,
             SyncQueueActionModel::ATTR_ENTITY => $queueAction->entity,
-            SyncQueueActionModel::ATTR_DATA => json_encode($queueAction->data),
+            SyncQueueActionModel::ATTR_DATA => json_encode($queueAction->data->toArray()),
             SyncQueueActionModel::ATTR_ACTIONED_AT => $queueAction->actionedAt,
             SyncQueueActionModel::ATTR_SYNCED_AT => $queueAction->syncedAt,
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,

@@ -4,6 +4,7 @@ namespace Tests;
 
 
 use AppTank\Horus\HorusContainer;
+use Faker\Generator;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Orchestra\Testbench\Concerns\WithLaravelMigrations;
@@ -15,6 +16,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     use WithLaravelMigrations, WithWorkbench, LazilyRefreshDatabase;
 
     protected bool $initializeContainer = true;
+    protected Generator $faker;
 
     function setUp(): void
     {
@@ -22,6 +24,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
             HorusContainer::initialize([]);
         }
         parent::setUp();
+        $this->faker = \Faker\Factory::create();
     }
 
     protected function defineEnvironment($app): void

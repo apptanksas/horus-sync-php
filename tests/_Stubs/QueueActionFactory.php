@@ -1,0 +1,52 @@
+<?php
+
+namespace Tests\_Stubs;
+
+use AppTank\Horus\Core\Model\EntityDelete;
+use AppTank\Horus\Core\Model\EntityInsert;
+use AppTank\Horus\Core\Model\EntityOperation;
+use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Core\Model\QueueAction;
+use AppTank\Horus\Core\SyncAction;
+use Faker\Guesser\Name;
+
+class QueueActionFactory
+{
+
+
+    public static function create(?EntityOperation $entityOperation = null): QueueAction
+    {
+
+        $faker = \Faker\Factory::create();
+        $action = SyncAction::random();
+
+        $entity = $faker->userName;
+
+        return new QueueAction(
+            $action,
+            $faker->userName,
+            $entityOperation ?? self::createEntityOperation($entity, $action),
+            now()->toDateTimeImmutable(),
+            now()->toDateTimeImmutable(),
+            $faker->uuid,
+            $faker->uuid
+        );
+    }
+
+
+    private static function createEntityOperation(string $entity, SyncAction $action): EntityOperation
+    {
+        $faker = \Faker\Factory::create();
+        $data = ["id" => $faker->uuid];
+
+        for ($i = 0; $i < rand(1, 10); $i++) {
+            $data[$faker->colorName] = $faker->word;
+        }
+
+        return match ($action) {
+            SyncAction::INSERT => new EntityInsert($faker->uuid, $entity, now()->toDateTimeImmutable(), $data),
+            SyncAction::UPDATE => new EntityUpdate($faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
+            SyncAction::DELETE => new EntityDelete($faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable()),
+        };
+    }
+}

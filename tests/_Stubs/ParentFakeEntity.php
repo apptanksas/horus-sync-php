@@ -11,7 +11,7 @@ class ParentFakeEntity extends EntitySynchronizable
     const ATTR_NAME = "name";
     const ATTR_COLOR = "color";
 
-    const ATTR_CHILDREN = "children";
+    const RELATED_CHILDREN = "children";
 
     const VERSION_NAME = 1;
 
@@ -24,7 +24,7 @@ class ParentFakeEntity extends EntitySynchronizable
         return [
             SyncParameter::createString(self::ATTR_NAME, self::VERSION_NAME),
             SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_COLOR),
-            SyncParameter::createRelationOneToMany(self::ATTR_CHILDREN, [ChildFakeIEntity::class], self::VERSION_CHILDREN)
+            SyncParameter::createRelationOneToMany(self::RELATED_CHILDREN, [ChildFakeEntity::class], self::VERSION_CHILDREN)
         ];
     }
 
