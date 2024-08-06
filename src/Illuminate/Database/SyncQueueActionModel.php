@@ -7,7 +7,7 @@ use Carbon\Carbon;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Model;
 
-class SyncQueueActionModel extends Model
+final class SyncQueueActionModel extends Model
 {
 
     const TABLE_NAME = "sync_queue_actions";
@@ -33,7 +33,9 @@ class SyncQueueActionModel extends Model
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->setConnection(HorusContainer::getInstance()->getConnectionName());
+
+        if (!is_null(HorusContainer::getInstance()->getConnectionName()))
+            $this->setConnection(HorusContainer::getInstance()->getConnectionName());
     }
 
     function toArray(): array
