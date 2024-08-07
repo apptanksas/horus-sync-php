@@ -2,6 +2,7 @@
 
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
+use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use Illuminate\Database\Migrations\Migration;
@@ -65,8 +66,6 @@ return new class extends Migration {
             }
             Schema::dropIfExists($tableName);
         }
-
-
     }
 
     private function createColumn(Blueprint $table, SyncParameter $parameter): void
@@ -74,6 +73,11 @@ return new class extends Migration {
 
         if ($parameter->name == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
             $table->softDeletes(EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+            return;
+        }
+
+        if ($parameter->name == EntitySynchronizable::ATTR_SYNC_HASH) {
+            $table->string($parameter->name, Hasher::getHashLength());
             return;
         }
 

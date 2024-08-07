@@ -22,4 +22,8 @@ enum SyncParameterType: string
     case TIMESTAMP = "timestamp";
     case RELATION_ONE_TO_MANY = "relation_one_to_many";
 
+    public function isNotRelation(): bool
+    {
+        return $this !== self::RELATION_ONE_TO_MANY;
+    }
 }

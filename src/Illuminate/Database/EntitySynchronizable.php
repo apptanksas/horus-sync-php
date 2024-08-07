@@ -34,6 +34,8 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
      */
     protected array $parameters;
 
+    public $timestamps = false;
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -41,6 +43,8 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
         $this->entityName = static::getEntityName();
         $this->versionNumber = static::getVersionNumber();
         $this->parameters = static::parameters();
+
+        $this->setTable(static::getTableName());
     }
 
     public function getDeletedAtColumn(): string
@@ -109,6 +113,38 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
             "attributes" => $attributes,
             "current_version" => $class::getVersionNumber()
         ];
+    }
+
+    // ------------------------------------------------------------------------
+    // GETTERS
+    // ------------------------------------------------------------------------
+
+    public function getId(): string
+    {
+        return $this->getAttribute(self::ATTR_ID);
+    }
+
+    public function getOwnerId(): string|int
+    {
+        return $this->getAttribute(self::ATTR_SYNC_OWNER_ID);
+    }
+
+    public function getHash(): string
+    {
+        return $this->getAttribute(self::ATTR_SYNC_HASH);
+    }
+
+    // ------------------------------------------------------------------------
+    // OVERRIDE
+    // ------------------------------------------------------------------------
+
+    function save(array $options = []): bool
+    {
+        if (!$this->exists) {
+            $this->setAttribute(self::ATTR_SYNC_CREATED_AT, time());
+            $this->setAttribute(self::ATTR_SYNC_UPDATED_AT, time());
+        }
+        return parent::save($options);
     }
 
 }

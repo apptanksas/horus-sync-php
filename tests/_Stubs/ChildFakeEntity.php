@@ -20,6 +20,22 @@ class ChildFakeEntity extends EntitySynchronizable
 
     const VERSION_ATTRIBUTES = 5;
 
+    protected $fillable = [
+        self::ATTR_ID,
+        self::ATTR_PRIMARY_INT_VALUE,
+        self::ATTR_PRIMARY_STRING_VALUE,
+        self::ATTR_INT_VALUE,
+        self::ATTR_FLOAT_VALUE,
+        self::ATTR_STRING_VALUE,
+        self::ATTR_BOOLEAN_VALUE,
+        self::ATTR_TIMESTAMP_VALUE,
+        self::FK_PARENT_ID,
+        self::ATTR_SYNC_HASH,
+        self::ATTR_SYNC_OWNER_ID,
+        self::ATTR_SYNC_CREATED_AT,
+        self::ATTR_SYNC_UPDATED_AT,
+    ];
+
     public static function parameters(): array
     {
         return [

@@ -67,7 +67,7 @@ class SyncParameter
     // Validations
     // ------------------------------------------------------------------------
 
-    public function validateRelated(): void
+    private function validateRelated(): void
     {
         foreach ($this->related as $related) {
             if ($related != null && !class_exists($related)) {

@@ -16,8 +16,8 @@ class ParentFakeEntityFactory
         $data[EntitySynchronizable::ATTR_SYNC_OWNER_ID] = $faker->uuid;
 
         $entity = new ParentFakeEntity($data);
-
-        $entity->save();
+        $entity->setTable(ParentFakeEntity::getTableName());
+        $entity->saveOrFail();
 
         return $entity;
     }

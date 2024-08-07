@@ -23,6 +23,7 @@ class Hasher
 
         // Sort the array by key
         ksort($data);
+
         return hash(self::ALGORITHM, join("", $data));
     }
 
