@@ -235,7 +235,6 @@ class EloquentEntityRepositoryTest extends TestCase
         }
     }
 
-
     function testSearchAllEntitiesByUserIdIsSuccess()
     {
         // Given
@@ -295,6 +294,32 @@ class EloquentEntityRepositoryTest extends TestCase
                 $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT] > 0);
             }
         }
+    }
+
+    function testSearchAllEntitiesWithoutSoftDeletedIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        //Parents entities soft deleted
+        $parentsEntitiesDeleted = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        foreach ($parentsEntitiesDeleted as $parentEntity) {
+            $parentEntity->delete();
+        }
+
+        // When
+        /**
+         * @var $result EntityData[]
+         */
+        $result = $this->entityRepository->searchAllEntitiesByUserId($ownerId);
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+        // Validate soft deleted entities and entities not soft deleted are in the database
+        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($parentsEntitiesDeleted));
     }
 
     function testSearchEntitiesAfterUpdatedAtIsSuccess()
