@@ -10,7 +10,13 @@ class EntityMapper
     private array $entities = [];
     private array $map = [];
 
-    function getEloquentClassEntity(string $entityName): string
+    /**
+     * Get the Eloquent class entity
+     *
+     * @param string $entityName
+     * @return string
+     */
+    function getEntityClass(string $entityName): string
     {
         return $this->entities[$entityName] ?? throw new \InvalidArgumentException("Entity $entityName not found");
     }
@@ -32,5 +38,10 @@ class EntityMapper
     function getEntities(): array
     {
         return $this->entities;
+    }
+
+    function getMap(): array
+    {
+        return $this->map;
     }
 }

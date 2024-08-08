@@ -7,13 +7,13 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 class ParentFakeEntityFactory
 {
-    public static function create(): ParentFakeEntity
+    public static function create(string|int $userId = null, array $data = array()): ParentFakeEntity
     {
         $faker = \Faker\Factory::create();
-        $data = self::newData();
+        $data = array_replace(self::newData(), $data);
 
         $data[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($data);
-        $data[EntitySynchronizable::ATTR_SYNC_OWNER_ID] = $faker->uuid;
+        $data[EntitySynchronizable::ATTR_SYNC_OWNER_ID] = $userId ?? $faker->uuid;
 
         $entity = new ParentFakeEntity($data);
         $entity->setTable(ParentFakeEntity::getTableName());

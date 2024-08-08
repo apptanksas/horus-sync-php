@@ -36,6 +36,9 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
 
     public $timestamps = false;
 
+    public $incrementing = false;
+    protected $primaryKey = self::ATTR_ID;
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -134,17 +137,44 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
         return $this->getAttribute(self::ATTR_SYNC_HASH);
     }
 
+    public function getUpdatedAt(): int
+    {
+        return $this->getAttribute(self::ATTR_SYNC_UPDATED_AT);
+    }
+
+    public function getCreatedAt(): int
+    {
+        return $this->getAttribute(self::ATTR_SYNC_CREATED_AT);
+    }
+
     // ------------------------------------------------------------------------
     // OVERRIDE
     // ------------------------------------------------------------------------
 
     function save(array $options = []): bool
     {
-        if (!$this->exists) {
+        if (!$this->exists && !$this->getAttribute(self::ATTR_SYNC_CREATED_AT)) {
             $this->setAttribute(self::ATTR_SYNC_CREATED_AT, time());
+        }
+
+        if (!$this->exists && !$this->getAttribute(self::ATTR_SYNC_UPDATED_AT)) {
             $this->setAttribute(self::ATTR_SYNC_UPDATED_AT, time());
         }
+
         return parent::save($options);
     }
 
+
+    // ------------------------------------------------------------------------
+    // RELATIONS
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get relations methods many
+     * @return string[]
+     */
+    public function getRelationsMany(): array
+    {
+        return [];
+    }
 }

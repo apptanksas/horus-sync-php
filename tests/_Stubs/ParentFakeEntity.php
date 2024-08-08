@@ -4,6 +4,7 @@ namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ParentFakeEntity extends EntitySynchronizable
 {
@@ -29,9 +30,6 @@ class ParentFakeEntity extends EntitySynchronizable
         self::ATTR_SYNC_UPDATED_AT,
     ];
 
-    public $incrementing = false;
-    protected $primaryKey = self::ATTR_ID;
-
     public static function parameters(): array
     {
         return [
@@ -49,5 +47,15 @@ class ParentFakeEntity extends EntitySynchronizable
     public static function getVersionNumber(): int
     {
         return 2;
+    }
+
+    public function getRelationsMany(): array
+    {
+        return ["children"];
+    }
+
+    public function children():HasMany
+    {
+        return $this->hasMany(ChildFakeEntity::class, ChildFakeEntity::FK_PARENT_ID, self::ATTR_ID);
     }
 }

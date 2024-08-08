@@ -2,16 +2,19 @@
 
 namespace AppTank\Horus\Repository;
 
-use App\Models\Sync\BaseSyncModel;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -60,7 +63,7 @@ readonly class EloquentEntityRepository implements EntityRepository
             /**
              * @var EntitySynchronizable $entityClass
              */
-            $entityClass = $this->entityMapper->getEloquentClassEntity($entity);
+            $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
             $table = $this->getTableBuilder($tableName);
 
@@ -103,7 +106,7 @@ readonly class EloquentEntityRepository implements EntityRepository
             /**
              * @var EntitySynchronizable $entityClass
              */
-            $entityClass = $this->entityMapper->getEloquentClassEntity($entity);
+            $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
             $table = $this->getTableBuilder($tableName);
 
@@ -127,7 +130,12 @@ readonly class EloquentEntityRepository implements EntityRepository
                  * Finalmente, array_merge([], ...) convierte el resultado filtrado en un array numerado (reindexado) y [0] selecciona el primer (y más reciente) elemento.
                  * Esto asegura que se aplique la última actualización relevante a la entidad.
                  * */
-                $operationUpdate = array_merge([], array_filter(array_reverse($operations), fn(EntityUpdate $operation) => $operation->id == $entityId))[0];
+                $operationUpdate = array_merge([],
+                    array_filter(
+                        array_reverse($operations),
+                        fn(EntityUpdate $operation) => $operation->id == $entityId)
+                )[0];
+
                 $dataEntity = array_merge($dataEntity, $operationUpdate->attributes);
                 $groupHashesByEntity[$entity][$dataEntity[$columnId]] = Hasher::hash($dataEntity);
             }
@@ -155,7 +163,7 @@ readonly class EloquentEntityRepository implements EntityRepository
             /**
              * @var EntitySynchronizable $entityClass
              */
-            $entityClass = $this->entityMapper->getEloquentClassEntity($entity);
+            $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
 
             foreach ($data as $item) {
@@ -176,6 +184,83 @@ readonly class EloquentEntityRepository implements EntityRepository
     function delete(EntityUpdate ...$operations): void
     {
         // TODO: Implement delete() method.
+    }
+
+    /**
+     * @inheritdoc
+     */
+    function searchAllEntitiesByUserId(int|string $userId): array
+    {
+        $entitiesMap = $this->entityMapper->getMap();
+        $output = [];
+
+        foreach ($entitiesMap as $entity) {
+            $dataEntity = $this->searchEntity($userId, $entity->name);
+            $output = array_merge($output, $dataEntity);
+        }
+
+        return $output;
+    }
+
+    /**
+     * Search all entities by user ID and after a specific timestamp.
+     *
+     * @param string|int $userId
+     * @param int $timestamp
+     * @return EntityData[]
+     */
+    function searchEntitiesAfterUpdatedAt(string|int $userId, int $timestamp): array
+    {
+        $entities = $this->entityMapper->getEntities();
+        $output = [];
+
+        foreach ($entities as $entityName => $entityClass) {
+            $dataEntity = $this->searchEntity($userId, $entityName, [], $timestamp);
+            $output = array_merge($output, $dataEntity);
+        }
+
+        return $output;
+    }
+
+
+    /**
+     * Search entities by user ID, entity name, and optional filters.
+     *
+     * @param string|int $userId
+     * @param string $entityName
+     * @param array $ids
+     * @param int|null $timestampAfter
+     * @return EntityData[]
+     */
+    function searchEntity(string|int $userId,
+                          string     $entityName,
+                          array      $ids = [],
+                          ?int       $timestampAfter = null): array
+    {
+        /**
+         * @var $entityClass EntitySynchronizable
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityName);
+
+        /**
+         * @var $collectionItems \Illuminate\Database\Eloquent\Builder
+         */
+        $collectionItems = $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
+
+        if (count($ids) > 0) {
+            $collectionItems = $collectionItems->whereIn(EntitySynchronizable::ATTR_ID, $ids);
+        }
+
+        if (!is_null($timestampAfter)) {
+            $collectionItems = $collectionItems->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
+                ">",
+                $this->dateTimeUtil->parseDatetime($timestampAfter)->getTimestamp()
+            );
+        }
+
+        $collectionItems = $collectionItems->get();
+
+        return $this->iterateItemsAndSearchRelated($collectionItems);
     }
 
 
@@ -229,4 +314,58 @@ readonly class EloquentEntityRepository implements EntityRepository
         usort($operations, fn(EntityOperation $a, EntityOperation $b) => $a->actionedAt <=> $b->actionedAt);
         return $operations;
     }
+
+    /**
+     * Find related entities given a parent entity
+     *
+     * @param EntitySynchronizable $parentEntity
+     * @return EntityData
+     */
+    private function findEntitiesRelated(EntitySynchronizable $parentEntity): EntityData
+    {
+        $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
+
+        $relations = $parentEntity->getRelationsMany();
+
+        foreach ($relations as $relationMethod) {
+            /**
+             * @var $itemsRelated HasMany
+             */
+            $itemsRelated = $parentEntity->{$relationMethod}();
+
+            $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
+
+            $entityData->setEntitiesRelated($relationMethod, $collectionItemsRelated);
+        }
+
+        return $entityData;
+    }
+
+
+    /**
+     * @param Collection $collectionItems
+     * @return EntityData[]
+     */
+    private function iterateItemsAndSearchRelated(Collection $collectionItems): array
+    {
+        $output = [];
+
+        foreach ($collectionItems as $item) {
+            $output[] = $this->findEntitiesRelated($item);
+        }
+
+        return $output;
+    }
+
+
+    private function prepareData(array $modelData): array
+    {
+        $output = $modelData;
+
+        $output[EntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
+        $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
+
+        return $output;
+    }
+
 }

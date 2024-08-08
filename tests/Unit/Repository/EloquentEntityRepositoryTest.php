@@ -5,13 +5,13 @@ namespace Tests\Unit\Repository;
 
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
@@ -167,6 +167,93 @@ class EloquentEntityRepositoryTest extends TestCase
         );
         $this->assertSoftDeleted(ParentFakeEntity::getTableName(), $expectedData, deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
         $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+    }
+
+    function testSearchAllEntitiesByUserIdIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        $childEntities = [];
+
+        foreach ($parentsEntities as $parentEntity) {
+            $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId));
+        }
+
+        // When
+        /**
+         * @var $result EntityData[]
+         */
+        $result = $this->entityRepository->searchAllEntitiesByUserId($ownerId);
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+
+        foreach ($childEntities as $parentId => $childs) {
+            $children = array_merge([], array_filter($result, fn(EntityData $entity) => $entity->getData()["id"] === $parentId))[0]->getData()["_children"];
+            $this->assertCount(count($childEntities[$parentId]), $children);
+        }
+
+        foreach ($parentsEntities as $parentEntity) {
+            $parentEntityResult = array_merge([], array_filter($result, fn(EntityData $entity) => $entity->getData()["id"] === $parentEntity->getId()))[0];
+
+            $this->assertEquals($parentEntity->getId(), $parentEntityResult->getData()["id"]);
+            $this->assertEquals($parentEntity->name, $parentEntityResult->getData()[ParentFakeEntity::ATTR_NAME]);
+            $this->assertEquals($parentEntity->color, $parentEntityResult->getData()[ParentFakeEntity::ATTR_COLOR]);
+
+            $children = $parentEntityResult->getData()["_children"];
+
+            foreach ($childEntities[$parentEntity->getId()] as $childEntity) {
+                $childEntityResult = array_merge([], array_filter($children, fn($entity) => $entity->getData()["id"] == $childEntity->getId()))[0]->getData();
+                $this->assertEquals($childEntity->getId(), $childEntityResult[ChildFakeEntity::ATTR_ID]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_BOOLEAN_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_BOOLEAN_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_INT_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_INT_VALUE]);
+                $this->assertEquals(round(floatval($childEntity->{ChildFakeEntity::ATTR_FLOAT_VALUE}), 2), round(floatval($childEntityResult[ChildFakeEntity::ATTR_FLOAT_VALUE]), 2), 2);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_STRING_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_STRING_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_TIMESTAMP_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_TIMESTAMP_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_PRIMARY_INT_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_PRIMARY_INT_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_PRIMARY_STRING_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_PRIMARY_STRING_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::FK_PARENT_ID}, $childEntityResult[ChildFakeEntity::FK_PARENT_ID]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_HASH}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_HASH]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_OWNER_ID}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_OWNER_ID]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_CREATED_AT}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT]);
+                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_UPDATED_AT}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT]);
+
+                $this->assertIsInt($childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT]);
+                $this->assertIsInt($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT]);
+                $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT] > 0);
+                $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT] > 0);
+            }
+        }
+    }
+
+    function testSearchEntitiesAfterUpdatedAtIsSuccess()
+    {
+        $ownerId = $this->faker->uuid;
+        $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $updatedAt
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp()
+        ]));
+
+        $updatedAtTarget = $updatedAt - 1;
+        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt() > $updatedAtTarget));
+
+        // When
+        $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($ownerId, $updatedAtTarget);
+
+        // Then
+        $this->assertCount($countExpected, $result);
     }
 
 }
