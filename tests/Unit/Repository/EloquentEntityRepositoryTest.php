@@ -256,4 +256,69 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertCount($countExpected, $result);
     }
 
+    function testSearchEntitiesDefaultIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        // Others records
+        $this->generateArray(fn() => ParentFakeEntityFactory::create());
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+    }
+
+    function testSearchEntitiesByIdsIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        $parentsEntitiesToSearch = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        $idsExpected = array_map(fn(ParentFakeEntity $entity) => $entity->getId(), $parentsEntitiesToSearch);
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), $idsExpected);
+
+        // Then
+        $this->assertCount(count($idsExpected), $result);
+
+        foreach ($result as $entityData) {
+            $this->assertTrue(in_array($entityData->getData()["id"], $idsExpected));
+        }
+    }
+
+    function testSearchEntitiesByTimestampIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $timestamp = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $timestamp
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp()
+        ]));
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), [], $timestamp-1);
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+    }
+
+
 }

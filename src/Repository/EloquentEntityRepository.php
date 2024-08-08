@@ -195,7 +195,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         $output = [];
 
         foreach ($entitiesMap as $entity) {
-            $dataEntity = $this->searchEntity($userId, $entity->name);
+            $dataEntity = $this->searchEntities($userId, $entity->name);
             $output = array_merge($output, $dataEntity);
         }
 
@@ -215,7 +215,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         $output = [];
 
         foreach ($entities as $entityName => $entityClass) {
-            $dataEntity = $this->searchEntity($userId, $entityName, [], $timestamp);
+            $dataEntity = $this->searchEntities($userId, $entityName, [], $timestamp);
             $output = array_merge($output, $dataEntity);
         }
 
@@ -232,10 +232,10 @@ readonly class EloquentEntityRepository implements EntityRepository
      * @param int|null $timestampAfter
      * @return EntityData[]
      */
-    function searchEntity(string|int $userId,
-                          string     $entityName,
-                          array      $ids = [],
-                          ?int       $timestampAfter = null): array
+    function searchEntities(string|int $userId,
+                            string     $entityName,
+                            array      $ids = [],
+                            ?int       $timestampAfter = null): array
     {
         /**
          * @var $entityClass EntitySynchronizable
