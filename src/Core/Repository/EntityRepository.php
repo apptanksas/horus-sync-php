@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\Repository;
 
 use AppTank\Horus\Core\Model\EntityData;
+use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityUpdate;
 
@@ -12,7 +13,13 @@ interface EntityRepository
 
     function update(EntityUpdate ...$operations): void;
 
-    function delete(EntityUpdate ...$operations): void;
+    /**
+     * Deletes multiple entity records from the database and any related entities on cascade.
+     *
+     * @param EntityDelete ...$operations
+     * @return void
+     */
+    function delete(EntityDelete ...$operations): void;
 
 
     /**

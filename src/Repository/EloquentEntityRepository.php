@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityData;
+use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
@@ -181,9 +182,50 @@ readonly class EloquentEntityRepository implements EntityRepository
 
     }
 
-    function delete(EntityUpdate ...$operations): void
+    /**
+     * Deletes multiple entity records from the database and any related entities on cascade.
+     *
+     * @param EntityDelete ...$operations
+     * @return void
+     */
+    function delete(EntityDelete ...$operations): void
     {
-        // TODO: Implement delete() method.
+
+        $groupOperationByEntity = [];
+        $dataPreparedToDelete = [];
+
+        foreach ($operations as $operation) {
+            $groupOperationByEntity[$operation->entity][] = $operation->id;
+        }
+
+        foreach ($groupOperationByEntity as $entity => $ids) {
+
+            /**
+             * @var EntitySynchronizable $entityClass
+             */
+            $entityClass = $this->entityMapper->getEntityClass($entity);
+
+            foreach ($entityClass::query()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get() as $eloquentModel) {
+
+                $entityData = $this->buildEntityData($eloquentModel);
+                $idsRelated = $this->parseRelatedIds($entityData);
+
+                // Delete related entities
+                foreach ($idsRelated as $entityName => $ids) {
+                    $dataPreparedToDelete[$entityName] =
+                        array_merge($dataPreparedToDelete[$entityName] ?? [], (array)$ids);
+                }
+            }
+        }
+
+        // Delete entities and related entities
+        foreach ($dataPreparedToDelete as $entityName => $ids) {
+            /**
+             * @var EntitySynchronizable $entityClass
+             */
+            $entityClass = $this->entityMapper->getEntityClass($entityName);
+            $entityClass::query()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->delete();
+        }
     }
 
     /**
@@ -321,7 +363,7 @@ readonly class EloquentEntityRepository implements EntityRepository
      * @param EntitySynchronizable $parentEntity
      * @return EntityData
      */
-    private function findEntitiesRelated(EntitySynchronizable $parentEntity): EntityData
+    private function buildEntityData(EntitySynchronizable $parentEntity): EntityData
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
 
@@ -351,7 +393,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         $output = [];
 
         foreach ($collectionItems as $item) {
-            $output[] = $this->findEntitiesRelated($item);
+            $output[] = $this->buildEntityData($item);
         }
 
         return $output;
@@ -366,6 +408,46 @@ readonly class EloquentEntityRepository implements EntityRepository
         $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
 
         return $output;
+    }
+
+    /**
+     * Extract related entities IDs
+     *
+     * @param EntityData $entityData
+     * @return string[]
+     */
+    private function parseRelatedIds(EntityData $entityData): array
+    {
+        $idsOutput = [];
+        $entityName = $entityData->name;
+        $groupByEntity = function (array $data) {
+            $output = [];
+            foreach ($data as $index => $item) {
+                foreach ($item as $entity => $ids) {
+                    $output[$entity] = array_merge($output[$entity] ?? [], $ids);
+                }
+            }
+
+            return $output;
+        };
+
+        foreach ($entityData->getData() as $key => $value) {
+            // Validate if is a related entity
+            if (str_starts_with($key, "_")) {
+                $entitiesRelated = array_map(fn($item) => $this->parseRelatedIds($item), $value);
+                $groups = $groupByEntity($entitiesRelated);
+                foreach ($groups as $entity => $ids) {
+                    $idsOutput[$entity] = array_merge($idsOutput[$entity] ?? [], $ids);
+                }
+                continue;
+            }
+
+            if ($key == EntitySynchronizable::ATTR_ID) {
+                $idsOutput[$entityName][] = $value;
+            }
+        }
+
+        return $idsOutput;
     }
 
 }

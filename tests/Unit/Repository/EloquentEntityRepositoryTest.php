@@ -169,6 +169,73 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
     }
 
+    function testDeleteIsSuccess()
+    {
+        $ownerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($ownerId);
+
+        $deleteOperation = EntityOperationFactory::createEntityDelete(
+            $ownerId,
+            ParentFakeEntity::getEntityName(),
+            $parentEntity->getId(),
+            \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
+        );
+
+        // When
+        $this->entityRepository->delete($deleteOperation);
+
+        // Then
+        $expectedData = ["id" => $deleteOperation->id];
+        $this->assertSoftDeleted(ParentFakeEntity::getTableName(),
+            $expectedData,
+            deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+    }
+
+    function testDeleteManyEntitiesIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        $childEntities = [];
+
+        foreach ($parentsEntities as $parentEntity) {
+            $childEntities = array_merge($childEntities, $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId)));
+        }
+
+        $deleteOperations = array_map(function (ParentFakeEntity $entity) use ($ownerId) {
+            return EntityOperationFactory::createEntityDelete(
+                $ownerId,
+                ParentFakeEntity::getEntityName(),
+                $entity->getId(),
+                \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
+            );
+        }, $parentsEntities);
+
+        // When
+        $this->entityRepository->delete(...$deleteOperations);
+
+        // Then
+
+        // Validate parent entities are soft deleted
+        foreach ($parentsEntities as $parentFakeEntity) {
+            $expectedData = ["id" => $parentFakeEntity->getId()];
+            $this->assertSoftDeleted(ParentFakeEntity::getTableName(),
+                $expectedData,
+                deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        }
+        // Validate child entities are soft deleted
+        foreach ($childEntities as $childFakeEntity) {
+            $expectedData = ["id" => $childFakeEntity->getId()];
+            $this->assertSoftDeleted(ChildFakeEntity::getTableName(),
+                $expectedData,
+                deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        }
+    }
+
+
     function testSearchAllEntitiesByUserIdIsSuccess()
     {
         // Given
@@ -314,7 +381,7 @@ class EloquentEntityRepositoryTest extends TestCase
         ]));
 
         // When
-        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), [], $timestamp-1);
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), [], $timestamp - 1);
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
