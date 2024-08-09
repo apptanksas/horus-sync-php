@@ -271,13 +271,13 @@ readonly class EloquentEntityRepository implements EntityRepository
      * @param string|int $userId
      * @param string $entityName
      * @param array $ids
-     * @param int|null $timestampAfter
+     * @param int|null $afterTimestamp
      * @return EntityData[]
      */
     function searchEntities(string|int $userId,
                             string     $entityName,
                             array      $ids = [],
-                            ?int       $timestampAfter = null): array
+                            ?int       $afterTimestamp = null): array
     {
         /**
          * @var $entityClass EntitySynchronizable
@@ -293,10 +293,10 @@ readonly class EloquentEntityRepository implements EntityRepository
             $collectionItems = $collectionItems->whereIn(EntitySynchronizable::ATTR_ID, $ids);
         }
 
-        if (!is_null($timestampAfter)) {
+        if (!is_null($afterTimestamp)) {
             $collectionItems = $collectionItems->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
                 ">",
-                $this->dateTimeUtil->parseDatetime($timestampAfter)->getTimestamp()
+                $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()
             );
         }
 

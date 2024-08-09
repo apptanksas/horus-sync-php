@@ -4,12 +4,9 @@ namespace AppTank\Horus\Illuminate\Http;
 
 use AppTank\Horus\HorusContainer;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 abstract class Controller
 {
-
-    abstract function __invoke(Request $request): JsonResponse;
 
     function handle(callable $callback): JsonResponse
     {

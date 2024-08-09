@@ -55,11 +55,11 @@ interface EntityRepository
      * @param string|int $userId
      * @param string $entityName
      * @param array $ids
-     * @param int|null $timestampAfter
+     * @param int|null $afterTimestamp
      * @return EntityData[]
      */
     function searchEntities(string|int $userId,
                             string     $entityName,
                             array      $ids = [],
-                            ?int       $timestampAfter = null): array;
+                            ?int       $afterTimestamp = null): array;
 }
