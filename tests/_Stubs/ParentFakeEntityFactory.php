@@ -23,14 +23,15 @@ class ParentFakeEntityFactory
     }
 
 
-    public static function newData(): array
+    public static function newData(?string $valueNullable = null): array
     {
         $faker = \Faker\Factory::create();
 
         return [
             EntitySynchronizable::ATTR_ID => $faker->uuid,
             ParentFakeEntity::ATTR_NAME => $faker->name,
-            ParentFakeEntity::ATTR_COLOR => $faker->colorName
+            ParentFakeEntity::ATTR_COLOR => $faker->colorName,
+            ParentFakeEntity::ATTR_VALUE_NULLABLE => $valueNullable ?? ($faker->boolean ? $faker->word : null),
         ];
     }
 }

@@ -26,4 +26,9 @@ enum SyncParameterType: string
     {
         return $this !== self::RELATION_ONE_TO_MANY;
     }
+
+    public function isRelation(): bool
+    {
+        return $this === self::RELATION_ONE_TO_MANY;
+    }
 }

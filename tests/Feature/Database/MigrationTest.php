@@ -6,6 +6,7 @@ use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\TestCase;
@@ -30,6 +31,30 @@ class MigrationTest extends TestCase
         $this->assertDatabaseEmpty(ParentFakeEntity::getTableName());
         $this->assertDatabaseEmpty(ChildFakeEntity::getTableName());
         $this->assertDatabaseEmpty(SyncQueueActionModel::TABLE_NAME);
+
+        $parentColumns = Schema::getColumns(ParentFakeEntity::getTableName());
+        $childColumns = Schema::getColumns(ChildFakeEntity::getTableName());
+
+        // Validate nullable columns
+        foreach (ParentFakeEntity::parameters() as $parameter) {
+
+            if ($parameter->type->isRelation()) {
+                continue;
+            }
+
+            $columnNullable = array_merge([], array_filter($parentColumns, function ($column) use ($parameter) {
+                return $column["name"] == $parameter->name;
+            }))[0] ?? throw new \Exception("Column not[" . $parameter->name . "] found");
+            $this->assertEquals($parameter->isNullable, $columnNullable["nullable"], $parameter->name);
+        }
+
+        foreach (ChildFakeEntity::parameters() as $parameter) {
+            $columnNullable = array_merge([], array_filter($childColumns, function ($column) use ($parameter) {
+                return $column["name"] == $parameter->name;
+            }))[0] ?? throw new \Exception("Column not[" . $parameter->name . "] found");
+            $this->assertEquals($parameter->isNullable, $columnNullable["nullable"], $parameter->name);
+        }
+
     }
 
     function testRollbackMigrationParentFake()

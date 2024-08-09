@@ -12,6 +12,8 @@ class ParentFakeEntity extends EntitySynchronizable
     const ATTR_NAME = "name";
     const ATTR_COLOR = "color";
 
+    const ATTR_VALUE_NULLABLE = "value_nullable";
+
     const RELATED_CHILDREN = "children";
 
     const VERSION_NAME = 1;
@@ -25,6 +27,7 @@ class ParentFakeEntity extends EntitySynchronizable
         self::ATTR_NAME,
         self::ATTR_COLOR,
         self::ATTR_SYNC_HASH,
+        self::ATTR_VALUE_NULLABLE,
         self::ATTR_SYNC_OWNER_ID,
         self::ATTR_SYNC_CREATED_AT,
         self::ATTR_SYNC_UPDATED_AT,
@@ -35,6 +38,7 @@ class ParentFakeEntity extends EntitySynchronizable
         return [
             SyncParameter::createString(self::ATTR_NAME, self::VERSION_NAME),
             SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_COLOR),
+            SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_COLOR, true),
             SyncParameter::createRelationOneToMany(self::RELATED_CHILDREN, [ChildFakeEntity::class], self::VERSION_CHILDREN)
         ];
     }
@@ -54,7 +58,7 @@ class ParentFakeEntity extends EntitySynchronizable
         return ["children"];
     }
 
-    public function children():HasMany
+    public function children(): HasMany
     {
         return $this->hasMany(ChildFakeEntity::class, ChildFakeEntity::FK_PARENT_ID, self::ATTR_ID);
     }

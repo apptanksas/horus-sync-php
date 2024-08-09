@@ -23,14 +23,19 @@ class SyncParameter
         $this->validateRelated();
     }
 
-    public static function createPrimaryKeyInteger(string $name, int $version, bool $isNullable = false): self
+    public static function createPrimaryKeyInteger(string $name, int $version): self
     {
-        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_INTEGER, $version, $isNullable);
+        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_INTEGER, $version, false);
     }
 
-    public static function createPrimaryKeyString(string $name, int $version, bool $isNullable = false): self
+    public static function createPrimaryKeyString(string $name, int $version): self
     {
-        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_STRING, $version, $isNullable);
+        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_STRING, $version, false);
+    }
+
+    public static function createPrimaryKeyUUID(string $name, int $version): self
+    {
+        return new SyncParameter($name, SyncParameterType::PRIMARY_KEY_UUID, $version, false);
     }
 
     public static function createInt(string $name, int $version, bool $isNullable = false): self
@@ -58,9 +63,9 @@ class SyncParameter
         return new SyncParameter($name, SyncParameterType::TIMESTAMP, $version, $isNullable);
     }
 
-    public static function createRelationOneToMany(string $name, array $relatedClass, int $version, bool $isNullable = false): self
+    public static function createRelationOneToMany(string $name, array $relatedClass, int $version): self
     {
-        return new SyncParameter($name, SyncParameterType::RELATION_ONE_TO_MANY, $version, $isNullable, $relatedClass);
+        return new SyncParameter($name, SyncParameterType::RELATION_ONE_TO_MANY, $version, false, $relatedClass);
     }
 
     // ------------------------------------------------------------------------

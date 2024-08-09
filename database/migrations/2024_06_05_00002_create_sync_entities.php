@@ -81,7 +81,7 @@ return new class extends Migration {
             return;
         }
 
-        match ($parameter->type) {
+        $builder = match ($parameter->type) {
             SyncParameterType::PRIMARY_KEY_INTEGER => $table->id($parameter->name),
             SyncParameterType::PRIMARY_KEY_UUID => $table->uuid($parameter->name),
             SyncParameterType::PRIMARY_KEY_STRING => $table->string($parameter->name)->unique(),
@@ -94,6 +94,10 @@ return new class extends Migration {
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),
             SyncParameterType::RELATION_ONE_TO_MANY => null,
         };
+
+        if (!is_null($builder)) {
+            $builder->nullable($parameter->isNullable);
+        }
     }
 
 };

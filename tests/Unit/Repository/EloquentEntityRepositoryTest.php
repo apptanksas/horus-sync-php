@@ -41,7 +41,7 @@ class EloquentEntityRepositoryTest extends TestCase
         );
     }
 
-    function testInsertIsSuccess()
+    function testInsertWithNullableIsSuccess()
     {
         // Given
         /**
@@ -50,6 +50,46 @@ class EloquentEntityRepositoryTest extends TestCase
         $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
             ParentFakeEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+        ));
+        /**
+         * @var EntityOperation[] $childEntities
+         */
+        $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+        ));
+        $operations = array_merge($parentsEntities, $childEntities);
+        shuffle($operations);
+
+        // When
+        $this->entityRepository->insert(...$operations);
+
+        // Then
+        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities));
+        $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
+
+        foreach ($parentsEntities as $entity) {
+            $expectedData = $entity->toArray();
+            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+        }
+
+        foreach ($childEntities as $entity) {
+            $expectedData = $entity->toArray();
+            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ChildFakeEntity::getTableName(), $expectedData);
+        }
+    }
+
+    function testInsertWithoutNullableIsSuccess()
+    {
+        // Given
+        /**
+         * @var EntityOperation[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            ParentFakeEntity::getEntityName(), ParentFakeEntityFactory::newData($this->faker->name), now()->toDateTimeImmutable()
         ));
         /**
          * @var EntityOperation[] $childEntities
@@ -104,6 +144,11 @@ class EloquentEntityRepositoryTest extends TestCase
                 ["id" => $operation->id, ParentFakeEntity::ATTR_NAME => $parentsEntities[$index]->name],
                 $operation->attributes
             );
+
+            if (!is_null($parentsEntities[$index]->{ParentFakeEntity::ATTR_VALUE_NULLABLE})) {
+                $expectedData[ParentFakeEntity::ATTR_VALUE_NULLABLE] = $parentsEntities[$index]->{ParentFakeEntity::ATTR_VALUE_NULLABLE};
+            }
+
             $hashExpected = Hasher::hash($expectedData);
             $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
             $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);

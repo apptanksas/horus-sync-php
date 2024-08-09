@@ -407,7 +407,8 @@ readonly class EloquentEntityRepository implements EntityRepository
         $output[EntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
         $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
 
-        return $output;
+        // Filter attributes null
+        return array_filter($output, fn($item) => !is_null($item));
     }
 
     /**
