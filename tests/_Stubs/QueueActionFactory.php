@@ -8,13 +8,14 @@ use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\SyncAction;
+use Carbon\Carbon;
 use Faker\Guesser\Name;
 
 class QueueActionFactory
 {
 
 
-    public static function create(?EntityOperation $entityOperation = null): QueueAction
+    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null): QueueAction
     {
 
         $faker = \Faker\Factory::create();
@@ -26,10 +27,10 @@ class QueueActionFactory
             $action,
             $faker->userName,
             $entityOperation ?? self::createEntityOperation($entity, $action),
+            Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
             now()->toDateTimeImmutable(),
-            now()->toDateTimeImmutable(),
-            $faker->uuid,
-            $faker->uuid
+            $userId ?? $faker->uuid,
+            $userId ?? $faker->uuid,
         );
     }
 

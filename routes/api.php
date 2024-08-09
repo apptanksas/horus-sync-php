@@ -9,3 +9,4 @@ Route::get('/migration', [
     'as' => RouteName::GET_MIGRATIONS->value,
     'middleware' => 'throttle'
 ]);
+
