@@ -13,9 +13,14 @@ readonly class GetDataEntities
 
     }
 
-    function __invoke(string|int $userOwnerId): array
+    function __invoke(string|int $userOwnerId, ?int $afterTimestamp = null): array
     {
-        $result = $this->entityRepository->searchAllEntitiesByUserId($userOwnerId);
+        if (is_null($afterTimestamp)) {
+            $result = $this->entityRepository->searchAllEntitiesByUserId($userOwnerId);
+        } else {
+            $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($userOwnerId, $afterTimestamp);
+        }
+
         $output = [];
 
         foreach ($result as $entity) {
