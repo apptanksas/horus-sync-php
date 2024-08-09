@@ -9,8 +9,20 @@ use AppTank\Horus\Core\Model\EntityUpdate;
 
 interface EntityRepository
 {
+    /**
+     * Inserts multiple entity records into the database.
+     *
+     * @param EntityInsert ...$operations
+     * @return void
+     */
     function insert(EntityInsert ...$operations): void;
 
+    /**
+     * Updates multiple entity records in the database.
+     *
+     * @param EntityUpdate ...$operations
+     * @return void
+     */
     function update(EntityUpdate ...$operations): void;
 
     /**

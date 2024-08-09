@@ -15,6 +15,8 @@ class HorusContainer
 
     private bool $usesUUIDs = false;
 
+    private null|string|int $userId = null;
+
     private EntityMapper $entityMapper;
 
     /**
@@ -91,9 +93,9 @@ class HorusContainer
         $this->connectionName = $connectionName;
     }
 
-    public function usesUUID(): void
+    public function setAuthenticatedUserId(string|int $userId): void
     {
-        $this->usesUUIDs = true;
+        $this->userId = $userId;
     }
 
     // --------------------------------
@@ -129,5 +131,8 @@ class HorusContainer
         return $this->usesUUIDs;
     }
 
-
+    public function getAuthenticatedUserId(): null|string|int
+    {
+        return $this->userId;
+    }
 }

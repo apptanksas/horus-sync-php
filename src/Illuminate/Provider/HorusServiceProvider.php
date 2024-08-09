@@ -2,8 +2,20 @@
 
 namespace AppTank\Horus\Illuminate\Provider;
 
+use AppTank\Horus\Core\Bus\IEventBus;
+use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
+use AppTank\Horus\Core\Repository\QueueActionRepository;
+use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Util\IDateTimeUtil;
+use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
+use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Repository\EloquentEntityRepository;
+use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use Carbon\Laravel\ServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +34,41 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
+        $horusContainer = HorusContainer::getInstance();
+
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository();
         });
+
+        $this->app->singleton(QueueActionRepository::class, function () use ($horusContainer) {
+            return new EloquentQueueActionRepository($horusContainer->getConnectionName());
+        });
+
+        $this->app->singleton(IEventBus::class, function () {
+            return new EventBus();
+        });
+
+        $this->app->singleton(EntityMapper::class, function () use ($horusContainer) {
+            return $horusContainer->getEntityMapper();
+        });
+
+        $this->app->singleton(IDateTimeUtil::class, function () {
+            return new DateTimeUtil();
+        });
+
+        $this->app->singleton(ITransactionHandler::class, function () use ($horusContainer) {
+            return new EloquentTransactionHandler($horusContainer->getConnectionName());
+        });
+
+        $this->app->singleton(EntityRepository::class, function () use ($horusContainer) {
+            return new EloquentEntityRepository(
+                $this->app->make(EntityMapper::class),
+                $this->app->make(IDateTimeUtil::class),
+                $horusContainer->getConnectionName()
+            );
+        });
+
+
     }
 
     protected function registerRoutes(): void

@@ -13,7 +13,9 @@ trait EnumIterator
      */
     public static function newInstance(string|int $value): self
     {
-        return array_merge([], array_filter(self::cases(), fn($status) => strval($status->value ?? $status->name) == strval($value)))[0];
+        return array_merge([], array_filter(self::cases(),
+            fn($status) => strval($status->value ?? $status->name) == strval($value) || $status->name == strval($value)
+        ))[0];
     }
 
     /**

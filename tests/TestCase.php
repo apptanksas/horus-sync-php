@@ -9,20 +9,24 @@ use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Orchestra\Testbench\Concerns\WithLaravelMigrations;
 use Orchestra\Testbench\Concerns\WithWorkbench;
+use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\ParentFakeEntity;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
 
     use WithLaravelMigrations, WithWorkbench, LazilyRefreshDatabase;
 
-    protected bool $initializeContainer = true;
     protected Generator $faker;
 
     function setUp(): void
     {
-        if ($this->initializeContainer) {
-            HorusContainer::initialize([]);
-        }
+        HorusContainer::initialize([
+            ParentFakeEntity::class => [
+                ChildFakeEntity::class
+            ]
+        ]);
+
         parent::setUp();
         $this->faker = \Faker\Factory::create();
     }

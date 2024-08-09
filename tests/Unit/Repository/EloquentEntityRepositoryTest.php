@@ -25,8 +25,6 @@ class EloquentEntityRepositoryTest extends TestCase
 
     private EloquentEntityRepository $entityRepository;
 
-    protected bool $initializeContainer = false;
-
     function setUp(): void
     {
         HorusContainer::initialize([

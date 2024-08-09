@@ -14,8 +14,6 @@ class MigrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected bool $initializeContainer = false;
-
     function setUp(): void
     {
         HorusContainer::initialize([

@@ -6,11 +6,12 @@ use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use AppTank\Horus\RouteName;
+use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
 class GetMigrationSchemaApiTest extends ApiTestCase
 {
-    private const JSON_SCHEMA = [
+    private const array JSON_SCHEMA = [
         '*' => [
             'entity',
             'attributes' => [
@@ -24,17 +25,6 @@ class GetMigrationSchemaApiTest extends ApiTestCase
             'current_version'
         ]
     ];
-
-    function setUp(): void
-    {
-        parent::setUp();
-
-        $this->repository = new StaticMigrationSchemaRepository();
-
-        HorusContainer::initialize([
-            ParentFakeEntity::class
-        ]);
-    }
 
     function testGetMigrationSchemaIsSuccess()
     {

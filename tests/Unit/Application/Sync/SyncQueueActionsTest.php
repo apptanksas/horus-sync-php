@@ -12,9 +12,6 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
-use AppTank\Horus\Illuminate\Util\DateTimeUtil;
-use AppTank\Horus\Repository\EloquentEntityRepository;
-use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use Mockery\Mock;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
@@ -36,16 +33,10 @@ class SyncQueueActionsTest extends TestCase
 
     public function setUp(): void
     {
-        HorusContainer::initialize([
-            ParentFakeEntity::class => [
-                ChildFakeEntity::class
-            ]
-        ]);
 
         parent::setUp();
 
-        $container = HorusContainer::getInstance();
-        $this->transactionHandler = new EloquentTransactionHandler($container);
+        $this->transactionHandler = new EloquentTransactionHandler();
         $this->queueActionRepository = $this->mock(QueueActionRepository::class);
         $this->entityRepository = $this->mock(EntityRepository::class);
         $this->eventBus = $this->mock(IEventBus::class);
