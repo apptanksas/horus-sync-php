@@ -35,4 +35,29 @@ class ApiTestCase extends TestCase
             HorusServiceProvider::class
         ];
     }
+    protected function generateArray(callable $creator, int $maxQuantity = 12): array
+    {
+
+        $arrayData = [];
+        $quantity = rand(1, $maxQuantity);
+
+        for ($i = 0; $i < $quantity; $i++) {
+            $arrayData[] = $creator($i);
+        }
+
+        return $arrayData;
+    }
+
+    protected function generateCountArray(callable $creator, int $quantity = 12): array
+    {
+
+        $arrayData = [];
+
+        for ($i = 0; $i < $quantity; $i++) {
+            $arrayData[] = $creator($i);
+        }
+
+        return $arrayData;
+    }
+
 }
