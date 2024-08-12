@@ -1,6 +1,7 @@
 <?php
 
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\GetEntityHashesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
@@ -48,7 +49,8 @@ Route::get("queue/actions/last", [
 
 // Get entity hashes
 Route::get("entity/{entity}/hashes", [
-    'as' => RouteName::GET_HASHES_ENTITY->value,
+    'uses' => GetEntityHashesController::class,
+    'as' => RouteName::GET_ENTITY_HASHES->value,
     'middleware' => 'throttle'
 ]);
 

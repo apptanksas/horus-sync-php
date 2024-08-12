@@ -13,7 +13,7 @@ enum RouteName: string
 
     case SEARCH_ENTITIES = "horus.search.entities";
 
-    case GET_HASHES_ENTITY = "horus.get.hashes.entity";
+    case GET_ENTITY_HASHES = "horus.get.entity.hashes";
     case GET_SYNC_QUEUE_LAST_ACTION = "horus.get.sync.queue.last.action";
 
     case POST_VALIDATE_DATA = "horus.post.validate.data";
