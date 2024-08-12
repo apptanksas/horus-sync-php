@@ -2,6 +2,7 @@
 
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
+use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\SearchEntitiesController;
 use AppTank\Horus\RouteName;
@@ -16,6 +17,12 @@ Route::get('/migration', [
 Route::post("queue/actions", [
     'uses' => PostSyncQueueActionsController::class,
     'as' => RouteName::POST_SYNC_QUEUE_ACTIONS->value,
+    'middleware' => 'throttle'
+]);
+
+Route::get("queue/actions", [
+    'uses' => GetQueueActionsController::class,
+    'as' => RouteName::GET_SYNC_QUEUE_ACTIONS->value,
     'middleware' => 'throttle'
 ]);
 

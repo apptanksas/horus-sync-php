@@ -131,7 +131,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $countExpected = count($actions) - count($filterActions);
 
         // When
-        $result = $this->repository->getActions($ownerId, filterDateTimes: $filterActions);
+        $result = $this->repository->getActions($ownerId, excludeDateTimes: $filterActions);
 
         // Then
         $this->assertCount($countExpected, $result);

@@ -97,10 +97,10 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     /**
      * @param int|string $userOwnerId
      * @param int|null $afterTimestamp
-     * @param array $filterDateTimes Filter the actions that have the same actioned_at timestamp
+     * @param array $excludeDateTimes Filter the actions that have the same actioned_at timestamp
      * @return QueueAction[]
      */
-    function getActions(int|string $userOwnerId, ?int $afterTimestamp = null, array $filterDateTimes = []): array
+    function getActions(int|string $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
         $query = SyncQueueActionModel::query()
             ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId);
@@ -109,9 +109,9 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             $query = $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=',
                 $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())->orderBy("id");
         }
-        if (!empty($filterDateTimes)) {
+        if (!empty($excludeDateTimes)) {
             $query = $query->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT,
-                array_map(fn($timestamp) => $this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp(), $filterDateTimes));
+                array_map(fn($timestamp) => $this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp(), $excludeDateTimes));
         }
 
         return $query->get()->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))->toArray();

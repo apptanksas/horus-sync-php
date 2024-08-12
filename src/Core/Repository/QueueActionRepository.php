@@ -13,8 +13,8 @@ interface QueueActionRepository
     /**
      * @param string|int $userOwnerId
      * @param int|null $afterTimestamp
-     * @param int[] $filterDateTimes
+     * @param int[] $excludeDateTimes
      * @return QueueAction[]
      */
-    function getActions(string|int $userOwnerId, ?int $afterTimestamp = null, array $filterDateTimes = []): array;
+    function getActions(string|int $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array;
 }

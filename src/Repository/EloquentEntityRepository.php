@@ -319,6 +319,7 @@ readonly class EloquentEntityRepository implements EntityRepository
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
         $result = $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerUserId)
+            ->orderByDesc(EntitySynchronizable::ATTR_ID)
             ->get([EntitySynchronizable::ATTR_ID, EntitySynchronizable::ATTR_SYNC_HASH]);
 
         return $result->toArray();
