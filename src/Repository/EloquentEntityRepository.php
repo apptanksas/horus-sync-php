@@ -2,7 +2,6 @@
 
 namespace AppTank\Horus\Repository;
 
-use App\Models\Sync\BaseSyncModel;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;

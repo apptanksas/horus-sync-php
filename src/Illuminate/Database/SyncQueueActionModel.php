@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Illuminate\Database;
 
 use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use Carbon\Carbon;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Model;
@@ -67,14 +68,14 @@ final class SyncQueueActionModel extends Model
         return json_decode($this->getAttribute(self::ATTR_DATA), true);
     }
 
-    public function getActionedAt(): Carbon
+    public function getActionedAt(): \DateTimeImmutable
     {
-        return Carbon::create($this->getAttribute(self::ATTR_ACTIONED_AT), timezone: 'UTC');
+        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_ACTIONED_AT)));
     }
 
-    public function getSyncedAt(): Carbon
+    public function getSyncedAt(): \DateTimeImmutable
     {
-        return Carbon::create($this->getAttribute(self::ATTR_SYNCED_AT), timezone: 'UTC');
+        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_SYNCED_AT)));
     }
 
     public function getUserId(): int|string

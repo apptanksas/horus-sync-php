@@ -40,9 +40,6 @@ class HorusServiceProvider extends ServiceProvider
             return new StaticMigrationSchemaRepository();
         });
 
-        $this->app->singleton(QueueActionRepository::class, function () use ($horusContainer) {
-            return new EloquentQueueActionRepository($horusContainer->getConnectionName());
-        });
 
         $this->app->singleton(IEventBus::class, function () {
             return new EventBus();
@@ -54,6 +51,13 @@ class HorusServiceProvider extends ServiceProvider
 
         $this->app->singleton(IDateTimeUtil::class, function () {
             return new DateTimeUtil();
+        });
+
+        $this->app->singleton(QueueActionRepository::class, function () use ($horusContainer) {
+            return new EloquentQueueActionRepository(
+                $this->app->make(IDateTimeUtil::class),
+                $horusContainer->getConnectionName()
+            );
         });
 
         $this->app->singleton(ITransactionHandler::class, function () use ($horusContainer) {

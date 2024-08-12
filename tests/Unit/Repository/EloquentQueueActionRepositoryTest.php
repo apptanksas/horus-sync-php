@@ -5,9 +5,11 @@ namespace Tests\Unit\Repository;
 
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\QueueActionFactory;
+use Tests\_Stubs\SyncQueueActionModelFactory;
 use Tests\TestCase;
 
 class EloquentQueueActionRepositoryTest extends TestCase
@@ -20,7 +22,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->repository = new EloquentQueueActionRepository();
+        $this->repository = new EloquentQueueActionRepository(new DateTimeUtil());
     }
 
     function testSaveIsSuccess()
@@ -72,6 +74,67 @@ class EloquentQueueActionRepositoryTest extends TestCase
 
         // Then
         $this->assertNull($lastAction);
+    }
+
+    function testGetActionsIsSuccess()
+    {
+
+        // Given
+        $userId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $userId));
+        $this->repository->save(...$actions);
+
+        // When
+        $actions = $this->repository->getActions($userId);
+
+        // Then
+        $this->assertCount(count($actions), $actions);
+    }
+
+    function testGetActionsAfterTimestampIsSuccess()
+    {
+        $ownerId = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var SyncQueueActionModel[] $actions
+         */
+        $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $syncedAt
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp()
+        ]));
+
+        $syncedAtTarget = $syncedAt - 1;
+        $countExpected = count(array_filter($actions, fn(SyncQueueActionModel $entity) => $entity->getSyncedAt()->getTimestamp() > $syncedAtTarget));
+
+        // When
+        $result = $this->repository->getActions($ownerId, $syncedAtTarget);
+
+        // Then
+        $this->assertCount($countExpected, $result);
+    }
+
+    function testGetActionsFilterDateTimes()
+    {
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var SyncQueueActionModel[] $parentsEntities
+         */
+        $actions = $this->generateCountArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->faker->dateTimeBetween()->getTimestamp()
+        ]));
+
+        $filterActions = array_map(fn(SyncQueueActionModel $entity) => $entity->getActionedAt()->getTimestamp(), array_slice($actions, 0, rand(1, 5)));
+        $countExpected = count($actions) - count($filterActions);
+
+        // When
+        $result = $this->repository->getActions($ownerId, filterDateTimes: $filterActions);
+
+        // Then
+        $this->assertCount($countExpected, $result);
     }
 
 }

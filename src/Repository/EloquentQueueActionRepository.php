@@ -2,20 +2,21 @@
 
 namespace AppTank\Horus\Repository;
 
-use App\Models\SyncActionQueue;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
-use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
+use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 readonly class EloquentQueueActionRepository implements QueueActionRepository
 {
 
     public function __construct(
-        private ?string $connectionName = null,
+        private IDateTimeUtil $dateTimeUtil,
+        private ?string       $connectionName = null,
     )
     {
 
@@ -57,7 +58,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
     {
         $action = SyncAction::newInstance($model->getAction());
-        $actionedAt = $model->getActionedAt()->toDateTimeImmutable();
+        $actionedAt = $model->getActionedAt();
 
         match ($action) {
             SyncAction::INSERT => $operation = EntityOperationFactory::createEntityInsert($model->getOwnerId(), $model->getEntity(), $model->getData(), $actionedAt),
@@ -69,8 +70,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncAction::newInstance($model->getAction()),
             $model->getEntity(),
             $operation,
-            $model->getActionedAt()->toDateTimeImmutable(),
-            $model->getSyncedAt()->toDateTimeImmutable(),
+            $model->getActionedAt(),
+            $model->getSyncedAt(),
             $model->getUserId(),
             $model->getOwnerId()
         );
@@ -91,5 +92,28 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         }
 
         return $this->buildQueueActionByModel($result);
+    }
+
+    /**
+     * @param int|string $userOwnerId
+     * @param int|null $afterTimestamp
+     * @param array $filterDateTimes Filter the actions that have the same actioned_at timestamp
+     * @return QueueAction[]
+     */
+    function getActions(int|string $userOwnerId, ?int $afterTimestamp = null, array $filterDateTimes = []): array
+    {
+        $query = SyncQueueActionModel::query()
+            ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId);
+
+        if ($afterTimestamp !== null) {
+            $query = $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=',
+                $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())->orderBy("id");
+        }
+        if (!empty($filterDateTimes)) {
+            $query = $query->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT,
+                array_map(fn($timestamp) => $this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp(), $filterDateTimes));
+        }
+
+        return $query->get()->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))->toArray();
     }
 }
