@@ -3,6 +3,7 @@
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
+use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
 use AppTank\Horus\Illuminate\Http\Controller\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\SearchEntitiesController;
 use AppTank\Horus\RouteName;
@@ -37,3 +38,29 @@ Route::get("data/{entity}", [
     'as' => RouteName::SEARCH_ENTITIES->value,
     'middleware' => 'throttle'
 ]);
+
+// Get last action
+Route::get("queue/actions/last", [
+    'uses' => GetQueueLastActionController::class,
+    'as' => RouteName::GET_SYNC_QUEUE_LAST_ACTION->value,
+    'middleware' => 'throttle'
+]);
+
+// Get entity hashes
+Route::get("entity/{entity}/hashes", [
+    'as' => RouteName::GET_HASHES_ENTITY->value,
+    'middleware' => 'throttle'
+]);
+
+// Validate data
+Route::get("validate/data", [
+    'as' => RouteName::POST_VALIDATE_DATA->value,
+    'middleware' => 'throttle'
+]);
+
+// Validate hashing
+Route::get("validate/hashing", [
+    'as' => RouteName::POST_VALIDATE_HASHING->value,
+    'middleware' => 'throttle'
+]);
+
