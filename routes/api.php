@@ -7,6 +7,7 @@ use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
 use AppTank\Horus\Illuminate\Http\Controller\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\SearchEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\ValidateEntitiesDataController;
 use AppTank\Horus\RouteName;
 use Illuminate\Support\Facades\Route;
 
@@ -55,13 +56,14 @@ Route::get("entity/{entity}/hashes", [
 ]);
 
 // Validate data
-Route::get("validate/data", [
+Route::post("validate/data", [
+    'uses' => ValidateEntitiesDataController::class,
     'as' => RouteName::POST_VALIDATE_DATA->value,
     'middleware' => 'throttle'
 ]);
 
 // Validate hashing
-Route::get("validate/hashing", [
+Route::post("validate/hashing", [
     'as' => RouteName::POST_VALIDATE_HASHING->value,
     'middleware' => 'throttle'
 ]);
