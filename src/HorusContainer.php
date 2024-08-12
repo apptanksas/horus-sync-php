@@ -37,9 +37,15 @@ class HorusContainer
     /**
      * @param array $entitiesMap Array of EntitySynchronizable class names
      */
-    public static function initialize(array $entitiesMap): self
+    public static function initialize(array $entitiesMap, ?string $connectionName = null, bool $usesUUIds = false): self
     {
         self::$instance = new self($entitiesMap);
+
+        if (!is_null($connectionName)) {
+            self::$instance->setConnectionName($connectionName);
+        }
+        self::$instance->usesUUIDs = $usesUUIds;
+
         return self::$instance;
     }
 
@@ -105,7 +111,11 @@ class HorusContainer
 
     public static function getInstance(): HorusContainer
     {
-        return self::$instance ?? throw new \DomainException("HorusContainer not initialized");
+        if (is_null(self::$instance)) {
+            self::initialize([]);
+        }
+
+        return self::$instance;
     }
 
     /**

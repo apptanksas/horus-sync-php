@@ -7,7 +7,7 @@ use Illuminate\Console\GeneratorCommand;
 
 class CreateEntitySynchronizableCommand extends GeneratorCommand
 {
-    protected $name = 'sync:entity';
+    protected $name = 'horus:entity';
     protected $description = 'Create a new entity synchronizable class';
 
     protected $type = 'EntitySync';
@@ -15,5 +15,10 @@ class CreateEntitySynchronizableCommand extends GeneratorCommand
     function getStub(): string
     {
         return __DIR__ . '/stubs/entity.stub';
+    }
+
+    function getPath($name): string
+    {
+       return parent::getPath("Models/Sync/" . $name);
     }
 }

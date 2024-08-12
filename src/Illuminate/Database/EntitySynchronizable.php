@@ -41,11 +41,19 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
 
     public function __construct(array $attributes = [])
     {
-        parent::__construct($attributes);
-
         $this->entityName = static::getEntityName();
         $this->versionNumber = static::getVersionNumber();
         $this->parameters = static::parameters();
+        $this->fillable = array_merge(array_map(fn($parameter) => $parameter->name, $this->parameters), [
+            self::ATTR_ID,
+            self::ATTR_SYNC_OWNER_ID,
+            self::ATTR_SYNC_HASH,
+            self::ATTR_SYNC_CREATED_AT,
+            self::ATTR_SYNC_UPDATED_AT
+        ]);
+
+        parent::__construct($attributes);
+
 
         $this->setTable(static::getTableName());
     }

@@ -1,14 +1,28 @@
 <?php
 
-namespace {{ namespace }};
+namespace {{ namespace }}\Models\Sync;
 
-use CorBosman\Passport\AccessToken;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Core\Entity\SyncParameter;
 
-class {{ class }}
+class {{ class }} extends EntitySynchronizable
 {
-    public function handle(AccessToken $token, $next)
+    public static function parameters(): array
+       {
+           return [
+                // Define the parameters of the entity
+               // SyncParameter::createString("name", 1),
+               // SyncParameter::createInt("age", 1)
+           ];
+       }
+
+    public static function getEntityName(): string
     {
-        //  $token->addClaim('my-claim', 'my custom claim data');
-        return $next($token);
+        // TODO("Entity name")
+    }
+
+    public static function getVersionNumber(): int
+    {
+        return 1;
     }
 }

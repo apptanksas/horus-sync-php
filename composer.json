@@ -40,7 +40,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "AppTank\\Horus\\Infrastructure\\Providers\\HorusServiceProvider"
+        "AppTank\\Horus\\Illuminate\\Provider\\HorusServiceProvider"
       ]
     }
   },
