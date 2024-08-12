@@ -47,4 +47,43 @@ final class SyncQueueActionModel extends Model
 
         return $data;
     }
+
+    // ----------------------------------------------
+    // GETTERS
+    // ----------------------------------------------
+
+    public function getAction(): string
+    {
+        return $this->getAttribute(self::ATTR_ACTION);
+    }
+
+    public function getEntity(): string
+    {
+        return $this->getAttribute(self::ATTR_ENTITY);
+    }
+
+    public function getData(): array
+    {
+        return json_decode($this->getAttribute(self::ATTR_DATA), true);
+    }
+
+    public function getActionedAt(): Carbon
+    {
+        return Carbon::create($this->getAttribute(self::ATTR_ACTIONED_AT), timezone: 'UTC');
+    }
+
+    public function getSyncedAt(): Carbon
+    {
+        return Carbon::create($this->getAttribute(self::ATTR_SYNCED_AT), timezone: 'UTC');
+    }
+
+    public function getUserId(): int|string
+    {
+        return $this->getAttribute(self::FK_USER_ID);
+    }
+
+    public function getOwnerId(): int|string
+    {
+        return $this->getAttribute(self::FK_OWNER_ID);
+    }
 }

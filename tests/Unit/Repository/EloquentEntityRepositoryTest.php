@@ -181,6 +181,11 @@ class EloquentEntityRepositoryTest extends TestCase
             ["id" => $lastOperation->id, ParentFakeEntity::ATTR_NAME => $parentEntity->name],
             $lastOperation->attributes
         );
+
+        if (!is_null($parentEntity->{ParentFakeEntity::ATTR_VALUE_NULLABLE})) {
+            $expectedData[ParentFakeEntity::ATTR_VALUE_NULLABLE] = $parentEntity->{ParentFakeEntity::ATTR_VALUE_NULLABLE};
+        }
+
         $hashExpected = Hasher::hash($expectedData);
         $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
         $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
@@ -453,6 +458,27 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
+    }
+
+    function testEntityHashesIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        /**
+         * @var ParentFakeEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+
+        // When
+        $result = $this->entityRepository->getEntityHashes($ownerId, ParentFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[EntitySynchronizable::ATTR_ID] == $parentEntity->getId()));
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[EntitySynchronizable::ATTR_SYNC_HASH] == $parentEntity->getHash()));
+        }
     }
 
 

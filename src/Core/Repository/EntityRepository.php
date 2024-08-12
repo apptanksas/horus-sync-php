@@ -62,4 +62,13 @@ interface EntityRepository
                             string     $entityName,
                             array      $ids = [],
                             ?int       $afterTimestamp = null): array;
+
+    /**
+     * Get all entity hashes by entity name
+     *
+     * @param string|int $ownerUserId
+     * @param string $entityName
+     * @return array
+     */
+    function getEntityHashes(string|int $ownerUserId, string $entityName): array;
 }

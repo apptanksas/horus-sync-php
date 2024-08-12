@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Repository;
 
+use App\Models\Sync\BaseSyncModel;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
@@ -305,6 +306,24 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $this->iterateItemsAndSearchRelated($collectionItems);
     }
 
+    /**
+     * Get all entity hashes by entity name
+     *
+     * @param string|int $ownerUserId
+     * @param string $entityName
+     * @return array
+     */
+    function getEntityHashes(string|int $ownerUserId, string $entityName): array
+    {
+        /**
+         * @var $entityClass EntitySynchronizable
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityName);
+        $result = $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerUserId)
+            ->get([EntitySynchronizable::ATTR_ID, EntitySynchronizable::ATTR_SYNC_HASH]);
+
+        return $result->toArray();
+    }
 
     /**
      * Group ids by entity name
@@ -450,5 +469,6 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         return $idsOutput;
     }
+
 
 }

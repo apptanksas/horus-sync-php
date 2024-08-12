@@ -2,8 +2,12 @@
 
 namespace AppTank\Horus\Repository;
 
+use App\Models\SyncActionQueue;
+use AppTank\Horus\Core\Factory\EntityOperationFactory;
+use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
+use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Support\Facades\DB;
 
@@ -48,5 +52,44 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
             SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId
         ];
+    }
+
+    private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
+    {
+        $action = SyncAction::newInstance($model->getAction());
+        $actionedAt = $model->getActionedAt()->toDateTimeImmutable();
+
+        match ($action) {
+            SyncAction::INSERT => $operation = EntityOperationFactory::createEntityInsert($model->getOwnerId(), $model->getEntity(), $model->getData(), $actionedAt),
+            SyncAction::UPDATE => $operation = EntityOperationFactory::createEntityUpdate($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $model->getData()["attributes"], $actionedAt),
+            SyncAction::DELETE => $operation = EntityOperationFactory::createEntityDelete($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $actionedAt),
+        };
+
+        return new QueueAction(
+            SyncAction::newInstance($model->getAction()),
+            $model->getEntity(),
+            $operation,
+            $model->getActionedAt()->toDateTimeImmutable(),
+            $model->getSyncedAt()->toDateTimeImmutable(),
+            $model->getUserId(),
+            $model->getOwnerId()
+        );
+    }
+
+
+    /**
+     * @param int|string $userOwnerId
+     * @return QueueAction[]
+     */
+    function getLastAction(int|string $userOwnerId): ?QueueAction
+    {
+        $result = SyncQueueActionModel::query()->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId)
+            ->orderByDesc("id")->limit(1)->get()->first();
+
+        if (is_null($result)) {
+            return null;
+        }
+
+        return $this->buildQueueActionByModel($result);
     }
 }

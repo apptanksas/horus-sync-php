@@ -44,4 +44,34 @@ class EloquentQueueActionRepositoryTest extends TestCase
         }
     }
 
+    function testGetLastActionIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $userId));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $lastAction = $this->repository->getLastAction($userId);
+
+        // Then
+        $this->assertNotNull($lastAction);
+    }
+
+    function testGetLastActionIsReturnNull()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $userId));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $lastAction = $this->repository->getLastAction($this->faker->uuid);
+
+        // Then
+        $this->assertNull($lastAction);
+    }
+
 }

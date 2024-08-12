@@ -26,7 +26,7 @@ class QueueActionFactory
         return new QueueAction(
             $action,
             $faker->userName,
-            $entityOperation ?? self::createEntityOperation($entity, $action),
+            $entityOperation ?? self::createEntityOperation($entity, $action, $userId),
             Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
             now()->toDateTimeImmutable(),
             $userId ?? $faker->uuid,
@@ -35,7 +35,7 @@ class QueueActionFactory
     }
 
 
-    private static function createEntityOperation(string $entity, SyncAction $action): EntityOperation
+    private static function createEntityOperation(string $entity, SyncAction $action, ?string $userId = null): EntityOperation
     {
         $faker = \Faker\Factory::create();
         $data = ["id" => $faker->uuid];
@@ -45,9 +45,9 @@ class QueueActionFactory
         }
 
         return match ($action) {
-            SyncAction::INSERT => new EntityInsert($faker->uuid, $entity, now()->toDateTimeImmutable(), $data),
-            SyncAction::UPDATE => new EntityUpdate($faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
-            SyncAction::DELETE => new EntityDelete($faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable()),
+            SyncAction::INSERT => new EntityInsert($userId ?? $faker->uuid, $entity, now()->toDateTimeImmutable(), $data),
+            SyncAction::UPDATE => new EntityUpdate($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
+            SyncAction::DELETE => new EntityDelete($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable()),
         };
     }
 }
