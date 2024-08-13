@@ -19,7 +19,7 @@ class GetMigrationSchemaApiTest extends ApiTestCase
                     'name',
                     'version',
                     'type',
-                    'nullable'
+                    'nullable',
                 ]
             ],
             'current_version'

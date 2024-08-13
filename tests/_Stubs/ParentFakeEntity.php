@@ -14,20 +14,25 @@ class ParentFakeEntity extends EntitySynchronizable
 
     const ATTR_VALUE_NULLABLE = "value_nullable";
 
+    const ATTR_ENUM = "value_enum";
+
     const RELATED_CHILDREN = "children";
 
     const VERSION_NAME = 1;
 
-    const VERSION_COLOR = 2;
+    const VERSION_DEFAULT = 2;
 
     const VERSION_CHILDREN = 2;
+
+    const ENUM_VALUES = ["value1", "value2", "value3"];
 
     public static function parameters(): array
     {
         return [
             SyncParameter::createString(self::ATTR_NAME, self::VERSION_NAME),
-            SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_COLOR),
-            SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_COLOR, true),
+            SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_DEFAULT),
+            SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_DEFAULT, true),
+            SyncParameter::createEnum(self::ATTR_ENUM, self::ENUM_VALUES, self::VERSION_DEFAULT),
             SyncParameter::createRelationOneToMany(self::RELATED_CHILDREN, [ChildFakeEntity::class], self::VERSION_CHILDREN)
         ];
     }

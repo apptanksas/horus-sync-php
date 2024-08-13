@@ -17,7 +17,8 @@ class SyncParameter
         public SyncParameterType $type,
         public int               $version = 1,
         public bool              $isNullable = false,
-        public array             $related = []
+        public array             $related = [],
+        public array             $options = []
     )
     {
         $this->validateRelated();
@@ -61,6 +62,11 @@ class SyncParameter
     public static function createTimestamp(string $name, int $version, bool $isNullable = false): self
     {
         return new SyncParameter($name, SyncParameterType::TIMESTAMP, $version, $isNullable);
+    }
+
+    public static function createEnum(string $name, array $options, int $version): self
+    {
+        return new SyncParameter($name, SyncParameterType::ENUM, $version, false, [], $options);
     }
 
     public static function createRelationOneToMany(string $name, array $relatedClass, int $version): self

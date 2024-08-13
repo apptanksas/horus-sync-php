@@ -92,6 +92,7 @@ return new class extends Migration {
             SyncParameterType::JSON => $table->json($parameter->name),
             SyncParameterType::TEXT => $table->text($parameter->name),
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),
+            SyncParameterType::ENUM => $table->enum($parameter->name, $parameter->options),
             SyncParameterType::RELATION_ONE_TO_MANY => null,
         };
 

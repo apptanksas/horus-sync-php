@@ -141,7 +141,10 @@ class EloquentEntityRepositoryTest extends TestCase
         foreach ($updateOperations as $index => $operation) {
 
             $expectedData = array_merge(
-                ["id" => $operation->id, ParentFakeEntity::ATTR_NAME => $parentsEntities[$index]->name],
+                ["id" => $operation->id,
+                    ParentFakeEntity::ATTR_NAME => $parentsEntities[$index]->name,
+                    ParentFakeEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum
+                ],
                 $operation->attributes
             );
 
@@ -178,7 +181,9 @@ class EloquentEntityRepositoryTest extends TestCase
         usort($updateOperations, fn(EntityUpdate $a, EntityUpdate $b) => $a->actionedAt <=> $b->actionedAt);
         $lastOperation = end($updateOperations);
         $expectedData = array_merge(
-            ["id" => $lastOperation->id, ParentFakeEntity::ATTR_NAME => $parentEntity->name],
+            ["id" => $lastOperation->id,
+                ParentFakeEntity::ATTR_NAME => $parentEntity->name,
+                ParentFakeEntity::ATTR_ENUM => $parentEntity->value_enum],
             $lastOperation->attributes
         );
 

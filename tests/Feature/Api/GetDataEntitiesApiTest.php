@@ -45,6 +45,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
                     'sync_updated_at',
                     'name',
                     'color',
+                    'value_enum',
                     '_children' => [
                         '*' => [
                             'entity',
@@ -103,6 +104,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
                     'sync_updated_at',
                     'name',
                     'color',
+                    'value_enum',
                     'value_nullable',
                     '_children' => [
                         '*' => [
