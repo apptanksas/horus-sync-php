@@ -10,13 +10,17 @@ class StaticMigrationSchemaRepository implements MigrationSchemaRepository
 
     function getSchema(): array
     {
-        $entities = HorusContainer::getInstance()->getEntities();
+        $entityMapper = HorusContainer::getInstance()->getEntityMapper();
+        $entities = $entityMapper->getMap();
         $schema = [];
 
-        foreach ($entities as $entity) {
-            if (!class_exists($entity))
+        foreach ($entities as $entityMap) {
+
+            $entityClass = $entityMapper->getEntityClass($entityMap->name);
+
+            if (!class_exists($entityClass))
                 throw new \DomainException("Entity class not found");
-            $schema[] = $entity::schema();
+            $schema[] = $entityClass::schema();
         }
 
         return $schema;

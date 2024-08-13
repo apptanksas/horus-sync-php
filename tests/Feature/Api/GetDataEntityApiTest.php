@@ -12,7 +12,7 @@ use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
 
-class SearchEntitiesApiTest extends TestCase
+class GetDataEntityApiTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -67,7 +67,7 @@ class SearchEntitiesApiTest extends TestCase
         }
 
         // When
-        $response = $this->get(route(RouteName::SEARCH_ENTITIES->value, ParentFakeEntity::getEntityName()));
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ParentFakeEntity::getEntityName()));
 
         // Then
         $response->assertOk();
@@ -83,7 +83,7 @@ class SearchEntitiesApiTest extends TestCase
         $entities = $this->generateArray(fn() => ChildFakeEntityFactory::create(null, $userId));
 
         // When
-        $response = $this->get(route(RouteName::SEARCH_ENTITIES->value, ChildFakeEntity::getEntityName()));
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ChildFakeEntity::getEntityName()));
 
         // Then
         $response->assertOk();
@@ -115,7 +115,7 @@ class SearchEntitiesApiTest extends TestCase
 
         // When
         $response = $this->get(
-            route(RouteName::SEARCH_ENTITIES->value, [ParentFakeEntity::getEntityName(),"after" => $updatedAtTarget]));
+            route(RouteName::GET_ENTITY_DATA->value, [ParentFakeEntity::getEntityName(),"after" => $updatedAtTarget]));
 
         // Then
         $response->assertOk();

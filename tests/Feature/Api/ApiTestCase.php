@@ -16,6 +16,9 @@ class ApiTestCase extends TestCase
     use WithWorkbench;
 
     protected Generator $faker;
+
+    protected array $middlewares = [];
+
     protected function setUp(): void
     {
         HorusContainer::initialize([
@@ -23,6 +26,8 @@ class ApiTestCase extends TestCase
                 ChildFakeEntity::class
             ]
         ]);
+
+        HorusContainer::setMiddlewares($this->middlewares);
 
         parent::setUp();
 

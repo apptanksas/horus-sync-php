@@ -40,6 +40,9 @@ class EntityMapper
         return $this->entities;
     }
 
+    /**
+     * @return EntityMap[]
+     */
     function getMap(): array
     {
         return $this->map;

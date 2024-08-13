@@ -1,5 +1,6 @@
 <?php
 
+use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetEntityHashesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
@@ -12,61 +13,63 @@ use AppTank\Horus\Illuminate\Http\Controller\ValidateHashingController;
 use AppTank\Horus\RouteName;
 use Illuminate\Support\Facades\Route;
 
+$middlewares = array_merge(['throttle'], HorusContainer::getInstance()->getMiddlewares());
+
 Route::get('/migration', [
     'uses' => GetMigrationSchemaController::class,
     'as' => RouteName::GET_MIGRATIONS->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 Route::post("queue/actions", [
     'uses' => PostSyncQueueActionsController::class,
     'as' => RouteName::POST_SYNC_QUEUE_ACTIONS->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 Route::get("queue/actions", [
     'uses' => GetQueueActionsController::class,
     'as' => RouteName::GET_SYNC_QUEUE_ACTIONS->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 Route::get("data", [
     'uses' => GetDataEntitiesController::class,
     'as' => RouteName::GET_DATA_ENTITIES->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 Route::get("data/{entity}", [
     'uses' => SearchEntitiesController::class,
-    'as' => RouteName::SEARCH_ENTITIES->value,
-    'middleware' => 'throttle'
+    'as' => RouteName::GET_ENTITY_DATA->value,
+    'middleware' => $middlewares
 ]);
 
 // Get last action
 Route::get("queue/actions/last", [
     'uses' => GetQueueLastActionController::class,
     'as' => RouteName::GET_SYNC_QUEUE_LAST_ACTION->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 // Get entity hashes
 Route::get("entity/{entity}/hashes", [
     'uses' => GetEntityHashesController::class,
     'as' => RouteName::GET_ENTITY_HASHES->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 // Validate data
 Route::post("validate/data", [
     'uses' => ValidateEntitiesDataController::class,
     'as' => RouteName::POST_VALIDATE_DATA->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 
 // Validate hashing
 Route::post("validate/hashing", [
     'uses' => ValidateHashingController::class,
     'as' => RouteName::POST_VALIDATE_HASHING->value,
-    'middleware' => 'throttle'
+    'middleware' => $middlewares
 ]);
 

@@ -19,6 +19,8 @@ class HorusContainer
 
     private EntityMapper $entityMapper;
 
+    private array $middlewares = [];
+
     /**
      * @param array $entitiesMap Array of EntitySynchronizable class names
      */
@@ -48,6 +50,8 @@ class HorusContainer
 
         return self::$instance;
     }
+
+
 
     // --------------------------------
     // OPERATIONS
@@ -85,7 +89,7 @@ class HorusContainer
                 $output[] = new EntityMap($entityIndex::getEntityName(), $this->createMap($entities));
                 continue;
             }
-            $output[] = new EntityMap($entities);
+            $output[] = new EntityMap($entities::getEntityName());
         }
         return $output;
     }
@@ -102,6 +106,11 @@ class HorusContainer
     public function setAuthenticatedUserId(string|int $userId): void
     {
         $this->userId = $userId;
+    }
+
+    public static function setMiddlewares(array $middlewares): void
+    {
+        self::getInstance()->middlewares = $middlewares;
     }
 
     // --------------------------------
@@ -144,5 +153,10 @@ class HorusContainer
     public function getAuthenticatedUserId(): null|string|int
     {
         return $this->userId;
+    }
+
+    public function getMiddlewares(): array
+    {
+        return $this->middlewares;
     }
 }
