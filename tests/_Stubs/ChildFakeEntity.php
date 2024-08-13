@@ -46,7 +46,7 @@ class ChildFakeEntity extends EntitySynchronizable
             SyncParameter::createString(self::ATTR_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createBoolean(self::ATTR_BOOLEAN_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES),
-            SyncParameter::createString(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES)
+            SyncParameter::createUUID(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES)
         ];
     }
 

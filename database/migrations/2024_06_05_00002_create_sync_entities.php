@@ -85,7 +85,7 @@ return new class extends Migration {
 
         $builder = match ($parameter->type) {
             SyncParameterType::PRIMARY_KEY_INTEGER => $table->id($parameter->name),
-            SyncParameterType::PRIMARY_KEY_UUID => $table->uuid($parameter->name),
+            SyncParameterType::PRIMARY_KEY_UUID => $table->uuid($parameter->name)->unique(),
             SyncParameterType::PRIMARY_KEY_STRING => $table->string($parameter->name)->unique(),
             SyncParameterType::INT => $table->integer($parameter->name),
             SyncParameterType::FLOAT => $table->float($parameter->name),
@@ -95,6 +95,7 @@ return new class extends Migration {
             SyncParameterType::TEXT => $table->text($parameter->name),
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),
             SyncParameterType::ENUM => $table->enum($parameter->name, $parameter->options),
+            SyncParameterType::UUID => $table->uuid($parameter->name),
             SyncParameterType::RELATION_ONE_TO_MANY => null,
         };
 
