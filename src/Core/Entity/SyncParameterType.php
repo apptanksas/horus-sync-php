@@ -19,6 +19,9 @@ enum SyncParameterType: string
     case TEXT = "text";
 
     case JSON = "json";
+
+    case ENUM = "enum";
+
     case TIMESTAMP = "timestamp";
     case RELATION_ONE_TO_MANY = "relation_one_to_many";
 

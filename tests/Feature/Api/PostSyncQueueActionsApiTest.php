@@ -80,6 +80,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $entityName = ParentFakeEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
+        $enumValue = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [
@@ -89,7 +90,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                 "data" => [
                     "id" => $entityId,
                     "name" => $name,
-                    "color" => $color
+                    "color" => $color,
+                    "value_enum" => $enumValue
                 ],
                 "actioned_at" => $actionedAt
             ]
@@ -118,10 +120,12 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $entityName = ParentFakeEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
+        $valueEnum = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
+        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
 
         $data = [
             // delete action
@@ -139,7 +143,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "attributes" => [
                         "name" => $nameExpected,
-                        "color" => $colorExpected
+                        "color" => $colorExpected,
+                        "value_enum" => $valueEnumExpected
                     ]
                 ],
                 "actioned_at" => $actionedAt - 1000
@@ -151,7 +156,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                 "data" => [
                     "id" => $entityId,
                     "name" => $name,
-                    "color" => $color
+                    "color" => $color,
+                    "value_enum" => $valueEnum
                 ],
                 "actioned_at" => $actionedAt - 2000
             ],
@@ -167,7 +173,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId,
             'name' => $nameExpected,
-            'color' => $colorExpected
+            'color' => $colorExpected,
+            'value_enum' => $valueEnumExpected
         ]);
         $this->assertSoftDeleted(ParentFakeEntity::getTableName(), [
             ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,

@@ -31,6 +31,7 @@ class ParentFakeEntityFactory
             EntitySynchronizable::ATTR_ID => $faker->uuid,
             ParentFakeEntity::ATTR_NAME => $faker->name,
             ParentFakeEntity::ATTR_COLOR => $faker->colorName,
+            ParentFakeEntity::ATTR_ENUM => ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)],
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $valueNullable ?? ($faker->boolean ? $faker->word : null),
         ];
     }
