@@ -11,6 +11,17 @@ Esta libreria debe ser usada con la versión de Laravel 11 o superior.
 composer require apptank/horus-sync
 ```
 
+Agregar en su archivo de composer.json
+
+```json
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/apptanksas/horus-sync-php.git"
+    }
+  ]
+```
+
 ## Modo de uso
 
 Todos los modelos sincronizables deben heredar de `AppTank\Horus\Illuminate\Database\EntitySynchronizable` definiendo
