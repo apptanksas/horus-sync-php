@@ -59,10 +59,10 @@ return new class extends Migration {
         $container = HorusContainer::getInstance();
 
         if (is_null($container->getConnectionName())) {
-            Schema::connection($container->getConnectionName())->dropIfExists(SyncQueueActionModel::TABLE_NAME);
+            Schema::dropIfExists(SyncQueueActionModel::TABLE_NAME);
             return;
         }
-        Schema::dropIfExists(SyncQueueActionModel::TABLE_NAME);
+        Schema::connection($container->getConnectionName())->dropIfExists(SyncQueueActionModel::TABLE_NAME);
     }
 
 };

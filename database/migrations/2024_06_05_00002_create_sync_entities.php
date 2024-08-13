@@ -63,10 +63,10 @@ return new class extends Migration {
             $tableName = $entityClass::getTableName();
 
             if (is_null($container->getConnectionName())) {
-                Schema::connection($container->getConnectionName())->dropIfExists($tableName);
+                Schema::dropIfExists($tableName);
                 continue;
             }
-            Schema::dropIfExists($tableName);
+            Schema::connection($container->getConnectionName())->dropIfExists($tableName);
         }
     }
 
