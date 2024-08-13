@@ -69,6 +69,11 @@ class SyncParameter
         return new SyncParameter($name, SyncParameterType::ENUM, $version, false, [], $options);
     }
 
+    public static function createUUID(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::UUID, $version, $isNullable);
+    }
+
     public static function createRelationOneToMany(string $name, array $relatedClass, int $version): self
     {
         return new SyncParameter($name, SyncParameterType::RELATION_ONE_TO_MANY, $version, false, $relatedClass);

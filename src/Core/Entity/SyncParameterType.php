@@ -9,20 +9,15 @@ enum SyncParameterType: string
     case PRIMARY_KEY_UUID = "primary_key_uuid";
 
     case INT = "int";
-
     case FLOAT = "float";
-
     case BOOLEAN = "boolean";
-
     case STRING = "string";
-
     case TEXT = "text";
-
     case JSON = "json";
-
     case ENUM = "enum";
-
     case TIMESTAMP = "timestamp";
+    case UUID = "uuid";
+
     case RELATION_ONE_TO_MANY = "relation_one_to_many";
 
     public function isNotRelation(): bool
