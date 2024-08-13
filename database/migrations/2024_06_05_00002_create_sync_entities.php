@@ -19,6 +19,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        $this->down();
+
         $container = HorusContainer::getInstance();
 
         /**
