@@ -32,6 +32,7 @@ abstract class EntitySynchronizable extends BaseSynchronizable implements IEntit
     {
         $this->parameters = static::parameters();
         $this->fillable = array_merge(array_map(fn($parameter) => $parameter->name, $this->parameters), [
+            self::ATTR_ID,
             self::ATTR_SYNC_OWNER_ID,
             self::ATTR_SYNC_HASH,
             self::ATTR_SYNC_CREATED_AT,

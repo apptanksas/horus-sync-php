@@ -35,9 +35,7 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
         $this->versionNumber = static::getVersionNumber();
         $this->parameters = static::parameters();
 
-        $this->fillable = array_merge($this->fillable, array_map(fn($parameter) => $parameter->name, $this->parameters), [
-            self::ATTR_ID
-        ]);
+        $this->fillable = array_merge($this->fillable, array_map(fn($parameter) => $parameter->name, $this->parameters));
 
         parent::__construct($attributes);
 

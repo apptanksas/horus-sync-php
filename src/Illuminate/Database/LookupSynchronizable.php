@@ -8,11 +8,9 @@ use AppTank\Horus\Core\Entity\SyncParameter;
 abstract class LookupSynchronizable extends BaseSynchronizable implements IEntitySynchronizable
 {
 
-
     public $timestamps = false;
 
     public $incrementing = true;
-
 
     public static function baseParameters(): array
     {

@@ -4,13 +4,25 @@ namespace Tests\_Stubs;
 
 class LookupFakeEntityFactory
 {
-    function create(): LookupFakeEntity
+    public static function create(): LookupFakeEntity
     {
-        $faker = \Faker\Factory::create();
 
-        $entity = new LookupFakeEntity();
-        $entity->save(["name"=>$faker->uuid]);
+        $data = self::newData();
+        unset($data["id"]);
+        $entity = new LookupFakeEntity($data);
+        $entity->save();
 
         return $entity;
     }
+
+    public static function newData(): array
+    {
+        $faker = \Faker\Factory::create();
+
+        return [
+            "id" => $faker->randomNumber(),
+            "name" => $faker->name
+        ];
+    }
+
 }

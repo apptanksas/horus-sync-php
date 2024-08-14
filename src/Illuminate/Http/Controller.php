@@ -2,6 +2,8 @@
 
 namespace AppTank\Horus\Illuminate\Http;
 
+use AppTank\Horus\Core\Exception\NotAuthorizedException;
+use AppTank\Horus\Core\Exception\UserNotAuthenticatedException;
 use AppTank\Horus\HorusContainer;
 use Illuminate\Http\JsonResponse;
 
@@ -16,10 +18,9 @@ abstract class Controller
             return $this->responseBadRequest("Error in request data: Entity attributes are invalid");
         } catch (\ErrorException $e) {
             return $this->responseBadRequest("Error in request data");
+        } catch (NotAuthorizedException) {
+            return $this->responseUnauthorized();
         } catch (\Throwable $e) {
-            if ($e->getCode() == 401) {
-                return $this->responseUnauthorized();
-            }
             report($e);
             return $this->responseServerError();
         }
@@ -58,6 +59,6 @@ abstract class Controller
     protected function getAuthenticatedUserId(): string|int
     {
         return HorusContainer::getInstance()->getAuthenticatedUserId() ??
-            throw new \DomainException("User not authenticated", 401);
+            throw new UserNotAuthenticatedException();
     }
 }

@@ -5,6 +5,8 @@ namespace Api;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\_Stubs\LookupFakeEntity;
+use Tests\_Stubs\LookupFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -181,5 +183,30 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'id' => $entityId
         ], deletedAtColumn: ParentFakeEntity::ATTR_SYNC_DELETED_AT);
     }
+
+    function testPostSyncQueueLookupIsFailure()
+    {
+        $ownerId = $this->faker->uuid;
+        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $data = [
+            // delete action
+            [
+                "action" => "INSERT",
+                "entity" => LookupFakeEntity::getEntityName(),
+                "data" => ["id" => $this->faker->randomNumber(),"name" => $this->faker->name],
+                "actioned_at" => $actionedAt
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertUnauthorized();
+    }
+
 
 }

@@ -1,5 +1,6 @@
 <?php
 
+use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Hasher;
@@ -24,13 +25,13 @@ return new class extends Migration {
         $container = HorusContainer::getInstance();
 
         /**
-         * @var EntitySynchronizable $entityClass
+         * @var IEntitySynchronizable $entityClass
          */
         foreach ($container->getEntities() as $entityClass) {
             $tableName = $entityClass::getTableName();
 
             $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName) {
-                $parameters = array_merge(EntitySynchronizable::baseParameters(), $entityClass::parameters());
+                $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (Schema::hasColumn($tableName, $parameter->name)) {
                         continue;

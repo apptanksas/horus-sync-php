@@ -1,6 +1,9 @@
 # Changelog
 
 ## 2024-08-14
+- Se definen dos tipos de entidades sincronizables:
+  - **EntitySynchronizable**: Entidad que solamente se puede leer y no tiene tiene cuenta de usuario asociada. 
+  - **LookupSynchronizable**: Entidad que permite insertar, editar y eliminar registros asociados a una cuenta de usuario. 
 - Se refactoriza el metodo de **SyncParameter::createRelationOneOfMany**.
 - Se agrega soporte para el tipo de relacion oneOfOne.
 ```php

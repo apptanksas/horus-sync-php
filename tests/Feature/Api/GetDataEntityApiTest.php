@@ -8,6 +8,8 @@ use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
+use Tests\_Stubs\LookupFakeEntity;
+use Tests\_Stubs\LookupFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
@@ -54,6 +56,15 @@ class GetDataEntityApiTest extends TestCase
         ],
     ];
 
+    private const array JSON_SCHEME_LOOKUP = [
+        '*' => [
+            'entity',
+            'data' => [
+                'id',
+                'name',
+            ],
+        ],
+    ];
 
     function testGetEntitiesIsSuccess()
     {
@@ -121,6 +132,21 @@ class GetDataEntityApiTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount($countExpected);
         $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
+    }
+
+    function testGetEntitiesLookupIsSuccess()
+    {
+        $ownerId = $this->faker->uuid;
+        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        $entities=$this->generateArray(fn() => LookupFakeEntityFactory::create());
+
+        // When
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, LookupFakeEntity::getEntityName()));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($entities));
+        $response->assertJsonStructure(self::JSON_SCHEME_LOOKUP);
     }
 
 }
