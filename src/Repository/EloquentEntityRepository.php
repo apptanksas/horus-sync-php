@@ -2,7 +2,9 @@
 
 namespace AppTank\Horus\Repository;
 
+use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityData;
@@ -13,6 +15,7 @@ use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\LookupSynchronizable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -69,6 +72,8 @@ readonly class EloquentEntityRepository implements EntityRepository
             $tableName = $entityClass::getTableName();
             $table = $this->getTableBuilder($tableName);
 
+            $this->validateOperation($entityClass);
+
             if (!$table->insert($operations)) {
                 throw new \Exception('Failed to insert entities');
             }
@@ -111,6 +116,8 @@ readonly class EloquentEntityRepository implements EntityRepository
             $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
             $table = $this->getTableBuilder($tableName);
+
+            $this->validateOperation($entityClass);
 
             $selectAttributes = array_map(fn(SyncParameter $parameter) => $parameter->name,
                 array_filter($entityClass::parameters(),
@@ -206,6 +213,8 @@ readonly class EloquentEntityRepository implements EntityRepository
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
 
+            $this->validateOperation($entityClass);
+
             foreach ($entityClass::query()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get() as $eloquentModel) {
 
                 $entityData = $this->buildEntityData($eloquentModel);
@@ -284,26 +293,31 @@ readonly class EloquentEntityRepository implements EntityRepository
          * @var $entityClass EntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
+        $instanceClass = new $entityClass();
 
         /**
-         * @var $collectionItems \Illuminate\Database\Eloquent\Builder
+         * @var $queryBuilder \Illuminate\Database\Eloquent\Builder
          */
-        $collectionItems = $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
+        $queryBuilder = $entityClass::query();
 
-        if (count($ids) > 0) {
-            $collectionItems = $collectionItems->whereIn(EntitySynchronizable::ATTR_ID, $ids);
+        if ($instanceClass instanceof EntitySynchronizable) {
+            $queryBuilder = $queryBuilder->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
         }
 
-        if (!is_null($afterTimestamp)) {
-            $collectionItems = $collectionItems->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
+        if (count($ids) > 0) {
+            $queryBuilder = $queryBuilder->whereIn(EntitySynchronizable::ATTR_ID, $ids);
+        }
+
+        if (!is_null($afterTimestamp) && $instanceClass instanceof EntitySynchronizable) {
+            $queryBuilder = $queryBuilder->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
                 ">",
                 $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()
             );
         }
 
-        $collectionItems = $collectionItems->get();
+        $queryBuilder = $queryBuilder->get();
 
-        return $this->iterateItemsAndSearchRelated($collectionItems);
+        return $this->iterateItemsAndSearchRelated($queryBuilder);
     }
 
     /**
@@ -380,12 +394,16 @@ readonly class EloquentEntityRepository implements EntityRepository
     /**
      * Find related entities given a parent entity
      *
-     * @param EntitySynchronizable $parentEntity
+     * @param IEntitySynchronizable $parentEntity
      * @return EntityData
      */
-    private function buildEntityData(EntitySynchronizable $parentEntity): EntityData
+    private function buildEntityData(IEntitySynchronizable $parentEntity): EntityData
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
+
+        if ($parentEntity instanceof LookupSynchronizable) {
+            return $entityData;
+        }
 
         $relationsOneOfMany = $parentEntity->getRelationsOneOfMany();
 
@@ -437,8 +455,10 @@ readonly class EloquentEntityRepository implements EntityRepository
     {
         $output = $modelData;
 
-        $output[EntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
-        $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
+        if (isset($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))
+            $output[EntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
+        if (isset($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))
+            $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
 
         // Filter attributes null
         return array_filter($output, fn($item) => !is_null($item));
@@ -484,5 +504,14 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $idsOutput;
     }
 
+    private function validateOperation(string $entityClass): void
+    {
+        $instanceClass = new  $entityClass();
 
+        if ($instanceClass instanceof EntitySynchronizable) {
+            return;
+        }
+
+        throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
+    }
 }

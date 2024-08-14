@@ -8,6 +8,7 @@ use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntityFactory;
+use Tests\_Stubs\LookupFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
@@ -156,6 +157,31 @@ class GetDataEntitiesApiTest extends ApiTestCase
                 ],
             ],
         ]);
+    }
+
+    function testGetDataEntitiesWithLookupsSuccess()
+    {
+        $userId = $this->faker->uuid;
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
+            ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
+        ]));
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userId));
+            AdjacentFakeEntityFactory::create($parentEntity->getId(), $userId);
+        }
+
+        $lookups = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+
+        // When
+        $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
+
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($parentsEntities) + count($lookups));
     }
 
 

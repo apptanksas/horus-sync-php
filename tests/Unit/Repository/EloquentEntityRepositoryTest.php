@@ -3,6 +3,7 @@
 namespace Tests\Unit\Repository;
 
 
+use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Model\EntityData;
@@ -17,6 +18,8 @@ use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
+use Tests\_Stubs\LookupFakeEntity;
+use Tests\_Stubs\LookupFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
@@ -503,5 +506,80 @@ class EloquentEntityRepositoryTest extends TestCase
         }
     }
 
+    function testInsertLookupEntityIsFailureByLookupEntity()
+    {
+        $this->expectException(OperationNotPermittedException::class);
 
+        // Given
+        $operation = EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            LookupFakeEntity::getEntityName(), LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+        );
+
+        // When
+        $this->entityRepository->insert($operation);
+    }
+
+    function testUpdateLookupEntityIsFailureByLookupEntity()
+    {
+        $this->expectException(OperationNotPermittedException::class);
+
+        // Given
+        $lookup = LookupFakeEntityFactory::create();
+        $operation = EntityOperationFactory::createEntityUpdate(
+            $lookup->getId(),
+            LookupFakeEntity::getEntityName(),
+            $this->faker->uuid,
+            LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+        );
+
+        // When
+        $this->entityRepository->update($operation);
+    }
+
+    function testDeleteLookupEntityIsFailureByLookupEntity()
+    {
+        $this->expectException(OperationNotPermittedException::class);
+
+        // Given
+        $lookup = LookupFakeEntityFactory::create();
+        $operation = EntityOperationFactory::createEntityDelete(
+            $lookup->getId(),
+            LookupFakeEntity::getEntityName(),
+            $this->faker->uuid,
+            now()->toDateTimeImmutable()
+        );
+
+        // When
+        $this->entityRepository->delete($operation);
+    }
+
+    function testSearchEntitiesReturnLookup()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+
+        // When
+        $lookupEntity = $this->entityRepository->searchEntities($ownerId, LookupFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($entities), $lookupEntity);
+    }
+
+
+    function testSearchEntitiesReturnLookupWithIds()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $ids = array_map(fn(LookupFakeEntity $entity) => $entity->getId(), $entities);
+        $this->generateArray(fn() => LookupFakeEntityFactory::create());
+
+        // When
+        $lookupEntity = $this->entityRepository->searchEntities($ownerId, LookupFakeEntity::getEntityName(), $ids);
+
+        // Then
+        $this->assertCount(count($entities), $lookupEntity);
+    }
 }

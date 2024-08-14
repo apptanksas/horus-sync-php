@@ -21,4 +21,10 @@ interface IEntitySynchronizable
      * @return int
      */
     public static function getVersionNumber(): int;
+
+    public static function baseParameters(): array;
+
+    public static function getTableName(): string;
+
+    public static function schema(): array;
 }

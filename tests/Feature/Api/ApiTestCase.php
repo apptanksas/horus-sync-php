@@ -10,6 +10,7 @@ use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase;
 use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\LookupFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
 class ApiTestCase extends TestCase
@@ -26,7 +27,8 @@ class ApiTestCase extends TestCase
             ParentFakeEntity::class => [
                 ChildFakeEntity::class,
                 AdjacentFakeEntity::class
-            ]
+            ],
+            LookupFakeEntity::class
         ]);
 
         HorusContainer::setMiddlewares($this->middlewares);
