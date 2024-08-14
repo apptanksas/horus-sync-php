@@ -11,6 +11,7 @@ use Orchestra\Testbench\Concerns\WithLaravelMigrations;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\LookupFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
 class TestCase extends \Orchestra\Testbench\TestCase
@@ -26,7 +27,8 @@ class TestCase extends \Orchestra\Testbench\TestCase
             ParentFakeEntity::class => [
                 ChildFakeEntity::class,
                 AdjacentFakeEntity::class
-            ]
+            ],
+            LookupFakeEntity::class
         ]);
 
         parent::setUp();

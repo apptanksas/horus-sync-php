@@ -284,6 +284,11 @@ readonly class EloquentEntityRepository implements EntityRepository
          * @var $entityClass EntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
+        $instanceClass = new $entityClass();
+
+        if($instanceClass instanceof EntitySynchronizable){
+
+        }
 
         /**
          * @var $collectionItems \Illuminate\Database\Eloquent\Builder

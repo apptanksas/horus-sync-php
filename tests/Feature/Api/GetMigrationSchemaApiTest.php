@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Api;
 
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Core\Entity\EntityType;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
-use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use AppTank\Horus\RouteName;
 use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\LookupFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
 class GetMigrationSchemaApiTest extends ApiTestCase
@@ -15,6 +15,7 @@ class GetMigrationSchemaApiTest extends ApiTestCase
     private const array JSON_SCHEMA = [
         '*' => [
             'entity',
+            'type',
             'attributes' => [
                 '*' => [
                     'name',
@@ -33,11 +34,14 @@ class GetMigrationSchemaApiTest extends ApiTestCase
 
         $response->assertOk();
         $response->assertJsonStructure(self::JSON_SCHEMA);
-        $response->assertJson([ParentFakeEntity::schema()]);
+        $response->assertJson([ParentFakeEntity::schema(),LookupFakeEntity::schema()]);
+        $response->assertJsonPath("0.type", EntityType::EDITABLE->value);
+        $response->assertJsonPath("1.type", EntityType::LOOKUP->value);
 
         // Validate relations one of many
         $response->assertJsonPath("0.attributes.9.name", "relations_one_of_many");
         $response->assertJsonPath("0.attributes.9.related.0.entity", ChildFakeEntity::getEntityName());
+        $response->assertJsonPath("0.attributes.9.related.0.type", EntityType::EDITABLE->value);
 
         // Validate relations one of one
         $response->assertJsonPath("0.attributes.10.name", "relations_one_of_one");
