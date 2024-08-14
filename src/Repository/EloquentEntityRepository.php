@@ -16,6 +16,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -386,9 +387,9 @@ readonly class EloquentEntityRepository implements EntityRepository
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
 
-        $relations = $parentEntity->getRelationsMany();
+        $relationsOneOfMany = $parentEntity->getRelationsOneOfMany();
 
-        foreach ($relations as $relationMethod) {
+        foreach ($relationsOneOfMany as $relationMethod) {
             /**
              * @var $itemsRelated HasMany
              */
@@ -396,7 +397,20 @@ readonly class EloquentEntityRepository implements EntityRepository
 
             $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
 
-            $entityData->setEntitiesRelated($relationMethod, $collectionItemsRelated);
+            $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+        }
+
+        $relationsOneOfOne = $parentEntity->getRelationsOneOfOne();
+
+        foreach ($relationsOneOfOne as $relationMethod) {
+            /**
+             * @var $itemRelated HasOne
+             */
+            $itemRelated = $parentEntity->{$relationMethod}();
+
+            if (!is_null($entityOne = $itemRelated->get()->first())) {
+                $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($entityOne));
+            }
         }
 
         return $entityData;

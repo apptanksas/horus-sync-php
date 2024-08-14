@@ -6,6 +6,7 @@ use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
@@ -25,6 +26,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
 
         foreach ($parentsEntities as $parentEntity) {
             $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userId));
+            AdjacentFakeEntityFactory::create($parentEntity->getId(), $userId);
         }
 
         // When
@@ -66,6 +68,18 @@ class GetDataEntitiesApiTest extends ApiTestCase
                             ],
                         ],
                     ],
+                    '_adjacent' => [
+                        'entity',
+                        'data' => [
+                            'id',
+                            'sync_owner_id',
+                            'sync_hash',
+                            'sync_created_at',
+                            'sync_updated_at',
+                            'name',
+                            'parent_id',
+                        ],
+                    ],
                 ],
             ],
         ]);
@@ -84,6 +98,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
 
         foreach ($parentsEntities as $parentEntity) {
             $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userId));
+            AdjacentFakeEntityFactory::create($parentEntity->getId(), $userId);
         }
 
         // When
@@ -124,6 +139,18 @@ class GetDataEntitiesApiTest extends ApiTestCase
                                 'timestamp_value',
                                 'parent_id',
                             ],
+                        ],
+                    ],
+                    '_adjacent' => [
+                        'entity',
+                        'data' => [
+                            'id',
+                            'sync_owner_id',
+                            'sync_hash',
+                            'sync_created_at',
+                            'sync_updated_at',
+                            'name',
+                            'parent_id',
                         ],
                     ],
                 ],

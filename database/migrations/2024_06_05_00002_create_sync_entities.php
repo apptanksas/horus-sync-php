@@ -96,7 +96,7 @@ return new class extends Migration {
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),
             SyncParameterType::ENUM => $table->enum($parameter->name, $parameter->options),
             SyncParameterType::UUID => $table->uuid($parameter->name),
-            SyncParameterType::RELATION_ONE_TO_MANY => null,
+            SyncParameterType::RELATION_ONE_OF_MANY, SyncParameterType::RELATION_ONE_OF_ONE => null,
         };
 
         if (!is_null($builder)) {

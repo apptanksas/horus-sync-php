@@ -18,15 +18,16 @@ enum SyncParameterType: string
     case TIMESTAMP = "timestamp";
     case UUID = "uuid";
 
-    case RELATION_ONE_TO_MANY = "relation_one_to_many";
+    case RELATION_ONE_OF_MANY = "relation_one_of_many";
+    case RELATION_ONE_OF_ONE = "relation_one_of_one";
 
     public function isNotRelation(): bool
     {
-        return $this !== self::RELATION_ONE_TO_MANY;
+        return $this !== self::RELATION_ONE_OF_MANY && $this !== self::RELATION_ONE_OF_ONE;
     }
 
     public function isRelation(): bool
     {
-        return $this === self::RELATION_ONE_TO_MANY;
+        return $this === self::RELATION_ONE_OF_MANY || $this === self::RELATION_ONE_OF_ONE;
     }
 }

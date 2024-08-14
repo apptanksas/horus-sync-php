@@ -81,7 +81,7 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
 
     final public static function getTableName(): string
     {
-        return static::getEntityName() . "_sync_entity";
+        return "se_" . static::getEntityName();
     }
 
     /**
@@ -112,7 +112,7 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
             $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
             $attribute["nullable"] = $parameter->isNullable;
 
-            if ($parameter->type == SyncParameterType::RELATION_ONE_TO_MANY) {
+            if ($parameter->type == SyncParameterType::RELATION_ONE_OF_MANY || $parameter->type == SyncParameterType::RELATION_ONE_OF_ONE) {
                 $attribute["related"] = array_map(fn($classRelated) => $classRelated::schema(), $parameter->related);
             }
 
@@ -181,7 +181,16 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
      * Get relations methods many
      * @return string[]
      */
-    public function getRelationsMany(): array
+    public function getRelationsOneOfMany(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get relations methods one
+     * @return string[]
+     */
+    public function getRelationsOneOfOne(): array
     {
         return [];
     }
