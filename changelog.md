@@ -2,6 +2,10 @@
 
 ## 2024-08-14
 - Se refactoriza el metodo de **SyncParameter::createRelationOneOfMany**.
+- Se agrega soporte para el tipo de relacion oneOfOne.
+```php
+    SyncParameter::createRelationOneOfOne(relatedClass:[ClassOne:class], version:1);
+```
 ## 2024-08-13   
 
 Se agrega soporte para el tipo de parametro de **_Enum_**.

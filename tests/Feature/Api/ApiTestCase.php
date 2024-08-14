@@ -8,6 +8,7 @@ use AppTank\Horus\Illuminate\Provider\HorusServiceProvider;
 use Faker\Generator;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase;
+use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
@@ -23,7 +24,8 @@ class ApiTestCase extends TestCase
     {
         HorusContainer::initialize([
             ParentFakeEntity::class => [
-                ChildFakeEntity::class
+                ChildFakeEntity::class,
+                AdjacentFakeEntity::class
             ]
         ]);
 
@@ -40,6 +42,7 @@ class ApiTestCase extends TestCase
             HorusServiceProvider::class
         ];
     }
+
     protected function generateArray(callable $creator, int $maxQuantity = 12): array
     {
 

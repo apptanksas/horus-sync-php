@@ -9,6 +9,7 @@ use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Orchestra\Testbench\Concerns\WithLaravelMigrations;
 use Orchestra\Testbench\Concerns\WithWorkbench;
+use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 
@@ -23,7 +24,8 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         HorusContainer::initialize([
             ParentFakeEntity::class => [
-                ChildFakeEntity::class
+                ChildFakeEntity::class,
+                AdjacentFakeEntity::class
             ]
         ]);
 

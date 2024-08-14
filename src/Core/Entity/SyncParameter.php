@@ -76,7 +76,12 @@ class SyncParameter
 
     public static function createRelationOneOfMany(array $relatedClass, int $version): self
     {
-        return new SyncParameter("relations_one_of_many", SyncParameterType::RELATION_ONE_TO_MANY, $version, false, $relatedClass);
+        return new SyncParameter("relations_one_of_many", SyncParameterType::RELATION_ONE_OF_MANY, $version, false, $relatedClass);
+    }
+
+    public static function createRelationOneOfOne(array $relatedClass, int $version): self
+    {
+        return new SyncParameter("relations_one_of_one", SyncParameterType::RELATION_ONE_OF_ONE, $version, false, $relatedClass);
     }
 
     // ------------------------------------------------------------------------

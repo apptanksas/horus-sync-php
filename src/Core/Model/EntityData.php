@@ -13,9 +13,14 @@ class EntityData
     {
     }
 
-    function setEntitiesRelated(string $relationName, array $relatedEntities): void
+    function setEntitiesRelatedOneOfMany(string $relationName, array $relatedEntities): void
     {
         $this->data["_$relationName"] = $relatedEntities;
+    }
+
+    function setEntitiesRelatedOneToOne(string $relationName, EntityData $relatedEntity): void
+    {
+        $this->data["_$relationName"] = $relatedEntity;
     }
 
     /**

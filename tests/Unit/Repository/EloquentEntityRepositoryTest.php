@@ -13,6 +13,8 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\_Stubs\AdjacentFakeEntity;
+use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ParentFakeEntity;
@@ -297,9 +299,14 @@ class EloquentEntityRepositoryTest extends TestCase
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $childEntities = [];
+        /**
+         * @var AdjacentFakeEntity[] $adjacentEntities
+         */
+        $adjacentEntities = [];
 
         foreach ($parentsEntities as $parentEntity) {
             $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId));
+            $adjacentEntities[$parentEntity->getId()] = AdjacentFakeEntityFactory::create($parentEntity->getId(), $ownerId);
         }
 
         // When
@@ -324,6 +331,10 @@ class EloquentEntityRepositoryTest extends TestCase
             $this->assertEquals($parentEntity->color, $parentEntityResult->getData()[ParentFakeEntity::ATTR_COLOR]);
 
             $children = $parentEntityResult->getData()["_children"];
+            /**
+             * @var EntityData $adjacentResult
+             */
+            $adjacentResult = $parentEntityResult->getData()["_adjacent"];
 
             foreach ($childEntities[$parentEntity->getId()] as $childEntity) {
                 $childEntityResult = array_merge([], array_filter($children, fn($entity) => $entity->getData()["id"] == $childEntity->getId()))[0]->getData();
@@ -346,6 +357,12 @@ class EloquentEntityRepositoryTest extends TestCase
                 $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT] > 0);
                 $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT] > 0);
             }
+
+            // Adjacent
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->name, $adjacentResult->getData()["name"]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_HASH}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_HASH]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_OWNER_ID}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_OWNER_ID]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_CREATED_AT}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_CREATED_AT]);
         }
     }
 
