@@ -59,6 +59,11 @@ class SyncParameter
         return new SyncParameter($name, SyncParameterType::STRING, $version, $isNullable);
     }
 
+    public static function createText(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::TEXT, $version, $isNullable);
+    }
+
     public static function createTimestamp(string $name, int $version, bool $isNullable = false): self
     {
         return new SyncParameter($name, SyncParameterType::TIMESTAMP, $version, $isNullable);
