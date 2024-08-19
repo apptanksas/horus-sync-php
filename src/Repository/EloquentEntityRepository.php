@@ -341,6 +341,25 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
+     * Check if the entity exists
+     *
+     * @param string|int $userId
+     * @param string $entityName
+     * @param string $entityId
+     * @return bool
+     */
+    function entityExists(int|string $userId, string $entityName, string $entityId): bool
+    {
+        /**
+         * @var $entityClass EntitySynchronizable
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityName);
+        return $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)
+            ->where(EntitySynchronizable::ATTR_ID, $entityId)
+            ->exists();
+    }
+
+    /**
      * Group ids by entity name
      *
      * @param EntityOperation ...$operations
@@ -514,4 +533,6 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
     }
+
+
 }

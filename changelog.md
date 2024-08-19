@@ -1,5 +1,9 @@
 # Changelog
 
+
+## 2024-08-19
+- Se agrega el metodo de **_entityExists_** en el repository de _**EntityRepository**_ para validar si una entitidad exists y le pertenece a un usuario. 
+
 ## 2024-08-14
 - Se definen dos tipos de entidades sincronizables:
   - **EntitySynchronizable**: Entidad que solamente se puede leer y no tiene tiene cuenta de usuario asociada. 

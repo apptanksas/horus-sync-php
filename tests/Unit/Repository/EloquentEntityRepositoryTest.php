@@ -582,4 +582,30 @@ class EloquentEntityRepositoryTest extends TestCase
         // Then
         $this->assertCount(count($entities), $lookupEntity);
     }
+
+    function testShouldEntityExistIsTrue()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $entity = ParentFakeEntityFactory::create($ownerId);
+
+        // When
+        $result = $this->entityRepository->entityExists($ownerId, ParentFakeEntity::getEntityName(), $entity->getId());
+
+        // Then
+        $this->assertTrue($result);
+    }
+
+    function testShouldEntityExistIsFalse()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $entity = ParentFakeEntityFactory::create($ownerId);
+
+        // When
+        $result = $this->entityRepository->entityExists($ownerId, ParentFakeEntity::getEntityName(), $this->faker->uuid);
+
+        // Then
+        $this->assertFalse($result);
+    }
 }

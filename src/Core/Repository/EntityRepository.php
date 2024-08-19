@@ -71,4 +71,14 @@ interface EntityRepository
      * @return array
      */
     function getEntityHashes(string|int $ownerUserId, string $entityName): array;
+
+    /**
+     * Check if the entity exists
+     *
+     * @param string|int $userId
+     * @param string $entityName
+     * @param string $entityId
+     * @return bool
+     */
+    function entityExists(string|int $userId, string $entityName, string $entityId): bool;
 }
