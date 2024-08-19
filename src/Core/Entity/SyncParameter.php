@@ -79,6 +79,11 @@ class SyncParameter
         return new SyncParameter($name, SyncParameterType::UUID, $version, $isNullable);
     }
 
+    public static function createJSON(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::JSON, $version, $isNullable);
+    }
+
     public static function createRelationOneOfMany(array $relatedClass, int $version): self
     {
         return new SyncParameter("relations_one_of_many", SyncParameterType::RELATION_ONE_OF_MANY, $version, false, $relatedClass);
