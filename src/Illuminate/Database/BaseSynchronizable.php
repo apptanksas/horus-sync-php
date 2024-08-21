@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Util\StringUtil;
+use AppTank\Horus\HorusContainer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -40,6 +41,11 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
         parent::__construct($attributes);
 
         $this->setTable(static::getTableName());
+
+        // Set the connection name if it is not set
+        if (!is_null($connection = HorusContainer::getInstance()->getConnectionName()) && is_null($this->connection)) {
+            $this->setConnection($connection);
+        }
     }
 
     public function getDeletedAtColumn(): string
