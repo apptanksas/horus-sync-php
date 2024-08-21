@@ -34,8 +34,6 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
-        $horusContainer = HorusContainer::getInstance();
-
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository();
         });
@@ -45,30 +43,30 @@ class HorusServiceProvider extends ServiceProvider
             return new EventBus();
         });
 
-        $this->app->singleton(EntityMapper::class, function () use ($horusContainer) {
-            return $horusContainer->getEntityMapper();
+        $this->app->singleton(EntityMapper::class, function ()  {
+            return HorusContainer::getInstance()->getEntityMapper();
         });
 
         $this->app->singleton(IDateTimeUtil::class, function () {
             return new DateTimeUtil();
         });
 
-        $this->app->singleton(QueueActionRepository::class, function () use ($horusContainer) {
+        $this->app->singleton(QueueActionRepository::class, function ()  {
             return new EloquentQueueActionRepository(
                 $this->app->make(IDateTimeUtil::class),
-                $horusContainer->getConnectionName()
+                HorusContainer::getInstance()->getConnectionName()
             );
         });
 
-        $this->app->singleton(ITransactionHandler::class, function () use ($horusContainer) {
-            return new EloquentTransactionHandler($horusContainer->getConnectionName());
+        $this->app->singleton(ITransactionHandler::class, function ()  {
+            return new EloquentTransactionHandler(HorusContainer::getInstance()->getConnectionName());
         });
 
-        $this->app->singleton(EntityRepository::class, function () use ($horusContainer) {
+        $this->app->singleton(EntityRepository::class, function ()  {
             return new EloquentEntityRepository(
                 $this->app->make(EntityMapper::class),
                 $this->app->make(IDateTimeUtil::class),
-                $horusContainer->getConnectionName()
+                HorusContainer::getInstance()->getConnectionName()
             );
         });
 
