@@ -25,9 +25,11 @@ class HorusServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->registerRoutes();
         $this->registerCommands();
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
+        $this->app->afterResolving(function () {
+            $this->registerRoutes();
+        });
     }
 
     public function register()
@@ -43,7 +45,7 @@ class HorusServiceProvider extends ServiceProvider
             return new EventBus();
         });
 
-        $this->app->singleton(EntityMapper::class, function ()  {
+        $this->app->singleton(EntityMapper::class, function () {
             return HorusContainer::getInstance()->getEntityMapper();
         });
 
@@ -51,18 +53,18 @@ class HorusServiceProvider extends ServiceProvider
             return new DateTimeUtil();
         });
 
-        $this->app->singleton(QueueActionRepository::class, function ()  {
+        $this->app->singleton(QueueActionRepository::class, function () {
             return new EloquentQueueActionRepository(
                 $this->app->make(IDateTimeUtil::class),
                 HorusContainer::getInstance()->getConnectionName()
             );
         });
 
-        $this->app->singleton(ITransactionHandler::class, function ()  {
+        $this->app->singleton(ITransactionHandler::class, function () {
             return new EloquentTransactionHandler(HorusContainer::getInstance()->getConnectionName());
         });
 
-        $this->app->singleton(EntityRepository::class, function ()  {
+        $this->app->singleton(EntityRepository::class, function () {
             return new EloquentEntityRepository(
                 $this->app->make(EntityMapper::class),
                 $this->app->make(IDateTimeUtil::class),
@@ -77,7 +79,6 @@ class HorusServiceProvider extends ServiceProvider
     {
         Route::group([
             'prefix' => "sync",
-            'namespace' => 'AppTank\Horus\Illuminate\Http\Controller',
         ], function () {
             $this->loadRoutesFrom(__DIR__ . '/../../../routes/api.php');
         });
