@@ -2,6 +2,7 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
@@ -226,4 +227,38 @@ class GetDataEntitiesApiTest extends ApiTestCase
         // Then
         $response->assertJsonCount($countExpected);
     }
+
+
+    function testGetDataEntitiesWithGrantsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userInvitedId = $this->faker->uuid;
+        $grants = [];
+
+        $parentsEntitiesOwner = $this->generateArray(function () use ($userOwnerId, &$grants) {
+            $entity = ParentFakeEntityFactory::create($userOwnerId);
+            $grants[] = new EntityGranted($userOwnerId, ParentFakeEntity::getEntityName(), $entity->getId());
+            return $entity;
+        });
+
+        $parentsEntitiesInvited = $this->generateArray(fn() => ParentFakeEntityFactory::create($userInvitedId));
+
+        $childEntities = [];
+
+        foreach ($parentsEntitiesOwner as $parentEntity) {
+            $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
+            AdjacentFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+        }
+
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants));
+
+        // When
+        $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
+
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($parentsEntitiesOwner) + count($parentsEntitiesInvited));
+    }
+
 }

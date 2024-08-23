@@ -15,4 +15,22 @@ readonly class UserAuth
     {
 
     }
+
+    function eachUserGranted(callable $callback): void
+    {
+        $callback($this->userId);
+        foreach ($this->entityGrants as $entityGranted) {
+            $callback($entityGranted->userOwnerId);
+        }
+    }
+
+    function groupByEachUserGranted(callable $callback): array
+    {
+        $output = $callback($this->userId, null);
+        foreach ($this->entityGrants as $entityGranted) {
+            $output = array_merge($output, $callback($entityGranted->userOwnerId));
+        }
+
+        return $output;
+    }
 }
