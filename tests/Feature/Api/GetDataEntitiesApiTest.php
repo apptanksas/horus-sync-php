@@ -2,6 +2,7 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -20,7 +21,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
         $childEntities = [];
@@ -89,7 +90,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithNullablesSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -162,7 +163,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithLookupsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -188,7 +189,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccessIsEmpty()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
@@ -202,7 +203,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     {
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
-        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
 
         /**
          * @var ParentFakeEntity[] $parentsEntities

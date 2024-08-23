@@ -2,6 +2,7 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueInsertIsFailureByBadRequest()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $data = [
             [
@@ -45,7 +46,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueIsFailureByInvalidAttributes()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -76,7 +77,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueInsertIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -116,7 +117,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueMultipleIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -187,7 +188,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueLookupIsFailure()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         $this->generateArray(fn() => LookupFakeEntityFactory::create());
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 

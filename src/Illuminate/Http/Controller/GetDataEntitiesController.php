@@ -21,7 +21,7 @@ class GetDataEntitiesController extends Controller
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
-            return $this->responseSuccess($this->useCase->__invoke($this->getAuthenticatedUserId(), $request->query("after")));
+            return $this->responseSuccess($this->useCase->__invoke($this->getUserAuthenticated(), $request->query("after")));
         });
     }
 }

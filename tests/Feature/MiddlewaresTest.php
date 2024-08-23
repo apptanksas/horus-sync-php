@@ -16,7 +16,7 @@ class MiddlewaresTest extends ApiTestCase
     function testFakeMiddleware()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new \AppTank\Horus\Core\Auth\UserAuth($userId));
 
         // When
         $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ParentFakeEntity::getEntityName()));

@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Application\Get;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Repository\EntityRepository;
 
 readonly class GetDataEntities extends BaseGetEntities
@@ -13,12 +14,12 @@ readonly class GetDataEntities extends BaseGetEntities
 
     }
 
-    function __invoke(string|int $userOwnerId, ?int $afterTimestamp = null): array
+    function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null): array
     {
         if (is_null($afterTimestamp)) {
-            $result = $this->entityRepository->searchAllEntitiesByUserId($userOwnerId);
+            $result = $this->entityRepository->searchAllEntitiesByUserId($userAuth->userId);
         } else {
-            $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($userOwnerId, $afterTimestamp);
+            $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($userAuth->userId, $afterTimestamp);
         }
 
         return $this->parseData($result);

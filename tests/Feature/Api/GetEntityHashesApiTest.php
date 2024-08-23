@@ -2,6 +2,7 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -18,7 +19,7 @@ class GetEntityHashesApiTest extends ApiTestCase
     {
         // Given
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         /**
          * @var ParentFakeEntity[] $parentsEntities
          */

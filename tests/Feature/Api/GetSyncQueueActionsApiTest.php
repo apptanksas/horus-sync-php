@@ -2,6 +2,7 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\RouteName;
@@ -29,7 +30,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->uuid;
 
-        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create(userId: $userId));
 
@@ -45,7 +46,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
     function testGetActionsAfterTimestampIsSuccess()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
 
         $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
         /**
@@ -75,7 +76,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
     function testGetActionsFilterDateTimes()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         /**
          * @var SyncQueueActionModel[] $parentsEntities
          */

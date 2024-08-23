@@ -3,6 +3,7 @@
 namespace AppTank\Horus;
 
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 
@@ -15,7 +16,7 @@ class HorusContainer
 
     private bool $usesUUIDs = false;
 
-    private null|string|int $userId = null;
+    private UserAuth|null $userAuth = null;
 
     private EntityMapper $entityMapper;
 
@@ -103,9 +104,9 @@ class HorusContainer
         $this->connectionName = $connectionName;
     }
 
-    public function setAuthenticatedUserId(string|int $userId): void
+    public function setUserAuthenticated(UserAuth $userAuth): void
     {
-        $this->userId = $userId;
+        $this->userAuth = $userAuth;
     }
 
     public static function setMiddlewares(array $middlewares): void
@@ -150,9 +151,9 @@ class HorusContainer
         return $this->usesUUIDs;
     }
 
-    public function getAuthenticatedUserId(): null|string|int
+    public function getUserAuthenticated(): ?UserAuth
     {
-        return $this->userId;
+        return $this->userAuth;
     }
 
     public function getMiddlewares(): array

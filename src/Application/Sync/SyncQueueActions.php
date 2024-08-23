@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Application\Sync;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
@@ -24,11 +25,11 @@ readonly class SyncQueueActions
 
     }
 
-    function __invoke(string|int $userId, QueueAction ...$actions): void
+    function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
         usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
-        $this->transactionHandler->executeTransaction(function () use ($userId, $actions) {
+        $this->transactionHandler->executeTransaction(function () use ($actions) {
             usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions(...$actions);

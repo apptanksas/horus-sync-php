@@ -31,7 +31,7 @@ class SearchEntitiesController extends Controller
 
             return $this->responseSuccess(
                 $this->useCase->__invoke(
-                    $this->getAuthenticatedUserId(),
+                    $this->getUserAuthenticated(),
                     $entity,
                     $ids,
                     $after)
