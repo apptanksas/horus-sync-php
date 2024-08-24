@@ -16,6 +16,6 @@ class GetEntityHashes
 
     function __invoke(UserAuth $userAuth, string $entityName): array
     {
-        return $this->entityRepository->getEntityHashes($userAuth->userId, $entityName);
+        return $this->entityRepository->getEntityHashes($userAuth->getEffectiveUserId(), $entityName);
     }
 }

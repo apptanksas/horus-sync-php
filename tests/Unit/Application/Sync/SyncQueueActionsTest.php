@@ -3,6 +3,7 @@
 namespace Tests\Unit\Application\Sync;
 
 use AppTank\Horus\Application\Sync\SyncQueueActions;
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Model\EntityOperation;
@@ -10,10 +11,8 @@ use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
-use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
-use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\QueueActionFactory;
@@ -102,6 +101,6 @@ class SyncQueueActionsTest extends TestCase
         $this->eventBus->shouldReceive('publish')->times(count($actions));
 
         // When
-        $this->syncQueueActions->__invoke($userId, ...$actions);
+        $this->syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
     }
 }

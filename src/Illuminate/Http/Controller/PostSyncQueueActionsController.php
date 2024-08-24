@@ -52,7 +52,7 @@ class PostSyncQueueActionsController extends Controller
         $requestData = $request->all();
         $dateUtil = new DateTimeUtil();
         $userId = $this->getUserAuthenticated()->userId;
-        $ownerId = $userId; // TODO: get ownerId from entity
+        $ownerId = $this->getUserAuthenticated()->getEffectiveUserId();
 
         foreach ($requestData as $itemAction) {
             $queueActions[] = new QueueAction(

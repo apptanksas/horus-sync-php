@@ -18,8 +18,8 @@ readonly class GetDataEntities extends BaseGetEntities
     function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null): array
     {
         $result = array_merge(
-            $this->searchOwnEntities($userAuth->userId, $afterTimestamp),
-            $this->searchEntitiesGranted($userAuth)
+            $this->searchOwnEntities($userAuth->getEffectiveUserId(), $afterTimestamp),
+            $this->searchEntitiesGranted($userAuth, $afterTimestamp)
         );
 
         return $this->parseData($result);
@@ -40,12 +40,16 @@ readonly class GetDataEntities extends BaseGetEntities
         return $this->entityRepository->searchEntitiesAfterUpdatedAt($userId, $afterTimestamp);
     }
 
-    private function searchEntitiesGranted(UserAuth $userAuth): array
+    private function searchEntitiesGranted(UserAuth $userAuth, ?int $afterTimestamp = null): array
     {
         $output = [];
 
         foreach ($userAuth->entityGrants as $entityGranted) {
-            $result = $this->entityRepository->searchEntities($entityGranted->userOwnerId, $entityGranted->entityName, [$entityGranted->entityId]);
+            $result = $this->entityRepository->searchEntities($entityGranted->userOwnerId,
+                $entityGranted->entityName,
+                [$entityGranted->entityId],
+                $afterTimestamp
+            );
             $output = array_merge($output, $result);
         }
 

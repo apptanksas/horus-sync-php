@@ -29,7 +29,7 @@ readonly class ValidateEntitiesData
 
         foreach ($entitiesHashes as $entityHash) {
 
-            $result = $this->entityRepository->getEntityHashes($userAuth->userId, $entityHash->entityName);
+            $result = $this->entityRepository->getEntityHashes($userAuth->getEffectiveUserId(), $entityHash->entityName);
             $hashes = [];
 
             foreach ($result as $item) {

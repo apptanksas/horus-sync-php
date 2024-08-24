@@ -17,7 +17,8 @@ readonly class SearchDataEntities extends BaseGetEntities
 
     function __invoke(UserAuth $userAuth, string $entityName, array $ids = [], ?int $afterTimestamp = null): array
     {
-        $result = $this->entityRepository->searchEntities($userAuth->userId, $entityName, $ids, $afterTimestamp);
-        return $this->parseData($result);
+        return $this->parseData(
+            $this->entityRepository->searchEntities($userAuth->getEffectiveUserId(), $entityName, $ids, $afterTimestamp)
+        );
     }
 }

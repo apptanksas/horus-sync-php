@@ -16,7 +16,7 @@ class GetQueueActions
 
     function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
-        $actions = $this->queueActionRepository->getActions($userAuth->userId, $afterTimestamp, $excludeDateTimes);
+        $actions = $this->queueActionRepository->getActions($userAuth->getEffectiveUserId(), $afterTimestamp, $excludeDateTimes);
 
         return array_map(function ($action) {
             return [

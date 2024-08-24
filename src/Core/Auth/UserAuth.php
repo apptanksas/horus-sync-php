@@ -9,28 +9,46 @@ readonly class UserAuth
      * @param EntityGranted[] $entityGrants
      */
     function __construct(
-        public string|int $userId,
-        public array      $entityGrants = []
+        public string|int    $userId,
+        public array         $entityGrants = [],
+        public ?UserActingAs $userActingAs = null
     )
     {
 
     }
 
-    function eachUserGranted(callable $callback): void
+    function getUserOwnersId(): array
     {
-        $callback($this->userId);
-        foreach ($this->entityGrants as $entityGranted) {
-            $callback($entityGranted->userOwnerId);
-        }
+        return array_unique(array_map(fn($item) => $item->userOwnerId, $this->entityGrants));
     }
 
-    function groupByEachUserGranted(callable $callback): array
+    function getEntitiesNameGranted(): array
     {
-        $output = $callback($this->userId, null);
-        foreach ($this->entityGrants as $entityGranted) {
-            $output = array_merge($output, $callback($entityGranted->userOwnerId));
-        }
+        return array_unique(array_map(fn($item) => $item->entityName, $this->entityGrants));
+    }
 
-        return $output;
+    function hasGranted(string $entityName, string $entityId): bool
+    {
+        foreach ($this->entityGrants as $entityGrant) {
+            if ($entityGrant->entityName === $entityName && $entityGrant->entityId === $entityId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function hasNotGranted(string $entityName, string $entityId): bool
+    {
+        return !$this->hasGranted($entityName, $entityId);
+    }
+
+    function getEffectiveUserId(): string|int
+    {
+        return $this->userActingAs?->userId ?? $this->userId;
+    }
+
+    function isActingAs(): bool
+    {
+        return !is_null($this->userActingAs);
     }
 }
