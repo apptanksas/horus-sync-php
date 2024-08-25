@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
@@ -26,6 +27,8 @@ class SyncQueueActionsTest extends TestCase
 
     private EntityRepository|Mock $entityRepository;
 
+    private EntityAccessValidatorRepository|Mock $accessValidatorRepository;
+
     private IEventBus|Mock $eventBus;
 
     private SyncQueueActions $syncQueueActions;
@@ -39,11 +42,13 @@ class SyncQueueActionsTest extends TestCase
         $this->queueActionRepository = $this->mock(QueueActionRepository::class);
         $this->entityRepository = $this->mock(EntityRepository::class);
         $this->eventBus = $this->mock(IEventBus::class);
+        $this->accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
 
         $this->syncQueueActions = new SyncQueueActions(
             $this->transactionHandler,
             $this->queueActionRepository,
             $this->entityRepository,
+            $this->accessValidatorRepository,
             $this->eventBus
         );
     }
@@ -76,6 +81,9 @@ class SyncQueueActionsTest extends TestCase
 
 
         // Mocks
+
+        $this->accessValidatorRepository->shouldReceive("canAccessEntity")->times(count($updateActions) + count($deleteActions))->andReturn(true);
+
         $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (...$args) use ($insertActions) {
             return count($args) === count($insertActions) &&
                 array_reduce($args, fn($carry, $action) => $carry &&

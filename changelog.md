@@ -8,7 +8,7 @@
 \AppTank\Horus\HorusContainer::getInstance()->setUserAuthenticated(
  new \AppTank\Horus\Core\Auth\UserAuth(
    "07a35af0-7317-41e4-99a3-e3583099aff2", // User Id Authenticated
-   [
+   [ // A
    new \AppTank\Horus\Core\Auth\EntityGranted(
    "971785f7-0f01-46cd-a3ce-af9ce6273d3d", // User Owner Id
    "animal", // Entity Name

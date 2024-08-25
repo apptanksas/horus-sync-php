@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
@@ -21,13 +22,18 @@ class PostSyncQueueActionsController extends Controller
     private SyncQueueActions $useCase;
 
     function __construct(
-        ITransactionHandler   $transactionHandler,
-        QueueActionRepository $queueActionRepository,
-        EntityRepository      $entityRepository,
-        IEventBus             $eventBus
+        ITransactionHandler             $transactionHandler,
+        QueueActionRepository           $queueActionRepository,
+        EntityRepository                $entityRepository,
+        EntityAccessValidatorRepository $accessValidatorRepository,
+        IEventBus                       $eventBus
     )
     {
-        $this->useCase = new SyncQueueActions($transactionHandler, $queueActionRepository, $entityRepository, $eventBus);
+        $this->useCase = new SyncQueueActions($transactionHandler,
+            $queueActionRepository,
+            $entityRepository,
+            $accessValidatorRepository,
+            $eventBus);
     }
 
     function __invoke(Request $request): JsonResponse
