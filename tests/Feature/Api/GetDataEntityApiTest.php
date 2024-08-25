@@ -2,9 +2,11 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -160,7 +162,7 @@ class GetDataEntityApiTest extends TestCase
 
         $parentsEntities = $this->generateArray(function () use ($userOwnerId, &$grants) {
             $entity = ParentFakeEntityFactory::create($userOwnerId);
-            $grants[] = new EntityGranted($userOwnerId, ParentFakeEntity::getEntityName(), $entity->getId());
+            $grants[] = new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()), AccessLevel::all());
             return $entity;
         });
 
@@ -192,8 +194,8 @@ class GetDataEntityApiTest extends TestCase
         });
 
         // Add grants to the parent entity
-        $grants = [new EntityGranted($userOwnerId, ParentFakeEntity::getEntityName(), $parentEntity->getId())];
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants,new UserActingAs($userOwnerId)));
+        $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
 
         // When
         $url = route(RouteName::GET_ENTITY_DATA->value, [ChildFakeEntity::getEntityName(),

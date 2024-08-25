@@ -2,10 +2,13 @@
 
 namespace Tests\_Stubs;
 
+use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Illuminate\Database\BaseSynchronizable;
+use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
-class ChildFakeEntity extends EntitySynchronizable
+class ChildFakeEntity extends EntitySynchronizable implements EntityDependsOn
 {
 
     const ATTR_PRIMARY_INT_VALUE = "primary_int_value";
@@ -58,5 +61,11 @@ class ChildFakeEntity extends EntitySynchronizable
     public static function getVersionNumber(): int
     {
         return 5;
+    }
+
+
+    public function dependsOn(): IEntitySynchronizable
+    {
+        return $this->belongsTo(ParentFakeEntity::class, self::FK_PARENT_ID, BaseSynchronizable::ATTR_ID)->first();
     }
 }

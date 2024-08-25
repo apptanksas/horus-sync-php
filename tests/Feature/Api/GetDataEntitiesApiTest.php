@@ -2,8 +2,11 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
+use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -237,7 +240,9 @@ class GetDataEntitiesApiTest extends ApiTestCase
 
         $parentsEntitiesOwner = $this->generateArray(function () use ($userOwnerId, &$grants) {
             $entity = ParentFakeEntityFactory::create($userOwnerId);
-            $grants[] = new EntityGranted($userOwnerId, ParentFakeEntity::getEntityName(), $entity->getId());
+            $grants[] = new EntityGranted($userOwnerId,
+                new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
+            AccessLevel::all());
             return $entity;
         });
 

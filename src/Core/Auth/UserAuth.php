@@ -24,13 +24,15 @@ readonly class UserAuth
 
     function getEntitiesNameGranted(): array
     {
-        return array_unique(array_map(fn($item) => $item->entityName, $this->entityGrants));
+        return array_unique(array_map(fn($item) => $item->entityReference->entityName, $this->entityGrants));
     }
 
-    function hasGranted(string $entityName, string $entityId): bool
+    function hasGranted(string $entityName, string $entityId, Permission $permission): bool
     {
         foreach ($this->entityGrants as $entityGrant) {
-            if ($entityGrant->entityName === $entityName && $entityGrant->entityId === $entityId) {
+            if ($entityGrant->entityReference->entityName === $entityName &&
+                $entityGrant->entityReference->entityId === $entityId &&
+                $entityGrant->accessLevel->can($permission)) {
                 return true;
             }
         }

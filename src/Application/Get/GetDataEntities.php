@@ -46,8 +46,8 @@ readonly class GetDataEntities extends BaseGetEntities
 
         foreach ($userAuth->entityGrants as $entityGranted) {
             $result = $this->entityRepository->searchEntities($entityGranted->userOwnerId,
-                $entityGranted->entityName,
-                [$entityGranted->entityId],
+                $entityGranted->entityReference->entityName,
+                [$entityGranted->entityReference->entityId],
                 $afterTimestamp
             );
             $output = array_merge($output, $result);
