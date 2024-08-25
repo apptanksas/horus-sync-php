@@ -4,8 +4,8 @@ namespace Api;
 
 use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
-use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
@@ -25,7 +25,8 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
         $childEntities = [];
@@ -242,7 +243,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
             $entity = ParentFakeEntityFactory::create($userOwnerId);
             $grants[] = new EntityGranted($userOwnerId,
                 new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
-            AccessLevel::all());
+                AccessLevel::all());
             return $entity;
         });
 
@@ -255,7 +256,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
             AdjacentFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
         }
 
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants));
+        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants))->setConfig(new Config(true));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));

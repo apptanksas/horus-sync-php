@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
@@ -208,4 +209,32 @@ class GetDataEntityApiTest extends TestCase
         $response->assertJsonStructure(self::JSON_SCHEME_CHILD);
     }
 
+    function testGetEntitiesGrantedUsingUserActingAsSuccessValidatingAccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userInvitedId = $this->faker->uuid;
+
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+
+        $childEntities = $this->generateArray(function () use ($userOwnerId, &$grants, $parentEntity) {
+            return ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+        });
+
+        // Add grants to the parent entity
+        $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
+
+        HorusContainer::getInstance()
+            ->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)))
+            ->setConfig(new Config(true));
+
+        // When
+        $url = route(RouteName::GET_ENTITY_DATA->value, [ChildFakeEntity::getEntityName(),
+            "ids" => implode(",", array_map(fn(ChildFakeEntity $entity) => $entity->getId(), $childEntities))]);
+        $response = $this->get($url);
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($childEntities));
+        $response->assertJsonStructure(self::JSON_SCHEME_CHILD);
+    }
 }

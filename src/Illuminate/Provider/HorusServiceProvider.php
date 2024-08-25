@@ -4,6 +4,7 @@ namespace AppTank\Horus\Illuminate\Provider;
 
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
@@ -14,6 +15,7 @@ use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
@@ -39,7 +41,6 @@ class HorusServiceProvider extends ServiceProvider
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository();
         });
-
 
         $this->app->singleton(IEventBus::class, function () {
             return new EventBus();
@@ -69,6 +70,13 @@ class HorusServiceProvider extends ServiceProvider
                 $this->app->make(EntityMapper::class),
                 $this->app->make(IDateTimeUtil::class),
                 HorusContainer::getInstance()->getConnectionName()
+            );
+        });
+
+        $this->app->singleton(EntityAccessValidatorRepository::class, function () {
+            return new EloquentEntityAccessValidatorRepository(
+                $this->app->make(EntityMapper::class),
+                HorusContainer::getInstance()->getConfig()
             );
         });
 

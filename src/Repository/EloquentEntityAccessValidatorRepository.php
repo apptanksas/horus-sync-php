@@ -5,6 +5,7 @@ namespace AppTank\Horus\Repository;
 use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -27,9 +28,11 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
      * Constructor de la clase `EloquentEntityAccessValidatorRepository`.
      *
      * @param EntityMapper $entityMapper Mapeador de entidades utilizado para obtener clases de entidad y jerarquías.
+     * @param Config $config Configuración de la aplicación.
      */
     public function __construct(
-        private EntityMapper $entityMapper
+        private EntityMapper $entityMapper,
+        private Config       $config
     )
     {
     }
@@ -46,6 +49,12 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
                                     EntityReference $entityReference,
                                     Permission      $permission): bool
     {
+
+        // 0. Validate if access validation is disabled
+        if (!$this->config->validateAccess) {
+            return true;
+        }
+
         // 1. Validate if user is owner
         if ($this->isEntityOwner($entityReference->entityName, $entityReference->entityId, $userAuth->userId)) {
             return true;

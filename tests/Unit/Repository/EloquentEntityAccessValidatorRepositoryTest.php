@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
@@ -24,7 +25,10 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentEntityAccessValidatorRepository(HorusContainer::getInstance()->getEntityMapper());
+        $mapper = HorusContainer::getInstance()->getEntityMapper();
+        $config = new Config(true);
+
+        $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config);
     }
 
     function test_when_user_owner_then_can_access_own_entity()
