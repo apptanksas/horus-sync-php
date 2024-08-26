@@ -29,7 +29,7 @@ class GetQueueActionsController extends Controller
             }
 
             return $this->responseSuccess($this->useCase->__invoke(
-                $this->getAuthenticatedUserId(),
+                $this->getUserAuthenticated(),
                 $afterTimestamp,
                 $excludeDateTimes
             ));

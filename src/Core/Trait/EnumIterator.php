@@ -7,7 +7,7 @@ trait EnumIterator
 {
 
     /**
-    /**
+     * /**
      * @param string|int $value
      * @return \UnitEnum
      */
@@ -27,6 +27,11 @@ trait EnumIterator
             $value = $status->value ?? $status->name;
             return (is_numeric($value)) ? intval($value) : (string)$value;
         }, self::cases());
+    }
+
+    public static function count(): int
+    {
+        return count(self::cases());
     }
 
     public function value(): string

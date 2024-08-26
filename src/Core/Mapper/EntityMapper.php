@@ -10,6 +10,8 @@ class EntityMapper
     private array $entities = [];
     private array $map = [];
 
+    private array $paths = [];
+
     /**
      * Get the Eloquent class entity
      *
@@ -33,6 +35,15 @@ class EntityMapper
     function pushMap(EntityMap $map): void
     {
         $this->map[] = $map;
+
+        $paths = $map->generateArrayPaths();
+
+        if (count($paths) == 1) {
+            $this->paths[] = $paths;
+            return;
+        }
+
+        $this->paths = array_merge($this->paths, $paths);
     }
 
     function getEntities(): array
@@ -46,5 +57,10 @@ class EntityMapper
     function getMap(): array
     {
         return $this->map;
+    }
+
+    function getPaths(): array
+    {
+        return $this->paths;
     }
 }

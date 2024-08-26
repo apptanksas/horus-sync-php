@@ -21,7 +21,7 @@ class GetEntityHashesController extends Controller
     {
         return $this->handle(function () use ($entityName) {
             return $this->responseSuccess($this->useCase->__invoke(
-                $this->getAuthenticatedUserId(),
+                $this->getUserAuthenticated(),
                 $entityName
             ));
         });
