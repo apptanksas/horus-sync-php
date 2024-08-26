@@ -6,17 +6,18 @@ Esto para indicar si el usuario tiene permisos para actuar como otro usuario y a
 donde se le ha otoragado permisos.
 
 ```php
-\AppTank\Horus\HorusContainer::getInstance()->setUserAuthenticated(
- new \AppTank\Horus\Core\Auth\UserAuth(
+HorusContainer::getInstance()->setUserAuthenticated(
+ new UserAuth(
    "07a35af0-7317-41e4-99a3-e3583099aff2", // User Id Authenticated
-   [ // A
-   new \AppTank\Horus\Core\Auth\EntityGranted(
+   [ // Array of Entities Granted
+   new EntityGranted(
    "971785f7-0f01-46cd-a3ce-af9ce6273d3d", // User Owner Id
    "animal", // Entity Name
     "9135e859-b053-4cfb-b701-d5f240b0aab1", // Entity Id
-   ),
+    // Set the permissions for the entity
+   , new AccessLevel(Permission::READ, Permission::CREATE)),
     // User Acting As
-   new \AppTank\Horus\Core\Auth\UserAuth("b253a0e8-027b-463c-b87a-b18f09c99ddd")
+   new UserAuth("b253a0e8-027b-463c-b87a-b18f09c99ddd")
    ]
  )
 );
