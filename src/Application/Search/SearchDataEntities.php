@@ -17,7 +17,7 @@ use AppTank\Horus\Core\Repository\EntityRepository;
  * This class extends `BaseGetEntities` and utilizes the `EntityRepository` and `EntityAccessValidatorRepository`
  * to fetch and validate entity access.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class SearchDataEntities extends BaseGetEntities

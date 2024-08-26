@@ -12,7 +12,7 @@ use AppTank\Horus\Core\Hasher;
  *
  * @package AppTank\Horus\Core\Model
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class EntityInsert extends EntityOperation

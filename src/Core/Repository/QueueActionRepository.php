@@ -12,7 +12,7 @@ use AppTank\Horus\Core\Model\QueueAction;
  *
  * @package AppTank\Horus\Core\Repository
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 interface QueueActionRepository

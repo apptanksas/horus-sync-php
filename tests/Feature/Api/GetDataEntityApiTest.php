@@ -8,7 +8,7 @@ use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,7 +75,7 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
 
@@ -95,7 +95,7 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesChildIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entities = $this->generateArray(fn() => ChildFakeEntityFactory::create(null, $userId));
 
@@ -112,7 +112,7 @@ class GetDataEntityApiTest extends TestCase
     {
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
 
         /**
          * @var ParentFakeEntity[] $parentsEntities
@@ -143,7 +143,7 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesLookupIsSuccess()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
 
         // When
@@ -170,7 +170,7 @@ class GetDataEntityApiTest extends TestCase
         foreach ($parentsEntities as $parentEntity) {
             $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
         }
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
 
         // When
         $url = route(RouteName::GET_ENTITY_DATA->value, [ParentFakeEntity::getEntityName(),
@@ -196,7 +196,7 @@ class GetDataEntityApiTest extends TestCase
 
         // Add grants to the parent entity
         $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
 
         // When
         $url = route(RouteName::GET_ENTITY_DATA->value, [ChildFakeEntity::getEntityName(),
@@ -223,7 +223,7 @@ class GetDataEntityApiTest extends TestCase
         // Add grants to the parent entity
         $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
 
-        HorusContainer::getInstance()
+        Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)))
             ->setConfig(new Config(true));
 

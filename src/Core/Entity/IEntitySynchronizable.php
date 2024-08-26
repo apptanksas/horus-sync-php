@@ -11,7 +11,7 @@ namespace AppTank\Horus\Core\Entity;
  *
  * @package AppTank\Horus\Core\Entity
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 interface IEntitySynchronizable

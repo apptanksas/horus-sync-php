@@ -7,7 +7,7 @@ namespace AppTank\Horus\Core\Auth;
  * Represents a collection of permissions granted to a user or entity.
  * Provides methods to check, encode, and decode permissions, as well as to validate the access level.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class AccessLevel

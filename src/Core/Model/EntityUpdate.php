@@ -10,7 +10,7 @@ namespace AppTank\Horus\Core\Model;
  *
  * @package AppTank\Horus\Core\Model
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class EntityUpdate extends EntityOperation

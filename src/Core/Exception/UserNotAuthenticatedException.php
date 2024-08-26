@@ -10,7 +10,7 @@ namespace AppTank\Horus\Core\Exception;
  *
  * @package AppTank\Horus\Core\Exception
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class UserNotAuthenticatedException extends NotAuthorizedException

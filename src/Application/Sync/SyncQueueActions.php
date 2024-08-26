@@ -24,7 +24,7 @@ use AppTank\Horus\Core\Transaction\ITransactionHandler;
  * This class is responsible for organizing the actions into insert, update, and delete operations, performing the respective database operations,
  * saving the queue actions, and publishing events related to the sync actions.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class SyncQueueActions

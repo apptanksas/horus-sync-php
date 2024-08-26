@@ -13,11 +13,11 @@ use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 /**
- * Clase EloquentEntityAccessValidatorRepository
+ * @internal Class EloquentEntityAccessValidatorRepository
  *
- * Implementación del repositorio de validación de acceso a entidades.
- * Proporciona mecanismos para validar si un usuario tiene acceso a una entidad específica
- * basándose en la propiedad, los permisos otorgados, y las relaciones de jerarquía entre entidades.
+ * Implementation of the entity access validation repository.
+ * Provides mechanisms to validate if a user has access to a specific entity
+ * based on ownership, granted permissions, and hierarchical relationships between entities.
  *
  * @author John Ospina
  * @year 2024
@@ -25,10 +25,10 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 readonly class EloquentEntityAccessValidatorRepository implements EntityAccessValidatorRepository
 {
     /**
-     * Constructor de la clase `EloquentEntityAccessValidatorRepository`.
+     * Constructor of the `EloquentEntityAccessValidatorRepository` class.
      *
-     * @param EntityMapper $entityMapper Mapeador de entidades utilizado para obtener clases de entidad y jerarquías.
-     * @param Config $config Configuración de la aplicación.
+     * @param EntityMapper $entityMapper Entity mapper used to obtain entity classes and hierarchies.
+     * @param Config $config Application configuration.
      */
     public function __construct(
         private EntityMapper $entityMapper,
@@ -38,12 +38,12 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Valida si un usuario tiene acceso a una entidad específica con un permiso determinado.
+     * Validates if a user has access to a specific entity with a given permission.
      *
-     * @param UserAuth $userAuth Autenticación del usuario que solicita el acceso.
-     * @param EntityReference $entityReference Referencia a la entidad que se desea acceder.
-     * @param Permission $permission Permiso que se quiere validar.
-     * @return bool Retorna `true` si el usuario tiene acceso, de lo contrario `false`.
+     * @param UserAuth $userAuth User authentication requesting access.
+     * @param EntityReference $entityReference Reference to the entity to access.
+     * @param Permission $permission Permission to validate.
+     * @return bool Returns `true` if the user has access; otherwise, `false`.
      */
     public function canAccessEntity(UserAuth        $userAuth,
                                     EntityReference $entityReference,
@@ -73,12 +73,12 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Verifica si el usuario tiene acceso a la entidad a través de una jerarquía de entidades.
+     * Checks if the user has access to the entity through a hierarchy of entities.
      *
-     * @param UserAuth $userAuth Autenticación del usuario.
-     * @param EntityReference $entityReference Referencia a la entidad que se desea acceder.
-     * @param Permission $permissionRequested Permiso que se quiere validar.
-     * @return bool Retorna `true` si el usuario tiene acceso por jerarquía, de lo contrario `false`.
+     * @param UserAuth $userAuth User authentication.
+     * @param EntityReference $entityReference Reference to the entity to access.
+     * @param Permission $permissionRequested Permission to validate.
+     * @return bool Returns `true` if the user has access through hierarchy; otherwise, `false`.
      */
     private function canAccessOnCascade(UserAuth $userAuth, EntityReference $entityReference, Permission $permissionRequested): bool
     {
@@ -103,11 +103,11 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Verifica si el usuario tiene acceso a la entidad a través de la jerarquía de entidades padres.
+     * Checks if the user has access to the entity through the hierarchy of parent entities.
      *
-     * @param UserAuth $userAuth Autenticación del usuario.
-     * @param EntityReference $entityReference Referencia a la entidad que se desea acceder.
-     * @return bool Retorna `true` si el usuario tiene acceso por jerarquía de padres, de lo contrario `false`.
+     * @param UserAuth $userAuth User authentication.
+     * @param EntityReference $entityReference Reference to the entity to access.
+     * @return bool Returns `true` if the user has access through parent hierarchy; otherwise, `false`.
      */
     private function canAccessByParentHierarchyWithPath(UserAuth $userAuth, EntityReference $entityReference): bool
     {
@@ -131,10 +131,10 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Construye una jerarquía de rutas basada en la entidad referenciada, considerando su relación con entidades padres.
+     * Builds a hierarchy of paths based on the referenced entity, considering its relationship with parent entities.
      *
-     * @param EntityReference $entityRefChild Referencia a la entidad hijo para construir la jerarquía.
-     * @return array Retorna un array con la jerarquía de entidades.
+     * @param EntityReference $entityRefChild Reference to the child entity to build the hierarchy.
+     * @return array Returns an array with the entity hierarchy.
      */
     private function buildPathHierarchy(EntityReference $entityRefChild): array
     {
@@ -165,11 +165,11 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Verifica si la entidad concedida está presente en la jerarquía de entidades.
+     * Checks if the granted entity is present in the entity hierarchy.
      *
-     * @param EntityGranted $entityGranted Entidad que ha sido concedida.
-     * @param array $entityHierarchy Jerarquía de entidades construida.
-     * @return bool Retorna `true` si la entidad concedida se encuentra en la jerarquía, de lo contrario `false`.
+     * @param EntityGranted $entityGranted Granted entity.
+     * @param array $entityHierarchy Built entity hierarchy.
+     * @return bool Returns `true` if the granted entity is in the hierarchy; otherwise, `false`.
      */
     private function entityGrantedIsInEntityHierarchy(EntityGranted $entityGranted, array $entityHierarchy): bool
     {
@@ -183,12 +183,12 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Verifica si un usuario es propietario de una entidad específica.
+     * Checks if a user is the owner of a specific entity.
      *
-     * @param string $entityName Nombre de la entidad.
-     * @param string $entityId ID de la entidad.
-     * @param string|int $userId ID del usuario.
-     * @return bool Retorna `true` si el usuario es el propietario de la entidad, de lo contrario `false`.
+     * @param string $entityName Name of the entity.
+     * @param string $entityId ID of the entity.
+     * @param string|int $userId ID of the user.
+     * @return bool Returns `true` if the user is the owner of the entity; otherwise, `false`.
      */
     private function isEntityOwner(string $entityName, string $entityId, string|int $userId): bool
     {
@@ -201,10 +201,10 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Obtiene la clase de la entidad correspondiente a un nombre de entidad.
+     * Gets the class of the entity corresponding to an entity name.
      *
-     * @param string $entityName Nombre de la entidad.
-     * @return string Nombre de la clase de la entidad.
+     * @param string $entityName Name of the entity.
+     * @return string Name of the entity class.
      */
     private function getEntityClass(string $entityName): string
     {

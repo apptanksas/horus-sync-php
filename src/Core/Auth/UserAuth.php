@@ -7,7 +7,7 @@ namespace AppTank\Horus\Core\Auth;
  *
  * Represents the authentication details of a user. This includes the user ID, entity grants, and optional user acting as another user.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class UserAuth

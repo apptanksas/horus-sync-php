@@ -8,7 +8,7 @@ namespace AppTank\Horus\Core\Auth;
  * Represents a user who is acting on behalf of another user.
  * This includes the ID of the user who is being acted as.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class UserActingAs

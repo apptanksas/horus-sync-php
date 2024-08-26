@@ -1,6 +1,6 @@
 <?php
 
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetEntityHashesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
@@ -18,13 +18,13 @@ use Illuminate\Support\Facades\Route;
  * Route definitions for handling various API endpoints related to migrations, queues, data entities, and validations.
  * Each route is associated with a specific controller and middleware, with routes covering GET and POST operations.
  *
- * Middlewares: Merged array of default throttling and other middlewares retrieved from the HorusContainer.
- * Author: John Ospina
+ * Middlewares: Merged array of default throttling and other middlewares retrieved from the Horus.
+ * @author John Ospina
  * Year: 2024
  */
 
-// Combine throttle middleware with additional middlewares from the HorusContainer
-$middlewares = array_merge(['throttle'], HorusContainer::getInstance()->getMiddlewares());
+// Combine throttle middleware with additional middlewares from the Horus
+$middlewares = array_merge(['throttle'], Horus::getInstance()->getMiddlewares());
 
 // Route to get migration schema
 Route::get('/migration', [

@@ -10,7 +10,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
  * Represents the permissions granted to a user for a specific entity.
  * This includes the user owner ID, the reference to the entity, and the access level granted.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class EntityGranted

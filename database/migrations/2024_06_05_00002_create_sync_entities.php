@@ -4,7 +4,7 @@ use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Hasher;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -22,7 +22,7 @@ return new class extends Migration {
     {
         $this->down();
 
-        $container = HorusContainer::getInstance();
+        $container = Horus::getInstance();
 
         /**
          * @var IEntitySynchronizable $entityClass
@@ -55,7 +55,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        $container = HorusContainer::getInstance();
+        $container = Horus::getInstance();
 
         /**
          * @var EntitySynchronizable $entityClass

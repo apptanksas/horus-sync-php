@@ -13,7 +13,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
  *
  * @package AppTank\Horus\Core\Mapper
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class EntityMapper

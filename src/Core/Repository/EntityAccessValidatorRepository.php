@@ -15,7 +15,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
  *
  * @package AppTank\Horus\Core\Repository
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 interface EntityAccessValidatorRepository

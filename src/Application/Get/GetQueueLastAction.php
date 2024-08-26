@@ -11,7 +11,7 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
  * Retrieves the last action from the queue for the authenticated user.
  * This class interacts with the QueueActionRepository to obtain the last action.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class GetQueueLastAction

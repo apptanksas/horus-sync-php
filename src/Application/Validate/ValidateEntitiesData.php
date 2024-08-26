@@ -15,7 +15,7 @@ use AppTank\Horus\Core\Repository\EntityRepository;
  * This class is responsible for validating the hashes of entities to ensure data integrity.
  * It compares the provided hashes with the current ones calculated from the database, returning the validation results.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class ValidateEntitiesData

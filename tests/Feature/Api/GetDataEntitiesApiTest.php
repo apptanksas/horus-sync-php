@@ -7,7 +7,7 @@ use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +26,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     {
         $userId = $this->faker->uuid;
 
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
         $childEntities = [];
@@ -95,7 +95,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithNullablesSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -168,7 +168,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithLookupsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -194,7 +194,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccessIsEmpty()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
@@ -208,7 +208,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     {
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
 
         /**
          * @var ParentFakeEntity[] $parentsEntities
@@ -256,7 +256,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
             AdjacentFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
         }
 
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants))->setConfig(new Config(true));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants))->setConfig(new Config(true));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));

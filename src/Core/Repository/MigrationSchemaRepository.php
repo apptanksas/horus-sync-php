@@ -10,7 +10,7 @@ namespace AppTank\Horus\Core\Repository;
  *
  * @package AppTank\Horus\Core\Repository
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 interface MigrationSchemaRepository

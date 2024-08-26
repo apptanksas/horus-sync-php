@@ -7,7 +7,7 @@ namespace AppTank\Horus\Core\Bus;
  *
  * Defines the contract for an event bus that can publish events.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 interface IEventBus

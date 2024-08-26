@@ -9,7 +9,7 @@ namespace AppTank\Horus\Core\Config;
  *
  * @package AppTank\Horus\Core\Config
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class Config

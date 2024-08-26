@@ -10,7 +10,7 @@ use AppTank\Horus\Core\Trait\EnumIterator;
  * This enum represents different types of permissions that can be assigned to users or entities.
  * It provides a set of constants representing various actions that can be performed on an entity.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 enum Permission: string

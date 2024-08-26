@@ -11,7 +11,7 @@ use AppTank\Horus\Core\Repository\EntityRepository;
  * Retrieves the hash values of the specified entities for the authenticated user.
  * This class interacts with the EntityRepository to obtain the hashes.
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 readonly class GetEntityHashes

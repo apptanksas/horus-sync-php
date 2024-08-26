@@ -16,7 +16,7 @@ use AppTank\Horus\Core\Model\EntityUpdate;
  *
  * @package AppTank\Horus\Core\Factory
  *
- * Author: John Ospina
+ * @author John Ospina
  * Year: 2024
  */
 class EntityOperationFactory

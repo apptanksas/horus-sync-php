@@ -9,7 +9,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
@@ -25,7 +25,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $mapper = HorusContainer::getInstance()->getEntityMapper();
+        $mapper = Horus::getInstance()->getEntityMapper();
         $config = new Config(true);
 
         $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config);

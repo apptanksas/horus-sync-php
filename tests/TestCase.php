@@ -3,7 +3,7 @@
 namespace Tests;
 
 
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use Faker\Generator;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -23,7 +23,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
     function setUp(): void
     {
-        HorusContainer::initialize([
+        Horus::initialize([
             ParentFakeEntity::class => [
                 ChildFakeEntity::class,
                 AdjacentFakeEntity::class
