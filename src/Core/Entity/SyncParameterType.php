@@ -2,6 +2,17 @@
 
 namespace AppTank\Horus\Core\Entity;
 
+/**
+ * Enum SyncParameterType
+ *
+ * Defines the various types of synchronization parameters used in the system.
+ * This includes types for primary keys, data types, and relationships.
+ *
+ * @package AppTank\Horus\Core\Entity
+ *
+ * Author: John Ospina
+ * Year: 2024
+ */
 enum SyncParameterType: string
 {
     case PRIMARY_KEY_INTEGER = "primary_key_integer";
@@ -21,11 +32,21 @@ enum SyncParameterType: string
     case RELATION_ONE_OF_MANY = "relation_one_of_many";
     case RELATION_ONE_OF_ONE = "relation_one_of_one";
 
+    /**
+     * Checks if the parameter type is not a relation type.
+     *
+     * @return bool True if the type is not a relation, false otherwise.
+     */
     public function isNotRelation(): bool
     {
         return $this !== self::RELATION_ONE_OF_MANY && $this !== self::RELATION_ONE_OF_ONE;
     }
 
+    /**
+     * Checks if the parameter type is a relation type.
+     *
+     * @return bool True if the type is a relation, false otherwise.
+     */
     public function isRelation(): bool
     {
         return $this === self::RELATION_ONE_OF_MANY || $this === self::RELATION_ONE_OF_ONE;
