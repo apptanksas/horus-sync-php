@@ -2,20 +2,19 @@
 
 namespace AppTank\Horus\Application\Get;
 
-use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Repository\EntityRepository;
 
 class GetEntityHashes
 {
     function __construct(
-        private readonly EntityRepository $entityRepository
+        private EntityRepository $entityRepository
     )
     {
 
     }
 
-    function __invoke(UserAuth $userAuth, string $entityName): array
+    function __invoke(string|int $userOwnerId, string $entityName): array
     {
-        return $this->entityRepository->getEntityHashes($userAuth->getEffectiveUserId(), $entityName);
+        return $this->entityRepository->getEntityHashes($userOwnerId, $entityName);
     }
 }

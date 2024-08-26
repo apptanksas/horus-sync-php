@@ -122,29 +122,6 @@ HorusContainer::setMiddleware([MyMiddleware::class,'throttle:60,1']);
 
 ```
 
-### Autenticación y permisos
-
-El siguiente código muestra cómo se configura la autenticación de un usuario y los permisos asociados a las entidades.
-Utilizando la clase **UserAuth**, se define un usuario autenticado junto con las entidades a las que tiene acceso y los permisos correspondientes.
-
-```php
-HorusContainer::getInstance()->setUserAuthenticated(
- new UserAuth(
-   "07a35af0-7317-41e4-99a3-e3583099aff2", // User Id Authenticated
-   [ // Array of Entities Granted
-   new EntityGranted(
-   "971785f7-0f01-46cd-a3ce-af9ce6273d3d", // User Owner Id
-   "animal", // Entity Name
-    "9135e859-b053-4cfb-b701-d5f240b0aab1", // Entity Id
-    // Set the permissions for the entity
-   , new AccessLevel(Permission::READ, Permission::CREATE)),
-    // User Acting As
-   new UserAuth("b253a0e8-027b-463c-b87a-b18f09c99ddd")
-   ]
- )
-);
-```
-
 # Rutas
 
 ### Esquema de migración

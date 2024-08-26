@@ -2,7 +2,6 @@
 
 namespace AppTank\Horus\Application\Get;
 
-use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 
 class GetQueueLastAction
@@ -14,9 +13,9 @@ class GetQueueLastAction
 
     }
 
-    function __invoke(UserAuth $userAuth): array
+    function __invoke(string|int $userOwnerId): array
     {
-        $action = $this->queueActionRepository->getLastAction($userAuth->getEffectiveUserId());
+        $action = $this->queueActionRepository->getLastAction($userOwnerId);
 
         return [
             'action' => $action->action->name,

@@ -2,7 +2,6 @@
 
 namespace Api;
 
-use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +24,7 @@ class GetQueueLastActionApiTest extends ApiTestCase
     {
         // Given
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
         $this->generateArray(fn() => SyncQueueActionModelFactory::create(userId: $userId));
 
         // When

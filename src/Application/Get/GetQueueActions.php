@@ -2,7 +2,6 @@
 
 namespace AppTank\Horus\Application\Get;
 
-use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 
 class GetQueueActions
@@ -14,9 +13,9 @@ class GetQueueActions
 
     }
 
-    function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
+    function __invoke(string|int $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
-        $actions = $this->queueActionRepository->getActions($userAuth->getEffectiveUserId(), $afterTimestamp, $excludeDateTimes);
+        $actions = $this->queueActionRepository->getActions($userOwnerId, $afterTimestamp, $excludeDateTimes);
 
         return array_map(function ($action) {
             return [

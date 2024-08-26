@@ -2,12 +2,6 @@
 
 namespace Api;
 
-use AppTank\Horus\Core\Auth\AccessLevel;
-use AppTank\Horus\Core\Auth\EntityGranted;
-use AppTank\Horus\Core\Auth\UserActingAs;
-use AppTank\Horus\Core\Auth\UserAuth;
-use AppTank\Horus\Core\Config\Config;
-use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -75,7 +69,7 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
 
@@ -95,7 +89,7 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesChildIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         $entities = $this->generateArray(fn() => ChildFakeEntityFactory::create(null, $userId));
 
@@ -112,7 +106,7 @@ class GetDataEntityApiTest extends TestCase
     {
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
 
         /**
          * @var ParentFakeEntity[] $parentsEntities
@@ -132,7 +126,7 @@ class GetDataEntityApiTest extends TestCase
 
         // When
         $response = $this->get(
-            route(RouteName::GET_ENTITY_DATA->value, [ParentFakeEntity::getEntityName(), "after" => $updatedAtTarget]));
+            route(RouteName::GET_ENTITY_DATA->value, [ParentFakeEntity::getEntityName(),"after" => $updatedAtTarget]));
 
         // Then
         $response->assertOk();
@@ -143,8 +137,8 @@ class GetDataEntityApiTest extends TestCase
     function testGetEntitiesLookupIsSuccess()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
-        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
+        $entities=$this->generateArray(fn() => LookupFakeEntityFactory::create());
 
         // When
         $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, LookupFakeEntity::getEntityName()));
@@ -155,86 +149,4 @@ class GetDataEntityApiTest extends TestCase
         $response->assertJsonStructure(self::JSON_SCHEME_LOOKUP);
     }
 
-    function testGetEntitiesGrantedSuccess()
-    {
-        $userOwnerId = $this->faker->uuid;
-        $userInvitedId = $this->faker->uuid;
-        $grants = [];
-
-        $parentsEntities = $this->generateArray(function () use ($userOwnerId, &$grants) {
-            $entity = ParentFakeEntityFactory::create($userOwnerId);
-            $grants[] = new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()), AccessLevel::all());
-            return $entity;
-        });
-
-        foreach ($parentsEntities as $parentEntity) {
-            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
-        }
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
-
-        // When
-        $url = route(RouteName::GET_ENTITY_DATA->value, [ParentFakeEntity::getEntityName(),
-            "ids" => implode(",", array_map(fn(ParentFakeEntity $entity) => $entity->getId(), $parentsEntities))]);
-        $response = $this->get($url);
-
-        // Then
-        $response->assertOk();
-        $response->assertJsonCount(count($parentsEntities));
-        $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
-    }
-
-    function testGetEntitiesGrantedUsingUserActingAsSuccess()
-    {
-        $userOwnerId = $this->faker->uuid;
-        $userInvitedId = $this->faker->uuid;
-
-        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
-
-        $childEntities = $this->generateArray(function () use ($userOwnerId, &$grants, $parentEntity) {
-            return ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
-        });
-
-        // Add grants to the parent entity
-        $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
-
-        // When
-        $url = route(RouteName::GET_ENTITY_DATA->value, [ChildFakeEntity::getEntityName(),
-            "ids" => implode(",", array_map(fn(ChildFakeEntity $entity) => $entity->getId(), $childEntities))]);
-        $response = $this->get($url);
-
-        // Then
-        $response->assertOk();
-        $response->assertJsonCount(count($childEntities));
-        $response->assertJsonStructure(self::JSON_SCHEME_CHILD);
-    }
-
-    function testGetEntitiesGrantedUsingUserActingAsSuccessValidatingAccess()
-    {
-        $userOwnerId = $this->faker->uuid;
-        $userInvitedId = $this->faker->uuid;
-
-        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
-
-        $childEntities = $this->generateArray(function () use ($userOwnerId, &$grants, $parentEntity) {
-            return ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
-        });
-
-        // Add grants to the parent entity
-        $grants = [new EntityGranted($userOwnerId, new EntityReference(ParentFakeEntity::getEntityName(), $parentEntity->getId()), AccessLevel::all())];
-
-        HorusContainer::getInstance()
-            ->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)))
-            ->setConfig(new Config(true));
-
-        // When
-        $url = route(RouteName::GET_ENTITY_DATA->value, [ChildFakeEntity::getEntityName(),
-            "ids" => implode(",", array_map(fn(ChildFakeEntity $entity) => $entity->getId(), $childEntities))]);
-        $response = $this->get($url);
-
-        // Then
-        $response->assertOk();
-        $response->assertJsonCount(count($childEntities));
-        $response->assertJsonStructure(self::JSON_SCHEME_CHILD);
-    }
 }
