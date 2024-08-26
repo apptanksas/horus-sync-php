@@ -9,4 +9,5 @@ use AppTank\Horus\Core\Entity\EntityReference;
 interface EntityAccessValidatorRepository
 {
     public function canAccessEntity(UserAuth $userAuth, EntityReference $entityReference, Permission $permission): bool;
+
 }

@@ -367,4 +367,52 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertUnauthorized();
     }
 
+
+    function testTryUpdateEntityButNotPermissionByActingAsNotMatchWithEntityGranted()
+    {
+        $userOwnerRealId = $this->faker->uuid;
+        $userOwnerId = $this->faker->uuid;
+        $userId = $this->faker->uuid;
+
+        $entity = ParentFakeEntityFactory::create($userOwnerRealId);
+        $entityId = $entity->getId();
+        $entityName = ParentFakeEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $nameExpected = $this->faker->userName;
+        $colorExpected = $this->faker->colorName;
+        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+
+        HorusContainer::getInstance()->setUserAuthenticated(
+            new UserAuth($userId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference($entityName, $entityId), AccessLevel::new(Permission::UPDATE))
+                ], new UserActingAs($userOwnerRealId))
+        )->setConfig(new Config(true));
+
+
+        $data = [
+            // update action
+            [
+                "action" => "UPDATE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        "name" => $nameExpected,
+                        "color" => $colorExpected,
+                        "value_enum" => $valueEnumExpected
+                    ]
+                ],
+                "actioned_at" => $actionedAt - 1000
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertUnauthorized();
+    }
+
 }

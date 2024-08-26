@@ -49,23 +49,22 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
                                     EntityReference $entityReference,
                                     Permission      $permission): bool
     {
-
-        // 0. Validate if access validation is disabled
+        // 1. Validate if access validation is disabled
         if (!$this->config->validateAccess) {
             return true;
         }
 
-        // 1. Validate if user is owner
+        // 2. Validate if user is owner
         if ($this->isEntityOwner($entityReference->entityName, $entityReference->entityId, $userAuth->userId)) {
             return true;
         }
 
-        // 2. Validate if user has granted permission
+        // 3. Validate if user has granted permission
         if ($userAuth->hasGranted($entityReference->entityName, $entityReference->entityId, $permission)) {
             return true;
         }
 
-        // 3. Validate if user has access on cascade by entity granted
+        // 4. Validate if user has access on cascade by entity granted
         if ($this->canAccessOnCascade($userAuth, $entityReference, $permission)) {
             return true;
         }
