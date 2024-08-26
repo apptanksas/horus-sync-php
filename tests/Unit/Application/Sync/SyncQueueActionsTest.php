@@ -3,17 +3,17 @@
 namespace Tests\Unit\Application\Sync;
 
 use AppTank\Horus\Application\Sync\SyncQueueActions;
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
-use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
-use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\QueueActionFactory;
@@ -26,6 +26,8 @@ class SyncQueueActionsTest extends TestCase
     private QueueActionRepository|Mock $queueActionRepository;
 
     private EntityRepository|Mock $entityRepository;
+
+    private EntityAccessValidatorRepository|Mock $accessValidatorRepository;
 
     private IEventBus|Mock $eventBus;
 
@@ -40,11 +42,13 @@ class SyncQueueActionsTest extends TestCase
         $this->queueActionRepository = $this->mock(QueueActionRepository::class);
         $this->entityRepository = $this->mock(EntityRepository::class);
         $this->eventBus = $this->mock(IEventBus::class);
+        $this->accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
 
         $this->syncQueueActions = new SyncQueueActions(
             $this->transactionHandler,
             $this->queueActionRepository,
             $this->entityRepository,
+            $this->accessValidatorRepository,
             $this->eventBus
         );
     }
@@ -77,6 +81,9 @@ class SyncQueueActionsTest extends TestCase
 
 
         // Mocks
+
+        $this->accessValidatorRepository->shouldReceive("canAccessEntity")->times(count($updateActions) + count($deleteActions))->andReturn(true);
+
         $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (...$args) use ($insertActions) {
             return count($args) === count($insertActions) &&
                 array_reduce($args, fn($carry, $action) => $carry &&
@@ -102,6 +109,6 @@ class SyncQueueActionsTest extends TestCase
         $this->eventBus->shouldReceive('publish')->times(count($actions));
 
         // When
-        $this->syncQueueActions->__invoke($userId, ...$actions);
+        $this->syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
     }
 }

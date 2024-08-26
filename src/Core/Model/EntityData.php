@@ -30,4 +30,9 @@ class EntityData
     {
         return $this->data;
     }
+
+    function getEntityId(): string
+    {
+        return $this->data['id'];
+    }
 }

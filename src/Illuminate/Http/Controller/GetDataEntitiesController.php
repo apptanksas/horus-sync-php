@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Illuminate\Http\Controller;
 
 use AppTank\Horus\Application\Get\GetDataEntities;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
@@ -13,15 +14,16 @@ class GetDataEntitiesController extends Controller
 
     private readonly GetDataEntities $useCase;
 
-    function __construct(EntityRepository $entityRepository)
+    function __construct(EntityRepository                $entityRepository,
+                         EntityAccessValidatorRepository $entityAccessValidatorRepository)
     {
-        $this->useCase = new GetDataEntities($entityRepository);
+        $this->useCase = new GetDataEntities($entityRepository, $entityAccessValidatorRepository);
     }
 
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
-            return $this->responseSuccess($this->useCase->__invoke($this->getAuthenticatedUserId(), $request->query("after")));
+            return $this->responseSuccess($this->useCase->__invoke($this->getUserAuthenticated(), $request->query("after")));
         });
     }
 }

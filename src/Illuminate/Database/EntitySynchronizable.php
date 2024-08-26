@@ -4,10 +4,6 @@ namespace AppTank\Horus\Illuminate\Database;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Core\Entity\SyncParameterType;
-use AppTank\Horus\Core\Util\StringUtil;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class EntitySynchronizable
@@ -17,10 +13,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 abstract class EntitySynchronizable extends BaseSynchronizable implements IEntitySynchronizable
 {
 
-    const ATTR_SYNC_OWNER_ID = "sync_owner_id";
-    const ATTR_SYNC_HASH = "sync_hash";
-    const ATTR_SYNC_CREATED_AT = "sync_created_at";
-    const ATTR_SYNC_UPDATED_AT = "sync_updated_at";
+    const string ATTR_SYNC_OWNER_ID = "sync_owner_id";
+    const string ATTR_SYNC_HASH = "sync_hash";
+    const string ATTR_SYNC_CREATED_AT = "sync_created_at";
+    const string ATTR_SYNC_UPDATED_AT = "sync_updated_at";
 
 
     public $timestamps = false;
@@ -128,5 +124,15 @@ abstract class EntitySynchronizable extends BaseSynchronizable implements IEntit
     public function getRelationsOneOfOne(): array
     {
         return [];
+    }
+
+    // ------------------------------------------------------------------------
+    // PERMISSIONS
+    // ------------------------------------------------------------------------
+
+    public static function isOwner(string $entityId, string|int $userId): bool
+    {
+        $class = get_called_class();
+        return $class::where(self::ATTR_SYNC_OWNER_ID, $userId)->where(self::ATTR_ID, $entityId)->exists();
     }
 }

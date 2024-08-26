@@ -3,6 +3,8 @@
 namespace AppTank\Horus;
 
 
+use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 
@@ -11,11 +13,9 @@ class HorusContainer
 
     private static ?self $instance = null;
 
-    private ?string $connectionName = null;
+    private Config $config;
 
-    private bool $usesUUIDs = false;
-
-    private null|string|int $userId = null;
+    private UserAuth|null $userAuth = null;
 
     private EntityMapper $entityMapper;
 
@@ -39,17 +39,14 @@ class HorusContainer
     /**
      * @param array $entitiesMap Array of EntitySynchronizable class names
      */
-    public static function initialize(array $entitiesMap, ?string $connectionName = null, bool $usesUUIds = false): self
+    public static function initialize(array $entitiesMap): self
     {
         self::$instance = new self($entitiesMap);
-
-        if (!is_null($connectionName)) {
-            self::$instance->setConnectionName($connectionName);
-        }
-        self::$instance->usesUUIDs = $usesUUIds;
-
+        self::$instance->config = new Config();
         return self::$instance;
     }
+
+
 
 
 
@@ -98,14 +95,17 @@ class HorusContainer
     // SETTERS
     // --------------------------------
 
-    public function setConnectionName(string $connectionName): void
+
+    public function setConfig(Config $config): self
     {
-        $this->connectionName = $connectionName;
+        $this->config = $config;
+        return $this;
     }
 
-    public function setAuthenticatedUserId(string|int $userId): void
+    public function setUserAuthenticated(UserAuth $userAuth): self
     {
-        $this->userId = $userId;
+        $this->userAuth = $userAuth;
+        return $this;
     }
 
     public static function setMiddlewares(array $middlewares): void
@@ -127,6 +127,11 @@ class HorusContainer
         return self::$instance;
     }
 
+    public function getConfig(): Config
+    {
+        return $this->config;
+    }
+
     /**
      * @return string[]
      */
@@ -142,17 +147,22 @@ class HorusContainer
 
     public function getConnectionName(): ?string
     {
-        return $this->connectionName;
+        return $this->config->connectionName;
     }
 
     public function isUsesUUID(): bool
     {
-        return $this->usesUUIDs;
+        return $this->config->usesUUIDs;
     }
 
-    public function getAuthenticatedUserId(): null|string|int
+    public function isValidateAccess(): bool
     {
-        return $this->userId;
+        return $this->config->validateAccess;
+    }
+
+    public function getUserAuthenticated(): ?UserAuth
+    {
+        return $this->userAuth;
     }
 
     public function getMiddlewares(): array
