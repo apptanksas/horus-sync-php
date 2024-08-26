@@ -1,9 +1,10 @@
 # Changelog
 
 ## 2024-08-24
-- Se agrega soporte para UserActingAs en la configuracion del usuario autenticado. 
-- Esto para indicar si el usuario tiene permisos para actuar como otro usuario y acceder a la entidades
-- donde se le ha otoragado permisos.
+Se agrega soporte para UserActingAs en la configuracion del usuario autenticado. 
+Esto para indicar si el usuario tiene permisos para actuar como otro usuario y acceder a la entidades
+donde se le ha otoragado permisos.
+
 ```php
 \AppTank\Horus\HorusContainer::getInstance()->setUserAuthenticated(
  new \AppTank\Horus\Core\Auth\UserAuth(
