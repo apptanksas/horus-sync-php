@@ -7,7 +7,6 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
-use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
@@ -22,25 +21,20 @@ class PostSyncQueueActionsController extends Controller
     private SyncQueueActions $useCase;
 
     function __construct(
-        ITransactionHandler             $transactionHandler,
-        QueueActionRepository           $queueActionRepository,
-        EntityRepository                $entityRepository,
-        EntityAccessValidatorRepository $accessValidatorRepository,
-        IEventBus                       $eventBus
+        ITransactionHandler   $transactionHandler,
+        QueueActionRepository $queueActionRepository,
+        EntityRepository      $entityRepository,
+        IEventBus             $eventBus
     )
     {
-        $this->useCase = new SyncQueueActions($transactionHandler,
-            $queueActionRepository,
-            $entityRepository,
-            $accessValidatorRepository,
-            $eventBus);
+        $this->useCase = new SyncQueueActions($transactionHandler, $queueActionRepository, $entityRepository, $eventBus);
     }
 
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
             $this->useCase->__invoke(
-                $this->getUserAuthenticated(),
+                $this->getAuthenticatedUserId(),
                 ...$this->parseRequestToQueueActions($request)
             );
             return $this->responseAccepted();
@@ -57,8 +51,8 @@ class PostSyncQueueActionsController extends Controller
         $queueActions = [];
         $requestData = $request->all();
         $dateUtil = new DateTimeUtil();
-        $userId = $this->getUserAuthenticated()->userId;
-        $ownerId = $this->getUserAuthenticated()->getEffectiveUserId();
+        $userId = $this->getAuthenticatedUserId();
+        $ownerId = $userId; // TODO: get ownerId from entity
 
         foreach ($requestData as $itemAction) {
             $queueActions[] = new QueueAction(

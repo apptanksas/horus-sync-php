@@ -2,7 +2,6 @@
 
 namespace AppTank\Horus\Illuminate\Http;
 
-use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Exception\NotAuthorizedException;
 use AppTank\Horus\Core\Exception\UserNotAuthenticatedException;
 use AppTank\Horus\HorusContainer;
@@ -57,9 +56,9 @@ abstract class Controller
         return JsonResponse::fromJsonString(json_encode($data), $statusCode);
     }
 
-    protected function getUserAuthenticated(): UserAuth
+    protected function getAuthenticatedUserId(): string|int
     {
-        return HorusContainer::getInstance()->getUserAuthenticated() ??
+        return HorusContainer::getInstance()->getAuthenticatedUserId() ??
             throw new UserNotAuthenticatedException();
     }
 }
