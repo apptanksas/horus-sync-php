@@ -27,7 +27,7 @@ class ValidateEntitiesDataController extends Controller
             return $this->responseSuccess(
                 $this->parseResponse(
                     $this->useCase->__invoke(
-                        $this->getUserAuthenticated(), array_map(fn($item) => $this->parseEntityHash($item), $data)
+                        $this->getAuthenticatedUserId(), array_map(fn($item) => $this->parseEntityHash($item), $data)
                     ))
             );
         });

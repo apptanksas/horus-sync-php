@@ -3,7 +3,6 @@
 namespace AppTank\Horus\Illuminate\Http\Controller;
 
 use AppTank\Horus\Application\Search\SearchDataEntities;
-use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
@@ -14,10 +13,9 @@ class SearchEntitiesController extends Controller
 
     private readonly SearchDataEntities $useCase;
 
-    function __construct(EntityRepository                $entityRepository,
-                         EntityAccessValidatorRepository $accessValidatorRepository)
+    function __construct(EntityRepository $entityRepository)
     {
-        $this->useCase = new SearchDataEntities($entityRepository, $accessValidatorRepository);
+        $this->useCase = new SearchDataEntities($entityRepository);
     }
 
     function __invoke(string $entity, Request $request): JsonResponse
@@ -33,7 +31,7 @@ class SearchEntitiesController extends Controller
 
             return $this->responseSuccess(
                 $this->useCase->__invoke(
-                    $this->getUserAuthenticated(),
+                    $this->getAuthenticatedUserId(),
                     $entity,
                     $ids,
                     $after)

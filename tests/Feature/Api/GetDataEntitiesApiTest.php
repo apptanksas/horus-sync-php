@@ -2,11 +2,6 @@
 
 namespace Api;
 
-use AppTank\Horus\Core\Auth\AccessLevel;
-use AppTank\Horus\Core\Auth\EntityGranted;
-use AppTank\Horus\Core\Auth\UserAuth;
-use AppTank\Horus\Core\Config\Config;
-use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\HorusContainer;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
@@ -25,8 +20,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccess()
     {
         $userId = $this->faker->uuid;
-
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
         $childEntities = [];
@@ -95,7 +89,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithNullablesSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -168,7 +162,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesWithLookupsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
             ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
@@ -194,7 +188,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     function testGetDataEntitiesSuccessIsEmpty()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($userId);
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
@@ -208,7 +202,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
     {
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        HorusContainer::getInstance()->setAuthenticatedUserId($ownerId);
 
         /**
          * @var ParentFakeEntity[] $parentsEntities
@@ -231,40 +225,4 @@ class GetDataEntitiesApiTest extends ApiTestCase
         // Then
         $response->assertJsonCount($countExpected);
     }
-
-
-    function testGetDataEntitiesWithGrantsSuccess()
-    {
-        $userOwnerId = $this->faker->uuid;
-        $userInvitedId = $this->faker->uuid;
-        $grants = [];
-
-        $parentsEntitiesOwner = $this->generateArray(function () use ($userOwnerId, &$grants) {
-            $entity = ParentFakeEntityFactory::create($userOwnerId);
-            $grants[] = new EntityGranted($userOwnerId,
-                new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
-                AccessLevel::all());
-            return $entity;
-        });
-
-        $parentsEntitiesInvited = $this->generateArray(fn() => ParentFakeEntityFactory::create($userInvitedId));
-
-        $childEntities = [];
-
-        foreach ($parentsEntitiesOwner as $parentEntity) {
-            $childEntities[$parentEntity->getId()] = $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
-            AdjacentFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
-        }
-
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants))->setConfig(new Config(true));
-
-        // When
-        $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));
-
-
-        // Then
-        $response->assertOk();
-        $response->assertJsonCount(count($parentsEntitiesOwner) + count($parentsEntitiesInvited));
-    }
-
 }
