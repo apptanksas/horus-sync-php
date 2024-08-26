@@ -6,26 +6,24 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Exception\NotAuthorizedException;
 use AppTank\Horus\Core\Exception\UserNotAuthenticatedException;
 use AppTank\Horus\Core\Exception\UserNotAuthorizedException;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Clase abstracta Controller
+ * @internal Abstract Controller Class
  *
- * Proporciona métodos generales para manejar respuestas en controladores y gestiona la autenticación
- * y autorización de usuarios. También ofrece un mecanismo de manejo de errores estándar para
- * controladores derivados.
+ * Provides general methods for handling responses in controllers and manages user authentication
+ * and authorization. It also offers a standard error handling mechanism for derived controllers.
  *
- * @author John Ospina
- * @year 2024
+ * @package AppTank\Horus\Illuminate\Http
  */
 abstract class Controller
 {
     /**
-     * Maneja una solicitud, ejecutando un callback y gestionando posibles excepciones.
+     * Handles a request by executing a callback and managing possible exceptions.
      *
-     * @param callable $callback Función que se ejecutará al manejar la solicitud.
-     * @return JsonResponse Retorna una respuesta JSON con el resultado de la operación o un error.
+     * @param callable $callback Function to be executed to handle the request.
+     * @return JsonResponse Returns a JSON response with the result of the operation or an error.
      */
     function handle(callable $callback): JsonResponse
     {
@@ -45,10 +43,10 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta exitosa con código de estado 200.
+     * Generates a successful response with a 200 status code.
      *
-     * @param array $data Datos a incluir en la respuesta.
-     * @return JsonResponse Retorna una respuesta JSON con los datos y código 200.
+     * @param array $data Data to include in the response.
+     * @return JsonResponse Returns a JSON response with the data and a 200 status code.
      */
     function responseSuccess(array $data): JsonResponse
     {
@@ -56,10 +54,10 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta con código de estado 202 (Aceptado).
+     * Generates a response with a 202 (Accepted) status code.
      *
-     * @param array $data Datos opcionales a incluir en la respuesta.
-     * @return JsonResponse Retorna una respuesta JSON con los datos y código 202.
+     * @param array $data Optional data to include in the response.
+     * @return JsonResponse Returns a JSON response with the data and a 202 status code.
      */
     function responseAccepted(array $data = []): JsonResponse
     {
@@ -67,10 +65,10 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta de error con código de estado 400 (Solicitud incorrecta).
+     * Generates an error response with a 400 (Bad Request) status code.
      *
-     * @param string $message Mensaje de error a incluir en la respuesta.
-     * @return JsonResponse Retorna una respuesta JSON con un mensaje de error y código 400.
+     * @param string $message Error message to include in the response.
+     * @return JsonResponse Returns a JSON response with an error message and a 400 status code.
      */
     function responseBadRequest(string $message): JsonResponse
     {
@@ -78,9 +76,9 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta de error con código de estado 401 (No autorizado).
+     * Generates an error response with a 401 (Unauthorized) status code.
      *
-     * @return JsonResponse Retorna una respuesta JSON con un mensaje de "No autorizado" y código 401.
+     * @return JsonResponse Returns a JSON response with a "Unauthorized" message and a 401 status code.
      */
     function responseUnauthorized(): JsonResponse
     {
@@ -88,9 +86,9 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta de error con código de estado 500 (Error interno del servidor).
+     * Generates an error response with a 500 (Internal Server Error) status code.
      *
-     * @return JsonResponse Retorna una respuesta JSON con un mensaje de "Error interno del servidor" y código 500.
+     * @return JsonResponse Returns a JSON response with an "Internal server error" message and a 500 status code.
      */
     function responseServerError(): JsonResponse
     {
@@ -98,11 +96,11 @@ abstract class Controller
     }
 
     /**
-     * Genera una respuesta JSON con un código de estado específico.
+     * Generates a JSON response with a specific status code.
      *
-     * @param array $data Datos a incluir en la respuesta.
-     * @param int $statusCode Código de estado HTTP de la respuesta.
-     * @return JsonResponse Retorna una respuesta JSON con los datos y el código de estado especificado.
+     * @param array $data Data to include in the response.
+     * @param int $statusCode HTTP status code for the response.
+     * @return JsonResponse Returns a JSON response with the data and the specified status code.
      */
     private function response(array $data, int $statusCode): JsonResponse
     {
@@ -110,25 +108,25 @@ abstract class Controller
     }
 
     /**
-     * Obtiene el usuario autenticado actualmente.
+     * Retrieves the currently authenticated user.
      *
-     * @return UserAuth Retorna la instancia de `UserAuth` del usuario autenticado.
-     * @throws UserNotAuthenticatedException Si no hay un usuario autenticado.
+     * @return UserAuth Returns the `UserAuth` instance of the authenticated user.
+     * @throws UserNotAuthenticatedException If no user is authenticated.
      */
     protected function getUserAuthenticated(): UserAuth
     {
-        return HorusContainer::getInstance()->getUserAuthenticated() ??
+        return Horus::getInstance()->getUserAuthenticated() ??
             throw new UserNotAuthenticatedException();
     }
 
     /**
-     * Valida si el usuario autenticado tiene permiso para actuar como otro usuario.
+     * Validates if the authenticated user has permission to act as another user.
      *
-     * @throws UserNotAuthorizedException Si el usuario no tiene permiso para actuar como el usuario especificado.
+     * @throws UserNotAuthorizedException If the user is not permitted to act as the specified user.
      */
     private function validateUserActingAs(): void
     {
-        $userAuth = HorusContainer::getInstance()->getUserAuthenticated();
+        $userAuth = Horus::getInstance()->getUserAuthenticated();
 
         if (is_null($userAuth)) {
             return;

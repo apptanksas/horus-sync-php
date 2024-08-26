@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Database;
 
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\LookupSynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
@@ -20,7 +20,7 @@ class MigrationTest extends TestCase
 
     function setUp(): void
     {
-        HorusContainer::initialize([
+        Horus::initialize([
             ParentFakeEntity::class => [
                 ChildFakeEntity::class
             ]

@@ -8,22 +8,31 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @internal Class EloquentQueueActionRepository
+ *
+ * EloquentQueueActionRepository implements the QueueActionRepository interface using Eloquent ORM.
+ * It handles saving, retrieving, and building queue actions in the database.
+ */
 readonly class EloquentQueueActionRepository implements QueueActionRepository
 {
-
     public function __construct(
         private IDateTimeUtil $dateTimeUtil,
         private ?string       $connectionName = null,
     )
     {
-
     }
 
     /**
-     * @throws \Exception
+     * Saves one or more queue actions to the database.
+     *
+     * This method inserts the provided queue actions into the database.
+     * Throws an exception if the operation fails.
+     *
+     * @param QueueAction ...$actions The queue actions to be saved.
+     * @throws \Exception If the insertion operation fails.
      */
     function save(QueueAction ...$actions): void
     {
@@ -41,7 +50,12 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         }
     }
 
-
+    /**
+     * Converts a QueueAction object to an array format suitable for database insertion.
+     *
+     * @param QueueAction $queueAction The QueueAction object to convert.
+     * @return array The array representation of the queue action.
+     */
     private function parseData(QueueAction $queueAction): array
     {
         return [
@@ -55,6 +69,12 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         ];
     }
 
+    /**
+     * Builds a QueueAction object from a SyncQueueActionModel instance.
+     *
+     * @param SyncQueueActionModel $model The model instance to build the QueueAction from.
+     * @return QueueAction The constructed QueueAction object.
+     */
     private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
     {
         $action = SyncAction::newInstance($model->getAction());
@@ -77,10 +97,11 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         );
     }
 
-
     /**
-     * @param int|string $userOwnerId
-     * @return QueueAction[]
+     * Retrieves the most recent queue action for a specific user or owner ID.
+     *
+     * @param int|string $userOwnerId The ID of the user or owner to retrieve the last action for.
+     * @return QueueAction|null The most recent QueueAction, or null if no actions are found.
      */
     function getLastAction(int|string $userOwnerId): ?QueueAction
     {
@@ -95,10 +116,13 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     }
 
     /**
-     * @param int|string $userOwnerId
-     * @param int|null $afterTimestamp
-     * @param array $excludeDateTimes Filter the actions that have the same actioned_at timestamp
-     * @return QueueAction[]
+     * Retrieves a list of queue actions for a specific user or owner ID,
+     * optionally filtering by timestamp and excluding specific action times.
+     *
+     * @param int|string $userOwnerId The ID of the user or owner to retrieve actions for.
+     * @param int|null $afterTimestamp Optional timestamp to filter actions after this time.
+     * @param array $excludeDateTimes Optional list of timestamps to exclude from results.
+     * @return QueueAction[] An array of QueueAction objects.
      */
     function getActions(int|string $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {

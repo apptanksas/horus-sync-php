@@ -3,7 +3,7 @@
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\SyncAction;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Database\Migrations\Migration;
@@ -22,7 +22,7 @@ return new class extends Migration {
     {
         $this->down();
 
-        $container = HorusContainer::getInstance();
+        $container = Horus::getInstance();
 
         $callbackCreateTable = function (Blueprint $table) use ($container) {
             $table->id();
@@ -56,7 +56,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        $container = HorusContainer::getInstance();
+        $container = Horus::getInstance();
 
         if (is_null($container->getConnectionName())) {
             Schema::dropIfExists(SyncQueueActionModel::TABLE_NAME);

@@ -91,7 +91,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        HorusContainer::initialize([
+        Horus::initialize([
             MyModel::class => [ChildModel::class], // Entities Map
             "sync_database", // Connection Name
             false // Uses UUID
@@ -118,7 +118,7 @@ en tu Service Provider:
 
 ```php
 
-HorusContainer::setMiddleware([MyMiddleware::class,'throttle:60,1']);
+Horus::setMiddleware([MyMiddleware::class,'throttle:60,1']);
 
 ```
 
@@ -128,7 +128,7 @@ El siguiente código muestra cómo se configura la autenticación de un usuario 
 Utilizando la clase **UserAuth**, se define un usuario autenticado junto con las entidades a las que tiene acceso y los permisos correspondientes.
 
 ```php
-HorusContainer::getInstance()->setUserAuthenticated(
+Horus::getInstance()->setUserAuthenticated(
  new UserAuth(
    "07a35af0-7317-41e4-99a3-e3583099aff2", // User Id Authenticated
    [ // Array of Entities Granted

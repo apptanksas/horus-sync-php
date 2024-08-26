@@ -6,7 +6,7 @@ Esto para indicar si el usuario tiene permisos para actuar como otro usuario y a
 donde se le ha otoragado permisos.
 
 ```php
-HorusContainer::getInstance()->setUserAuthenticated(
+Horus::getInstance()->setUserAuthenticated(
  new UserAuth(
    "07a35af0-7317-41e4-99a3-e3583099aff2", // User Id Authenticated
    [ // Array of Entities Granted

@@ -9,7 +9,7 @@ use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
@@ -32,7 +32,7 @@ class EloquentEntityRepositoryTest extends TestCase
 
     function setUp(): void
     {
-        HorusContainer::initialize([
+        Horus::initialize([
             ParentFakeEntity::class => [
                 ChildFakeEntity::class
             ]
@@ -41,7 +41,7 @@ class EloquentEntityRepositoryTest extends TestCase
         parent::setUp();
 
         $this->entityRepository = new EloquentEntityRepository(
-            HorusContainer::getInstance()->getEntityMapper(),
+            Horus::getInstance()->getEntityMapper(),
             new DateTimeUtil()
         );
     }

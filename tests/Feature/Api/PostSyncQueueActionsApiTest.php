@@ -10,7 +10,7 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\SyncAction;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,7 +37,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueInsertIsFailureByBadRequest()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $data = [
             [
@@ -55,7 +55,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueIsFailureByInvalidAttributes()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -86,7 +86,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueInsertIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -126,7 +126,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueMultipleIsSuccess()
     {
         $userId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeEntity::getEntityName();
@@ -197,7 +197,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     function testPostSyncQueueLookupIsFailure()
     {
         $ownerId = $this->faker->uuid;
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         $this->generateArray(fn() => LookupFakeEntityFactory::create());
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
@@ -234,7 +234,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $colorExpected = $this->faker->colorName;
         $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
 
-        HorusContainer::getInstance()->setUserAuthenticated(
+        Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
                 [new EntityGranted($userOwnerId,
                     new EntityReference($entityName, $entityId), AccessLevel::all())
@@ -335,7 +335,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $colorExpected = $this->faker->colorName;
         $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
 
-        HorusContainer::getInstance()->setUserAuthenticated(
+        Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
                 [new EntityGranted($userOwnerId,
                     new EntityReference($entityName, $entityId), AccessLevel::new(Permission::DELETE))
@@ -383,7 +383,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $colorExpected = $this->faker->colorName;
         $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
 
-        HorusContainer::getInstance()->setUserAuthenticated(
+        Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
                 [new EntityGranted($userOwnerId,
                     new EntityReference($entityName, $entityId), AccessLevel::new(Permission::UPDATE))

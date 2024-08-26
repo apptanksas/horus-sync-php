@@ -17,8 +17,27 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 
+/**
+ * @internal Class SyncQueueActions
+ *
+ * Handles the synchronization of queue actions, ensuring that the actions are organized, validated, and executed within a transaction.
+ * This class is responsible for organizing the actions into insert, update, and delete operations, performing the respective database operations,
+ * saving the queue actions, and publishing events related to the sync actions.
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 readonly class SyncQueueActions
 {
+    /**
+     * SyncQueueActions constructor.
+     *
+     * @param ITransactionHandler $transactionHandler Handler for managing database transactions.
+     * @param QueueActionRepository $queueActionRepository Repository for queue actions.
+     * @param EntityRepository $entityRepository Repository for managing entities.
+     * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating access to entities.
+     * @param IEventBus $eventBus Event bus for dispatching events.
+     */
     function __construct(
         private ITransactionHandler             $transactionHandler,
         private QueueActionRepository           $queueActionRepository,
@@ -30,6 +49,19 @@ readonly class SyncQueueActions
 
     }
 
+    /**
+     * Invokes the SyncQueueActions class to process and synchronize the queue actions.
+     *
+     * The actions are first sorted by the time they were actioned. Then, they are organized into insert, update,
+     * and delete actions. These actions are executed within a transaction to ensure data integrity.
+     * After executing the actions, the events related to these actions are published via the event bus.
+     *
+     * @param UserAuth $userAuth The authenticated user performing the actions.
+     * @param QueueAction ...$actions The queue actions to be synchronized.
+     * @return void
+     *
+     * @throws OperationNotPermittedException If the user does not have the necessary permissions to perform an action.
+     */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
         usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
@@ -48,11 +80,10 @@ readonly class SyncQueueActions
         });
     }
 
-
     /**
-     * Dispatch events for the actions
+     * Dispatches events for the actions based on their type (insert, update, delete).
      *
-     * @param QueueAction[] $actions
+     * @param QueueAction[] $actions The actions for which to publish events.
      * @return void
      */
     private function publishEvents(array $actions): void
@@ -74,13 +105,14 @@ readonly class SyncQueueActions
         }
     }
 
-
     /**
-     * Organize the actions into insert, update and delete actions
+     * Organizes the actions into insert, update, and delete categories.
      *
-     * @param UserAuth $userAuth
-     * @param QueueAction ...$actions
-     * @return array[]
+     * @param UserAuth $userAuth The authenticated user performing the actions.
+     * @param QueueAction ...$actions The actions to organize.
+     * @return array[] An array containing the organized actions [insertActions, updateActions, deleteActions].
+     *
+     * @throws OperationNotPermittedException If the user does not have the necessary permissions to update or delete an entity.
      */
     private function organizeActions(UserAuth $userAuth, QueueAction ...$actions): array
     {

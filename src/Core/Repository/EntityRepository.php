@@ -7,12 +7,25 @@ use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityUpdate;
 
+/**
+ * Interface EntityRepository
+ *
+ * Defines the contract for managing entity operations in a repository. This includes inserting, updating,
+ * and deleting entities, as well as searching for entities based on various criteria. Implementations of this
+ * interface should handle the persistence and retrieval of entity data from a storage system.
+ *
+ * @package AppTank\Horus\Core\Repository
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 interface EntityRepository
 {
     /**
      * Inserts multiple entity records into the database.
      *
-     * @param EntityInsert ...$operations
+     * @param EntityInsert ...$operations The entity insert operations to be performed.
+     *
      * @return void
      */
     function insert(EntityInsert ...$operations): void;
@@ -20,7 +33,8 @@ interface EntityRepository
     /**
      * Updates multiple entity records in the database.
      *
-     * @param EntityUpdate ...$operations
+     * @param EntityUpdate ...$operations The entity update operations to be performed.
+     *
      * @return void
      */
     function update(EntityUpdate ...$operations): void;
@@ -28,35 +42,40 @@ interface EntityRepository
     /**
      * Deletes multiple entity records from the database and any related entities on cascade.
      *
-     * @param EntityDelete ...$operations
+     * @param EntityDelete ...$operations The entity delete operations to be performed.
+     *
      * @return void
      */
     function delete(EntityDelete ...$operations): void;
 
-
     /**
-     * Search all entities by user id
+     * Searches all entities associated with a specific user ID.
      *
-     * @param string|int $userId
-     * @return EntityData[]
+     * @param string|int $userId The ID of the user whose entities are being searched.
+     *
+     * @return EntityData[] An array of entity data associated with the specified user ID.
      */
     function searchAllEntitiesByUserId(string|int $userId): array;
 
     /**
-     * Search entities that have been updated after the given timestamp
+     * Searches entities that have been updated after the given timestamp.
      *
-     * @param string|int $userId
-     * @param int $timestamp
-     * @return EntityData[]
+     * @param string|int $userId The ID of the user whose entities are being searched.
+     * @param int $timestamp The timestamp after which entities have been updated.
+     *
+     * @return EntityData[] An array of entity data that have been updated after the specified timestamp.
      */
     function searchEntitiesAfterUpdatedAt(string|int $userId, int $timestamp): array;
 
     /**
-     * @param string|int $userId
-     * @param string $entityName
-     * @param array $ids
-     * @param int|null $afterTimestamp
-     * @return EntityData[]
+     * Searches entities based on user ID, entity name, and optionally entity IDs and a timestamp.
+     *
+     * @param string|int $userId The ID of the user whose entities are being searched.
+     * @param string $entityName The name of the entity to search for.
+     * @param array $ids Optional. The IDs of the entities to search for.
+     * @param int|null $afterTimestamp Optional. The timestamp after which entities should be returned.
+     *
+     * @return EntityData[] An array of entity data matching the search criteria.
      */
     function searchEntities(string|int $userId,
                             string     $entityName,
@@ -64,21 +83,23 @@ interface EntityRepository
                             ?int       $afterTimestamp = null): array;
 
     /**
-     * Get all entity hashes by entity name
+     * Retrieves all entity hashes by entity name.
      *
-     * @param string|int $ownerUserId
-     * @param string $entityName
-     * @return array
+     * @param string|int $ownerUserId The ID of the owner user.
+     * @param string $entityName The name of the entity for which hashes are being retrieved.
+     *
+     * @return array An array of entity hashes associated with the specified entity name.
      */
     function getEntityHashes(string|int $ownerUserId, string $entityName): array;
 
     /**
-     * Check if the entity exists
+     * Checks if a specific entity exists.
      *
-     * @param string|int $userId
-     * @param string $entityName
-     * @param string $entityId
-     * @return bool
+     * @param string|int $userId The ID of the user who owns the entity.
+     * @param string $entityName The name of the entity.
+     * @param string $entityId The ID of the entity.
+     *
+     * @return bool True if the entity exists; otherwise, false.
      */
     function entityExists(string|int $userId, string $entityName, string $entityId): bool;
 }

@@ -23,6 +23,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @internal Class EloquentEntityRepository
+ *
+ * EloquentEntityRepository is a repository implementation for managing entity operations
+ * using Eloquent ORM. It handles the insertion, updating, deletion, and searching of entities
+ * by interacting with the underlying database using Eloquent models.
+ */
 readonly class EloquentEntityRepository implements EntityRepository
 {
 
@@ -239,7 +246,13 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * @inheritdoc
+     * Searches all entities associated with a given user ID.
+     *
+     * This method retrieves all entity types mapped in the repository and searches for entities
+     * associated with the provided user ID. It collects and merges results from all entities.
+     *
+     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @return array An array of EntityData objects representing the entities associated with the user.
      */
     function searchAllEntitiesByUserId(int|string $userId): array
     {
@@ -255,11 +268,14 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Search all entities by user ID and after a specific timestamp.
+     * Searches all entities associated with a given user ID that have been updated after a specific timestamp.
      *
-     * @param string|int $userId
-     * @param int $timestamp
-     * @return EntityData[]
+     * This method retrieves all entity types from the repository and searches for entities
+     * associated with the provided user ID that have been updated after the specified timestamp.
+     *
+     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @param int $timestamp The timestamp after which entities should be retrieved.
+     * @return EntityData[] An array of EntityData objects representing the entities updated after the timestamp.
      */
     function searchEntitiesAfterUpdatedAt(string|int $userId, int $timestamp): array
     {
@@ -274,15 +290,17 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $output;
     }
 
-
     /**
-     * Search entities by user ID, entity name, and optional filters.
+     * Searches for entities by user ID, entity name, and optional filters.
      *
-     * @param string|int $userId
-     * @param string $entityName
-     * @param array $ids
-     * @param int|null $afterTimestamp
-     * @return EntityData[]
+     * This method searches for entities that match the specified user ID, entity name, optional IDs,
+     * and an optional timestamp indicating the last update.
+     *
+     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @param string $entityName The name of the entity to search for.
+     * @param array $ids Optional array of entity IDs to filter by.
+     * @param int|null $afterTimestamp Optional timestamp to filter entities updated after this time.
+     * @return EntityData[] An array of EntityData objects representing the matched entities.
      */
     function searchEntities(string|int $userId,
                             string     $entityName,
@@ -321,11 +339,14 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Get all entity hashes by entity name
+     * Retrieves all entity hashes for a specific entity type associated with a given owner user ID.
      *
-     * @param string|int $ownerUserId
-     * @param string $entityName
-     * @return array
+     * This method queries the database for hashes of entities of the specified type that belong to
+     * the provided user ID, returning the results in descending order of entity ID.
+     *
+     * @param int|string $ownerUserId The ID of the owner whose entity hashes are to be retrieved.
+     * @param string $entityName The name of the entity to retrieve hashes for.
+     * @return array An array of arrays containing entity IDs and their corresponding hashes.
      */
     function getEntityHashes(string|int $ownerUserId, string $entityName): array
     {
@@ -341,12 +362,15 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Check if the entity exists
+     * Checks if an entity exists for a given user ID, entity name, and entity ID.
      *
-     * @param string|int $userId
-     * @param string $entityName
-     * @param string $entityId
-     * @return bool
+     * This method queries the database to determine if an entity with the specified ID and type
+     * exists for the provided user ID.
+     *
+     * @param int|string $userId The ID of the user to check for the entity's existence.
+     * @param string $entityName The name of the entity to check.
+     * @param string $entityId The ID of the entity to check.
+     * @return bool True if the entity exists, otherwise false.
      */
     function entityExists(int|string $userId, string $entityName, string $entityId): bool
     {
@@ -360,10 +384,12 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Group ids by entity name
+     * Groups entity IDs by entity name from a list of operations.
      *
-     * @param EntityOperation ...$operations
-     * @return array
+     * This method organizes entity IDs from the provided operations into groups based on the entity name.
+     *
+     * @param EntityOperation ...$operations The operations containing entity IDs to be grouped.
+     * @return array An associative array where the keys are entity names and the values are arrays of entity IDs.
      */
     private function groupIdsByEntity(EntityOperation ...$operations): array
     {
@@ -384,25 +410,45 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $groupOperationByEntity;
     }
 
+    /**
+     * Retrieves a table builder instance for the specified table name.
+     *
+     * @param string $tableName The name of the table.
+     * @return Builder The table builder instance.
+     */
     private function getTableBuilder(string $tableName): Builder
     {
         return (is_null($this->connectionName)) ? DB::table($tableName) :
             DB::connection($this->connectionName)->table($tableName);
     }
 
+    /**
+     * Converts a standard data transfer object (SDT) class instance to a standard array.
+     *
+     * @param mixed $object The SDT class instance to convert.
+     * @return array The converted array representation of the object.
+     */
     private function convertSdtClassToArray($object): array
     {
         return json_decode(json_encode($object), true);
     }
 
+    /**
+     * Checks if an operation failed based on the number of rows affected.
+     *
+     * @param int $rowsAffected The number of rows affected by the operation.
+     * @return bool True if the operation failed (affected rows == 0), otherwise false.
+     */
     private function isOperationIsFailure(int $rowsAffected): bool
     {
         return $rowsAffected == 0;
     }
 
     /**
-     * @param EntityOperation[] $operations
-     * @return array
+     * Sorts a list of operations by the actioned timestamp.
+     *
+     * @param EntityOperation[] $operations The operations to sort.
+     * @return EntityOperation[] The sorted list of operations.
      */
     private function sortByActionedAt(array $operations): array
     {
@@ -411,10 +457,10 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Find related entities given a parent entity
+     * Builds an EntityData object from a parent entity, including its related entities.
      *
-     * @param IEntitySynchronizable $parentEntity
-     * @return EntityData
+     * @param IEntitySynchronizable $parentEntity The parent entity to build the data from.
+     * @return EntityData The built EntityData object containing the parent entity and its related entities.
      */
     private function buildEntityData(IEntitySynchronizable $parentEntity): EntityData
     {
@@ -453,10 +499,12 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $entityData;
     }
 
-
     /**
-     * @param Collection $collectionItems
-     * @return EntityData[]
+     * Iterates over a collection of items and builds EntityData objects for each item,
+     * including related entities.
+     *
+     * @param Collection $collectionItems The collection of items to iterate over.
+     * @return EntityData[] An array of EntityData objects for each item in the collection.
      */
     private function iterateItemsAndSearchRelated(Collection $collectionItems): array
     {
@@ -469,7 +517,13 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $output;
     }
 
-
+    /**
+     * Prepares the data from a model by converting datetime fields to timestamps
+     * and filtering out null attributes.
+     *
+     * @param array $modelData The model data to prepare.
+     * @return array The prepared data with datetime fields converted to timestamps and null attributes removed.
+     */
     private function prepareData(array $modelData): array
     {
         $output = $modelData;
@@ -484,10 +538,13 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
-     * Extract related entities IDs
+     * Extracts related entity IDs from an EntityData object.
      *
-     * @param EntityData $entityData
-     * @return string[]
+     * This method extracts IDs of related entities from the given EntityData object,
+     * grouping them by entity name.
+     *
+     * @param EntityData $entityData The EntityData object to extract related IDs from.
+     * @return string[] An associative array where the keys are related entity names and the values are arrays of IDs.
      */
     private function parseRelatedIds(EntityData $entityData): array
     {
@@ -523,6 +580,15 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $idsOutput;
     }
 
+    /**
+     * Validates if an operation can be performed on a specified entity class.
+     *
+     * This method checks if the operation is permitted for the given entity class
+     * and throws an exception if the operation is not allowed.
+     *
+     * @param string $entityClass The name of the entity class to validate.
+     * @throws OperationNotPermittedException If the operation is not permitted for the given entity class.
+     */
     private function validateOperation(string $entityClass): void
     {
         $instanceClass = new  $entityClass();
@@ -533,6 +599,5 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
     }
-
 
 }

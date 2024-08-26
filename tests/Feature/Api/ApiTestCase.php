@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api;
 
 
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Provider\HorusServiceProvider;
 use Faker\Generator;
 use Orchestra\Testbench\Concerns\WithWorkbench;
@@ -23,7 +23,7 @@ class ApiTestCase extends TestCase
 
     protected function setUp(): void
     {
-        HorusContainer::initialize([
+        Horus::initialize([
             ParentFakeEntity::class => [
                 ChildFakeEntity::class,
                 AdjacentFakeEntity::class
@@ -31,7 +31,7 @@ class ApiTestCase extends TestCase
             LookupFakeEntity::class
         ]);
 
-        HorusContainer::setMiddlewares($this->middlewares);
+        Horus::setMiddlewares($this->middlewares);
 
         parent::setUp();
 

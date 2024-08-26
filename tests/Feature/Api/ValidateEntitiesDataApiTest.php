@@ -4,7 +4,7 @@ namespace Api;
 
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Hasher;
-use AppTank\Horus\HorusContainer;
+use AppTank\Horus\Horus;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ParentFakeEntity;
@@ -31,7 +31,7 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->uuid;
 
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
 
@@ -65,7 +65,7 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->uuid;
 
-        HorusContainer::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
 
