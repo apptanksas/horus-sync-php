@@ -134,7 +134,7 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
             $attribute["nullable"] = $parameter->isNullable;
 
             if($parameter->type == SyncParameterType::ENUM){
-                $attribute["options"] = $parameter->options;
+                $attribute["options"] = array_map(fn($item) => strval($item), $parameter->options);
             }
 
             if ($parameter->type == SyncParameterType::RELATION_ONE_OF_MANY || $parameter->type == SyncParameterType::RELATION_ONE_OF_ONE) {
