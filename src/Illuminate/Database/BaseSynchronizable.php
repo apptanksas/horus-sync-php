@@ -115,6 +115,10 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
     {
         $attributes = [];
         $class = get_called_class();
+
+        /**
+         * @var SyncParameter[] $parameters
+         */
         $parameters = array_merge(static::baseParameters(), $class::parameters());
         $filterParameters = [self::ATTR_SYNC_DELETED_AT];
 
@@ -128,6 +132,10 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
             $attribute["version"] = $parameter->version;
             $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
             $attribute["nullable"] = $parameter->isNullable;
+
+            if($parameter->type == SyncParameterType::ENUM){
+                $attribute["options"] = $parameter->options;
+            }
 
             if ($parameter->type == SyncParameterType::RELATION_ONE_OF_MANY || $parameter->type == SyncParameterType::RELATION_ONE_OF_ONE) {
                 $attribute["related"] = array_map(fn($classRelated) => $classRelated::schema(), $parameter->related);

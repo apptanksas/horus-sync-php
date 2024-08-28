@@ -1,5 +1,8 @@
 # Changelog
 
+## 2024-09-28
+Se agrega atributo de **__options__**  en la respuesta del esquema de la entidades cuando es de tipo **ENUM**.
+
 ## 2024-08-24
 Se agrega soporte para UserActingAs en la configuracion del usuario autenticado. 
 Esto para indicar si el usuario tiene permisos para actuar como otro usuario y acceder a la entidades
