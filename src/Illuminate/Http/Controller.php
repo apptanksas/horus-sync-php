@@ -35,7 +35,6 @@ abstract class Controller
             report($e);
             return $this->responseBadRequest($e->getMessage());
         } catch (\PDOException $e) {
-            report($e);
             return $this->responseBadRequest($this->parseError($e->getMessage()));
         } catch (\ErrorException $e) {
             report($e);
