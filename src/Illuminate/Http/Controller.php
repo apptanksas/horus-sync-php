@@ -31,12 +31,12 @@ abstract class Controller
         try {
             $this->validateUserActingAs();
             return $callback();
-        }catch (ClientException $e){
+        } catch (ClientException $e) {
             report($e);
-            return $this->responseBadRequest($e->getMessage())    ;
+            return $this->responseBadRequest($e->getMessage());
         } catch (\PDOException $e) {
             report($e);
-            return $this->responseBadRequest("Error in request data: Entity attributes are invalid");
+            return $this->responseBadRequest($this->parseError($e->getMessage()));
         } catch (\ErrorException $e) {
             report($e);
             return $this->responseBadRequest("Error in request data");
@@ -147,5 +147,15 @@ abstract class Controller
         }
 
         throw new UserNotAuthorizedException("User is not authorized to act as this user[$userActingAs->userId]");
+    }
+
+    private function parseError(string $message): string
+    {
+        $regex = "Data truncated for column '(.+)'";
+        $matches = [];
+        if (preg_match($regex, $message, $matches)) {
+            return "Attribute <<{$matches[1]}>> is invalid.";
+        }
+        return $message;
     }
 }
