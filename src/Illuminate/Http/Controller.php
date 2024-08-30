@@ -32,10 +32,13 @@ abstract class Controller
             $this->validateUserActingAs();
             return $callback();
         }catch (ClientException $e){
+            report($e);
             return $this->responseBadRequest($e->getMessage())    ;
         } catch (\PDOException $e) {
+            report($e);
             return $this->responseBadRequest("Error in request data: Entity attributes are invalid");
         } catch (\ErrorException $e) {
+            report($e);
             return $this->responseBadRequest("Error in request data");
         } catch (NotAuthorizedException) {
             return $this->responseUnauthorized();
