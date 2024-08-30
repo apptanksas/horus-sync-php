@@ -367,7 +367,6 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertUnauthorized();
     }
 
-
     function testTryUpdateEntityButNotPermissionByActingAsNotMatchWithEntityGranted()
     {
         $userOwnerRealId = $this->faker->uuid;
@@ -445,6 +444,76 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertBadRequest();
+    }
+
+    function testPostSyncQueueWithNewEntityAndUpdateItIsSuccess()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $valueEnum = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+
+        $nameExpected = $this->faker->userName;
+        $colorExpected = $this->faker->colorName;
+        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+
+        $data = [
+            // delete action
+            [
+                "action" => "DELETE",
+                "entity" => $entityName,
+                "data" => ["id" => $entityId],
+                "actioned_at" => 1725037164
+            ],
+            // update action
+            [
+                "action" => "UPDATE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        "name" => $nameExpected,
+                        "color" => $colorExpected,
+                        "value_enum" => $valueEnumExpected
+                    ]
+                ],
+                "actioned_at" => 1725037064
+            ],
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "value_enum" => $valueEnum
+                ],
+                "actioned_at" => 1725037000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), [
+            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $nameExpected,
+            'color' => $colorExpected,
+            'value_enum' => $valueEnumExpected
+        ]);
+        $this->assertSoftDeleted(ParentFakeEntity::getTableName(), [
+            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId
+        ], deletedAtColumn: ParentFakeEntity::ATTR_SYNC_DELETED_AT);
     }
 
 }

@@ -1,5 +1,7 @@
 # Changelog
 
+## 2024-09-30
+- Se corrige un error en el cual no se permitia actualizar el registro de una si dentro del mismo listado de acciones recibida se creaba el registro.
 ## 2024-09-28
 Se agrega atributo de **__options__**  en la respuesta del esquema de la entidades cuando es de tipo **ENUM**.
 
