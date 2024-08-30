@@ -12,6 +12,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\LookupFakeEntity;
@@ -81,6 +82,41 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertBadRequest();
+    }
+
+    function testPostSyncQueueIsFailureByInvalidAttribute()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "value_enum" => strval(rand(1, 100))
+                ],
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertBadRequest();
+        $response->assertJson([
+            "message" => sprintf(Controller::ERROR_MESSAGE_ATTRIBUTE_INVALID, "value_enum")
+        ]);
     }
 
     function testPostSyncQueueInsertIsSuccess()

@@ -20,6 +20,9 @@ use Illuminate\Http\JsonResponse;
  */
 abstract class Controller
 {
+
+    const string ERROR_MESSAGE_ATTRIBUTE_INVALID = "Attribute <<%s>> is invalid.";
+
     /**
      * Handles a request by executing a callback and managing possible exceptions.
      *
@@ -150,11 +153,14 @@ abstract class Controller
 
     private function parseError(string $message): string
     {
-        $regex = "Data truncated for column '(.+)'";
         $matches = [];
-        if (preg_match($regex, $message, $matches)) {
-            return "Attribute <<{$matches[1]}>> is invalid.";
+        if (preg_match("/Data truncated for column '(.+)'/i", $message, $matches)) {
+            return sprintf(self::ERROR_MESSAGE_ATTRIBUTE_INVALID, $matches[1]);
         }
-        return $message;
+        if(preg_match("/CHECK constraint failed: (.+) \(Connection/i", $message, $matches)) {
+            return sprintf(self::ERROR_MESSAGE_ATTRIBUTE_INVALID, $matches[1]);
+        }
+
+        return "Error in request data: Some attribute is invalid.";
     }
 }
