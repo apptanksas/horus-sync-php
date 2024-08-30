@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Core\Model;
 
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Hasher;
 
 /**
@@ -27,7 +28,7 @@ class EntityInsert extends EntityOperation
      * @param \DateTimeImmutable $actionedAt The date and time when the action was performed.
      * @param array              $data   The data associated with the entity insertion. Must include an 'id'.
      *
-     * @throws \InvalidArgumentException If the provided data is invalid (empty, missing 'id', or not enough attributes).
+     * @throws ClientException If the provided data is invalid (empty, missing 'id', or not enough attributes).
      */
     public function __construct(
         string|int         $ownerId,
@@ -44,20 +45,20 @@ class EntityInsert extends EntityOperation
     /**
      * Validates the provided data for the entity insertion.
      *
-     * @throws \InvalidArgumentException If the data is empty, missing an 'id', or has less than two attributes.
+     * @throws ClientException If the data is empty, missing an 'id', or has less than two attributes.
      */
     private function validateData(): void
     {
         if (empty($this->data)) {
-            throw new \InvalidArgumentException('Data cannot be empty');
+            throw new ClientException('Data cannot be empty');
         }
 
         if (!isset($this->data['id'])) {
-            throw new \InvalidArgumentException('Data must have an id');
+            throw new ClientException('Data must have an id');
         }
 
         if (count($this->data) < 2) {
-            throw new \InvalidArgumentException('Data must have at least one attribute');
+            throw new ClientException('Data must have at least one attribute');
         }
     }
 

@@ -1,6 +1,8 @@
 <?php
 
 namespace AppTank\Horus\Core\Auth;
+use AppTank\Horus\Core\Exception\ClientException;
+
 /**
  * Class AccessLevel
  *
@@ -79,26 +81,26 @@ readonly class AccessLevel
     /**
      * Validates the permissions of the access level.
      *
-     * @throws \InvalidArgumentException If validation fails.
+     * @throws ClientException If validation fails.
      */
     private function validate(): void
     {
         if (count($this->permissions) === 0) {
-            throw new \InvalidArgumentException('AccessLevel must have at least one permission');
+            throw new ClientException('AccessLevel must have at least one permission');
         }
 
         $permissionsNames = array_map(fn($permission) => $permission->value, $this->permissions);
 
         if (count($this->permissions) !== count(array_unique($permissionsNames))) {
-            throw new \InvalidArgumentException('AccessLevel must have unique permissions');
+            throw new ClientException('AccessLevel must have unique permissions');
         }
 
         if (count($this->permissions) !== count(array_filter($this->permissions, fn($permission) => $permission instanceof Permission))) {
-            throw new \InvalidArgumentException('AccessLevel must have only Permission instances');
+            throw new ClientException('AccessLevel must have only Permission instances');
         }
 
         if (count($this->permissions) > Permission::count()) {
-            throw new \InvalidArgumentException('AccessLevel must have at most ' . Permission::count() . ' permissions');
+            throw new ClientException('AccessLevel must have at most ' . Permission::count() . ' permissions');
         }
     }
 }

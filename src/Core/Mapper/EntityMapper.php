@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\Mapper;
 
 use AppTank\Horus\Core\EntityMap;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 /**
@@ -29,11 +30,11 @@ class EntityMapper
      *
      * @return string The fully qualified class name of the entity.
      *
-     * @throws \InvalidArgumentException If the entity name is not found in the mapping.
+     * @throws ClientException If the entity name is not found in the mapping.
      */
     function getEntityClass(string $entityName): string
     {
-        return $this->entities[$entityName] ?? throw new \InvalidArgumentException("Entity $entityName not found");
+        return $this->entities[$entityName] ?? throw new ClientException("Entity $entityName not found");
     }
 
     /**

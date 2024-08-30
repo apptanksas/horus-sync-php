@@ -2,6 +2,8 @@
 
 namespace AppTank\Horus\Core\Entity;
 
+use AppTank\Horus\Core\Exception\ClientException;
+
 /**
  * Class SyncParameter
  *
@@ -220,13 +222,13 @@ class SyncParameter
      * Validates that all related classes exist.
      *
      * @return void
-     * @throws \InvalidArgumentException If a related class does not exist.
+     * @throws ClientException If a related class does not exist.
      */
     private function validateRelated(): void
     {
         foreach ($this->related as $related) {
             if ($related != null && !class_exists($related)) {
-                throw new \InvalidArgumentException("ClassName related [$related] not exists!");
+                throw new ClientException("ClassName related [$related] not exists!");
             }
         }
     }

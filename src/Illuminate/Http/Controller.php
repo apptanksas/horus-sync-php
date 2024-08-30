@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Illuminate\Http;
 
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\NotAuthorizedException;
 use AppTank\Horus\Core\Exception\UserNotAuthenticatedException;
 use AppTank\Horus\Core\Exception\UserNotAuthorizedException;
@@ -30,6 +31,8 @@ abstract class Controller
         try {
             $this->validateUserActingAs();
             return $callback();
+        }catch (ClientException $e){
+            return $this->responseBadRequest($e->getMessage())    ;
         } catch (\PDOException $e) {
             return $this->responseBadRequest("Error in request data: Entity attributes are invalid");
         } catch (\ErrorException $e) {

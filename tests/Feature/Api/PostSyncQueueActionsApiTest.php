@@ -415,4 +415,36 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertUnauthorized();
     }
 
+    function testActionWithEntityNotFoundShouldBadRequest()
+    {
+
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $entityId = $this->faker->uuid;
+        $entityName = $this->faker->colorName;
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color
+                ],
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertBadRequest();
+    }
+
 }
