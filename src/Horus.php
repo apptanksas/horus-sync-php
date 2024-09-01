@@ -14,6 +14,7 @@ use AppTank\Horus\Core\Mapper\EntityMapper;
  */
 class Horus
 {
+
     private static ?self $instance = null;
 
     private Config $config;

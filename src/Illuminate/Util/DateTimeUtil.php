@@ -27,4 +27,9 @@ class DateTimeUtil implements IDateTimeUtil
     {
         return Carbon::now("UTC")->toDateTimeImmutable();
     }
+
+    public function getFormatDate(int $timestamp): string
+    {
+        return date(self::FORMAT_DATE, $timestamp);
+    }
 }

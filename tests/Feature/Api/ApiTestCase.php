@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Provider\HorusServiceProvider;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use Faker\Generator;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase;
@@ -68,6 +69,11 @@ class ApiTestCase extends TestCase
         }
 
         return $arrayData;
+    }
+
+    protected function getDateTimeUtil(): DateTimeUtil
+    {
+        return new DateTimeUtil();
     }
 
 }

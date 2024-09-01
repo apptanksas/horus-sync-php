@@ -12,6 +12,8 @@ namespace AppTank\Horus\Core\Util;
  */
 interface IDateTimeUtil
 {
+    const FORMAT_DATE = 'Y-m-d H:i:s';
+
     /**
      * Parses a date and time value and returns a \DateTime object.
      *
@@ -32,4 +34,14 @@ interface IDateTimeUtil
      * @return \DateTimeImmutable The current date and time.
      */
     public function getCurrent(): \DateTimeImmutable;
+
+    /**
+     * Returns the date and time in a specific format.
+     *
+     * This method accepts a timestamp and returns the date and time in a specific format.
+     *
+     * @param int $timestamp The timestamp to format.
+     * @return string The formatted date and time.
+     */
+    public function getFormatDate(int $timestamp): string;
 }

@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Support\Facades\DB;
 
@@ -131,11 +132,11 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
 
         if ($afterTimestamp !== null) {
             $query = $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=',
-                $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())->orderBy("id");
+                $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()))->orderBy("id");
         }
         if (!empty($excludeDateTimes)) {
             $query = $query->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT,
-                array_map(fn($timestamp) => $this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp(), $excludeDateTimes));
+                array_map(fn($timestamp) => $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp()), $excludeDateTimes));
         }
 
         return $query->get()->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))->toArray();

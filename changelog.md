@@ -1,5 +1,8 @@
 # Changelog
 
+## 2024-09-01
+- Se corrige la comparacion de fechas de SyncedAt y ActionedAt en el repositorio de QueueActions.
+
 ## 2024-09-30
 - Se corrige un error en el cual no se permitia actualizar el registro de una si dentro del mismo listado de acciones recibida se creaba el registro.
 ## 2024-09-28

@@ -5,6 +5,7 @@ namespace Api;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\SyncQueueActionModelFactory;
@@ -53,12 +54,12 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
          * @var SyncQueueActionModel[] $actions
          */
         $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_SYNCED_AT => $syncedAt
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_SYNCED_AT => $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp()
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp())
         ]));
 
         $syncedAtTarget = $syncedAt - 1;
@@ -81,7 +82,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
          * @var SyncQueueActionModel[] $parentsEntities
          */
         $actions = $this->generateCountArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->faker->dateTimeBetween()->getTimestamp()
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween()->getTimestamp())
         ]));
 
         $excludeActions = array_map(fn(SyncQueueActionModel $entity) => $entity->getActionedAt()->getTimestamp(), array_slice($actions, 0, rand(1, 5)));

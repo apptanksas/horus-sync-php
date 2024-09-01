@@ -4,6 +4,7 @@ namespace Tests;
 
 
 use AppTank\Horus\Horus;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use Faker\Generator;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -69,5 +70,9 @@ class TestCase extends \Orchestra\Testbench\TestCase
         return $arrayData;
     }
 
+    protected function getDateTimeUtil(): DateTimeUtil
+    {
+        return new DateTimeUtil();
+    }
 
 }

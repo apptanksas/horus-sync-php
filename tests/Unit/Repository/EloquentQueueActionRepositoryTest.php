@@ -99,13 +99,16 @@ class EloquentQueueActionRepositoryTest extends TestCase
          * @var SyncQueueActionModel[] $actions
          */
         $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_SYNCED_AT => $syncedAt
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt)
         ]));
 
         // Generate entities before the updatedAt
-        $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_SYNCED_AT => $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp()
-        ]));
+        $this->generateArray(function () use ($ownerId, $syncedAt) {
+            $timestamp = $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp();
+            return SyncQueueActionModelFactory::create($ownerId, [
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
+            ]);
+        });
 
         $syncedAtTarget = $syncedAt - 1;
         $countExpected = count(array_filter($actions, fn(SyncQueueActionModel $entity) => $entity->getSyncedAt()->getTimestamp() > $syncedAtTarget));
@@ -124,7 +127,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
          * @var SyncQueueActionModel[] $parentsEntities
          */
         $actions = $this->generateCountArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
-            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->faker->dateTimeBetween()->getTimestamp()
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween()->getTimestamp())
         ]));
 
         $filterActions = array_map(fn(SyncQueueActionModel $entity) => $entity->getActionedAt()->getTimestamp(), array_slice($actions, 0, rand(1, 5)));
