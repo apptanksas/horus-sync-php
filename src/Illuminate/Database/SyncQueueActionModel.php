@@ -64,8 +64,8 @@ final class SyncQueueActionModel extends Model
     {
         $data = parent::toArray();
 
-        $data[self::ATTR_ACTIONED_AT] = Carbon::create($data[self::ATTR_ACTIONED_AT], timezone: DateTimeZone::UTC)->timestamp;
-        $data[self::ATTR_SYNCED_AT] = Carbon::create($data[self::ATTR_SYNCED_AT], timezone: DateTimeZone::UTC)->timestamp;
+        $data[self::ATTR_ACTIONED_AT] = Carbon::parse($data[self::ATTR_ACTIONED_AT], "UTC")->timestamp;
+        $data[self::ATTR_SYNCED_AT] = Carbon::parse($data[self::ATTR_SYNCED_AT], "UTC")->timestamp;
 
         return $data;
     }
