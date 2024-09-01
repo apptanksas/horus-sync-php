@@ -112,6 +112,9 @@ abstract class Controller
      */
     private function response(array $data, int $statusCode): JsonResponse
     {
+        if (empty($data)) {
+            return new JsonResponse(null, $statusCode);
+        }
         return JsonResponse::fromJsonString(json_encode($data), $statusCode);
     }
 
@@ -157,7 +160,7 @@ abstract class Controller
         if (preg_match("/Data truncated for column '(.+)'/i", $message, $matches)) {
             return sprintf(self::ERROR_MESSAGE_ATTRIBUTE_INVALID, $matches[1]);
         }
-        if(preg_match("/CHECK constraint failed: (.+) \(Connection/i", $message, $matches)) {
+        if (preg_match("/CHECK constraint failed: (.+) \(Connection/i", $message, $matches)) {
             return sprintf(self::ERROR_MESSAGE_ATTRIBUTE_INVALID, $matches[1]);
         }
 
