@@ -329,7 +329,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         if (!is_null($afterTimestamp) && $instanceClass instanceof EntitySynchronizable) {
             $queryBuilder = $queryBuilder->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
                 ">",
-                $this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()
+                $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())
             );
         }
 

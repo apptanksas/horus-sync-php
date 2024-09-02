@@ -4,6 +4,7 @@ namespace AppTank\Horus\Illuminate\Database;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 
 /**
  * Class EntitySynchronizable
@@ -100,11 +101,11 @@ abstract class EntitySynchronizable extends BaseSynchronizable implements IEntit
     /**
      * Get the updated timestamp of the entity.
      *
-     * @return int Updated timestamp.
+     * @return \DateTimeImmutable Updated timestamp.
      */
-    public function getUpdatedAt(): int
+    public function getUpdatedAt(): \DateTimeImmutable
     {
-        return $this->getAttribute(self::ATTR_SYNC_UPDATED_AT);
+        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_SYNC_UPDATED_AT)));
     }
 
     /**
@@ -112,9 +113,9 @@ abstract class EntitySynchronizable extends BaseSynchronizable implements IEntit
      *
      * @return int Created timestamp.
      */
-    public function getCreatedAt(): int
+    public function getCreatedAt(): \DateTimeImmutable
     {
-        return $this->getAttribute(self::ATTR_SYNC_CREATED_AT);
+        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_SYNC_CREATED_AT)));
     }
 
     // ------------------------------------------------------------------------

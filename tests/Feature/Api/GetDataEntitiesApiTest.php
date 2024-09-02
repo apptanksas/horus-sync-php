@@ -214,16 +214,16 @@ class GetDataEntitiesApiTest extends ApiTestCase
          * @var ParentFakeEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $updatedAt
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp()
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp())
         ]));
 
         $updatedAtTarget = $updatedAt - 1;
-        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt() > $updatedAtTarget));
+        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value, ['after' => $updatedAtTarget]));

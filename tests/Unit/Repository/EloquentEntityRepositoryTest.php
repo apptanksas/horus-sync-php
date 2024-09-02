@@ -403,7 +403,7 @@ class EloquentEntityRepositoryTest extends TestCase
          * @var ParentFakeEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $updatedAt
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
         ]));
 
         // Generate entities before the updatedAt
@@ -412,7 +412,7 @@ class EloquentEntityRepositoryTest extends TestCase
         ]));
 
         $updatedAtTarget = $updatedAt - 1;
-        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt() > $updatedAtTarget));
+        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
 
         // When
         $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($ownerId, $updatedAtTarget);
@@ -470,12 +470,12 @@ class EloquentEntityRepositoryTest extends TestCase
          * @var ParentFakeEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $timestamp
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp()
+            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp())
         ]));
 
         // When
