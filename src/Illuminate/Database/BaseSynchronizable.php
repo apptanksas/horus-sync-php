@@ -133,13 +133,18 @@ abstract class BaseSynchronizable extends Model implements IEntitySynchronizable
             $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
             $attribute["nullable"] = $parameter->isNullable;
 
-            if($parameter->type == SyncParameterType::ENUM){
+            if ($parameter->linkedEntity !== null) {
+                $attribute["linked_entity"] = $parameter->linkedEntity;
+            }
+
+            if ($parameter->type == SyncParameterType::ENUM) {
                 $attribute["options"] = array_map(fn($item) => strval($item), $parameter->options);
             }
 
             if ($parameter->type == SyncParameterType::RELATION_ONE_OF_MANY || $parameter->type == SyncParameterType::RELATION_ONE_OF_ONE) {
                 $attribute["related"] = array_map(fn($classRelated) => $classRelated::schema(), $parameter->related);
             }
+
 
             $attributes[] = $attribute;
         }

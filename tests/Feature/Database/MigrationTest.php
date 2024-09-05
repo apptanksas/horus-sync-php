@@ -8,10 +8,14 @@ use AppTank\Horus\Illuminate\Database\LookupSynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\LookupFakeEntity;
 use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
 
 class MigrationTest extends TestCase
@@ -61,15 +65,14 @@ class MigrationTest extends TestCase
         }
 
 
-
         // Validate lookup migration
-        $columnIdAttributes = array_merge([],array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_ID))[0];
-        $this->assertEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_SYNC_HASH));
-        $this->assertEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_SYNC_OWNER_ID));
-        $this->assertEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_SYNC_UPDATED_AT));
-        $this->assertEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_SYNC_CREATED_AT));
-        $this->assertNotEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == EntitySynchronizable::ATTR_ID));
-        $this->assertNotEmpty(array_filter($lookupColumns,fn($column) => $column["name"]  == "name"));
+        $columnIdAttributes = array_merge([], array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_ID))[0];
+        $this->assertEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_SYNC_HASH));
+        $this->assertEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_SYNC_OWNER_ID));
+        $this->assertEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_SYNC_UPDATED_AT));
+        $this->assertEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_SYNC_CREATED_AT));
+        $this->assertNotEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == EntitySynchronizable::ATTR_ID));
+        $this->assertNotEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == "name"));
         $this->assertTrue($columnIdAttributes["type"] == "integer");
         $this->assertTrue($columnIdAttributes["auto_increment"] == true);
     }
@@ -93,5 +96,23 @@ class MigrationTest extends TestCase
         $this->artisan('migrate:rollback');
         $this->expectException(QueryException::class);
         $this->assertDatabaseEmpty(SyncQueueActionModel::TABLE_NAME);
+    }
+
+    public function testCheckForeignKeys()
+    {
+        DB::statement('PRAGMA foreign_keys = ON');
+        $foreignKeysChild = DB::select("PRAGMA foreign_key_list('".ChildFakeEntity::getTableName()."')");
+        $foreignKeysAdjacent = DB::select("PRAGMA foreign_key_list('".AdjacentFakeEntity::getTableName()."')");
+
+        $this->assertNotEmpty($foreignKeysChild);
+        $this->assertNotEmpty($foreignKeysAdjacent);
+
+        $this->assertEquals(ChildFakeEntity::FK_PARENT_ID, $foreignKeysChild[0]->from);
+        $this->assertEquals(ParentFakeEntity::getTableName(), $foreignKeysChild[0]->table);
+        $this->assertEquals('CASCADE', $foreignKeysChild[0]->on_delete);
+
+        $this->assertEquals(AdjacentFakeEntity::FK_PARENT_ID, $foreignKeysAdjacent[0]->from);
+        $this->assertEquals(ParentFakeEntity::getTableName(), $foreignKeysAdjacent[0]->table);
+        $this->assertEquals('CASCADE', $foreignKeysAdjacent[0]->on_delete);
     }
 }

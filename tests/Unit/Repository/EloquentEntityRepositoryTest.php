@@ -14,6 +14,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\_Stubs\AdjacentFakeEntity;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntity;
@@ -249,8 +250,9 @@ class EloquentEntityRepositoryTest extends TestCase
             deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
     }
 
-    function testDeleteManyEntitiesIsSuccess()
+    function testSoftDeleteEntityParentAndSoftDeleteOnCascadeChildrenIsSuccess()
     {
+        Schema::enableForeignKeyConstraints();
         // Given
         $ownerId = $this->faker->uuid;
         /**
