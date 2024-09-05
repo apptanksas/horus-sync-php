@@ -41,7 +41,8 @@ class GetMigrationSchemaApiTest extends ApiTestCase
         // Validate relations one of many
         $response->assertJsonPath("0.attributes.9.name", "relations_one_of_many");
         $response->assertJsonPath("0.attributes.9.related.0.entity", ChildFakeEntity::getEntityName());
-        $response->assertJsonPath("0.attributes.9.related.0.type", EntityType::EDITABLE->value);
+         $response->assertJsonPath("0.attributes.9.related.0.type", EntityType::EDITABLE->value);
+        $response->assertJsonPath("0.attributes.9.related.0.attributes.12.linked_entity",ParentFakeEntity::getEntityName());
 
         // Validate relations one of one
         $response->assertJsonPath("0.attributes.10.name", "relations_one_of_one");

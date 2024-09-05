@@ -17,7 +17,7 @@ class AdjacentFakeEntity extends EntitySynchronizable implements EntityDependsOn
     {
         return [
             SyncParameter::createString("name", 1),
-            SyncParameter::createUUID(self::FK_PARENT_ID, 1)
+            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, 1, ParentFakeEntity::getEntityName())
         ];
     }
 

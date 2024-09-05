@@ -31,7 +31,8 @@ class SyncParameter
         public int               $version = 1,
         public bool              $isNullable = false,
         public array             $related = [],
-        public array             $options = []
+        public array             $options = [],
+        public ?string            $linkedEntity = null
     )
     {
         $this->validateRelated();
@@ -212,6 +213,45 @@ class SyncParameter
     public static function createRelationOneOfOne(array $relatedClass, int $version): self
     {
         return new SyncParameter("relations_one_of_one", SyncParameterType::RELATION_ONE_OF_ONE, $version, false, $relatedClass);
+    }
+
+    /**
+     * Creates a UUID foreign key parameter.
+     *
+     * @param string $name
+     * @param int $version
+     * @param string $linkedEntity
+     * @return self
+     */
+    public static function createUUIDForeignKey(string $name, int $version, string $linkedEntity): self
+    {
+        return new SyncParameter($name, SyncParameterType::UUID, $version, linkedEntity: $linkedEntity);
+    }
+
+    /**
+     * Creates a string foreign key parameter.
+     *
+     * @param string $name
+     * @param int $version
+     * @param string $linkedEntity
+     * @return self
+     */
+    public static function createStringForeignKey(string $name, int $version, string $linkedEntity): self
+    {
+        return new SyncParameter($name, SyncParameterType::STRING, $version, linkedEntity: $linkedEntity);
+    }
+
+    /**
+     * Creates an integer foreign key parameter.
+     *
+     * @param string $name
+     * @param int $version
+     * @param string $linkedEntity
+     * @return self
+     */
+    public static function createIntForeignKey(string $name, int $version, string $linkedEntity): self
+    {
+        return new SyncParameter($name, SyncParameterType::INT, $version, linkedEntity: $linkedEntity);
     }
 
     // ------------------------------------------------------------------------

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2024-09-05
+- Se agrega soporte para llaves foraneas en las entidades sincronizables con eliminacion en cascada.
+- Se agrega nuevos metodos de SyncParameter para definir llaves foraneas.
+```php
+    SyncParameter::createUUIDForeignKey(string $name, int $version, string $linkedEntity);
+```
+```php
+    SyncParameter::createStringForeignKey(string $name, int $version, string $linkedEntity);
+```
+```php
+    SyncParameter::createIntForeignKey(string $name, int $version, string $linkedEntity);
+```
+
 ## 2024-09-01
 - Se corrige la comparacion de fechas de SyncedAt y ActionedAt en el repositorio de QueueActions.
 
