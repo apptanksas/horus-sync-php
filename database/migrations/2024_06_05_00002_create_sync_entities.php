@@ -58,6 +58,8 @@ return new class extends Migration {
     {
         $container = Horus::getInstance();
 
+        Schema::connection($container->getConnectionName())->disableForeignKeyConstraints();
+
         /**
          * @var EntitySynchronizable $entityClass
          */
@@ -70,6 +72,8 @@ return new class extends Migration {
             }
             Schema::connection($container->getConnectionName())->dropIfExists($tableName);
         }
+
+        Schema::connection($container->getConnectionName())->enableForeignKeyConstraints();
     }
 
     private function createColumn(Blueprint $table, SyncParameter $parameter): void
