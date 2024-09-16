@@ -50,6 +50,9 @@ class EloquentEntityRepositoryTest extends TestCase
     function testInsertWithNullableIsSuccess()
     {
         // Given
+        ChildFakeEntity::query()->forceDelete();
+        ParentFakeEntity::query()->forceDelete();
+
         /**
          * @var EntityOperation[] $parentsEntities
          */
@@ -62,7 +65,7 @@ class EloquentEntityRepositoryTest extends TestCase
          */
         $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
         ));
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
@@ -71,8 +74,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$operations);
 
         // Then
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities));
-        $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
+         $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($childEntities));
+         $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
 
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
@@ -90,6 +93,7 @@ class EloquentEntityRepositoryTest extends TestCase
     function testInsertWithoutNullableIsSuccess()
     {
         // Given
+        Schema::disableForeignKeyConstraints();
         /**
          * @var EntityOperation[] $parentsEntities
          */
@@ -102,7 +106,7 @@ class EloquentEntityRepositoryTest extends TestCase
          */
         $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
         ));
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
@@ -111,7 +115,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$operations);
 
         // Then
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities));
+        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($childEntities));
         $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
 
         foreach ($parentsEntities as $entity) {
@@ -252,8 +256,8 @@ class EloquentEntityRepositoryTest extends TestCase
 
     function testSoftDeleteEntityParentAndSoftDeleteOnCascadeChildrenIsSuccess()
     {
-        Schema::enableForeignKeyConstraints();
         // Given
+        Schema::disableForeignKeyConstraints();
         $ownerId = $this->faker->uuid;
         /**
          * @var ParentFakeEntity[] $parentsEntities
