@@ -15,9 +15,9 @@ use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\_Stubs\LookupFakeEntity;
+use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\LookupFakeEntityFactory;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -59,7 +59,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
@@ -90,7 +90,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
@@ -125,10 +125,10 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
-        $enumValue = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [
@@ -150,9 +150,9 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertStatus(202);
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), 1);
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId,
             'name' => $name,
             'color' => $color
@@ -165,15 +165,15 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
-        $valueEnum = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
-        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $data = [
             // delete action
@@ -216,18 +216,18 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertAccepted();
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), 1);
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
             'value_enum' => $valueEnumExpected
         ]);
-        $this->assertSoftDeleted(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+        $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId
-        ], deletedAtColumn: ParentFakeEntity::ATTR_SYNC_DELETED_AT);
+        ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
     }
 
     function testPostSyncQueueLookupIsFailure()
@@ -241,7 +241,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             // delete action
             [
                 "action" => "INSERT",
-                "entity" => LookupFakeEntity::getEntityName(),
+                "entity" => ReadableFakeEntity::getEntityName(),
                 "data" => ["id" => $this->faker->randomNumber(), "name" => $this->faker->name],
                 "actioned_at" => $actionedAt
             ],
@@ -260,15 +260,15 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $userId = $this->faker->uuid;
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
-        $valueEnum = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
-        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
@@ -320,18 +320,18 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         // Then
 
         $response->assertAccepted();
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), 1);
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
             'value_enum' => $valueEnumExpected
         ]);
-        $this->assertSoftDeleted(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
             'id' => $entityId
-        ], deletedAtColumn: ParentFakeEntity::ATTR_SYNC_DELETED_AT);
+        ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
 
         $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
             SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
@@ -364,12 +364,12 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         $entity = ParentFakeEntityFactory::create($userOwnerId);
         $entityId = $entity->getId();
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
-        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
@@ -411,12 +411,12 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         $entity = ParentFakeEntityFactory::create($userOwnerRealId);
         $entityId = $entity->getId();
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
-        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         Horus::getInstance()->setUserAuthenticated(
             new UserAuth($userId,
@@ -488,14 +488,14 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
 
         $entityId = $this->faker->uuid;
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
-        $valueEnum = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
-        $valueEnumExpected = ParentFakeEntity::ENUM_VALUES[array_rand(ParentFakeEntity::ENUM_VALUES)];
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $data = [
             // delete action
@@ -538,18 +538,18 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertAccepted();
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), 1);
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
             'value_enum' => $valueEnumExpected
         ]);
-        $this->assertSoftDeleted(ParentFakeEntity::getTableName(), [
-            ParentFakeEntity::ATTR_SYNC_OWNER_ID => $userId,
+        $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId
-        ], deletedAtColumn: ParentFakeEntity::ATTR_SYNC_DELETED_AT);
+        ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
     }
 
 }

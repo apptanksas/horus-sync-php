@@ -10,7 +10,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Illuminate\Database\EntityDependsOn;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 /**
  * @internal Class EloquentEntityAccessValidatorRepository
@@ -141,14 +141,14 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
         $entityHierarchy = [];
 
         /**
-         * @var EntitySynchronizable $entityClass
+         * @var WritableEntitySynchronizable $entityClass
          */
         $entityClass = $this->getEntityClass($entityRefChild->entityName);
-        $entity = $entityClass::query()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first();
+        $entity = $entityClass::query()->where(WritableEntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first();
 
         if ($entity instanceof EntityDependsOn) {
             /**
-             * @var EntitySynchronizable $entityParent
+             * @var WritableEntitySynchronizable $entityParent
              */
             $entityParent = $entity->dependsOn();
 
@@ -193,7 +193,7 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     private function isEntityOwner(string $entityName, string $entityId, string|int $userId): bool
     {
         /**
-         * @var EntitySynchronizable $entityClass
+         * @var WritableEntitySynchronizable $entityClass
          */
         $entityClass = $this->getEntityClass($entityName);
 

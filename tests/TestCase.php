@@ -10,10 +10,10 @@ use Illuminate\Config\Repository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Orchestra\Testbench\Concerns\WithLaravelMigrations;
 use Orchestra\Testbench\Concerns\WithWorkbench;
-use Tests\_Stubs\AdjacentFakeEntity;
-use Tests\_Stubs\ChildFakeEntity;
-use Tests\_Stubs\LookupFakeEntity;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\AdjacentFakeWritableEntity;
+use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\ReadableFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -25,11 +25,11 @@ class TestCase extends \Orchestra\Testbench\TestCase
     function setUp(): void
     {
         Horus::initialize([
-            ParentFakeEntity::class => [
-                ChildFakeEntity::class,
-                AdjacentFakeEntity::class
+            ParentFakeWritableEntity::class => [
+                ChildFakeWritableEntity::class,
+                AdjacentFakeWritableEntity::class
             ],
-            LookupFakeEntity::class
+            ReadableFakeEntity::class
         ]);
 
         parent::setUp();

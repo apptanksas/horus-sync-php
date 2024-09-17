@@ -15,7 +15,7 @@ use AppTank\Horus\Core\Entity\SyncParameter;
  *
  * @package AppTank\Horus\Illuminate\Database
  */
-abstract class LookupSynchronizable extends BaseSynchronizable implements IEntitySynchronizable
+abstract class ReadableEntitySynchronizable extends EntitySynchronizable implements IEntitySynchronizable
 {
     public $timestamps = false;
     public $incrementing = true;

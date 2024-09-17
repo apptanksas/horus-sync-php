@@ -8,13 +8,13 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\LookupFakeEntityFactory;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -98,7 +98,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
-            ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
+            ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $this->faker->word
         ]));
 
         $childEntities = [];
@@ -171,7 +171,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
-            ParentFakeEntity::ATTR_VALUE_NULLABLE => $this->faker->word
+            ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $this->faker->word
         ]));
 
         foreach ($parentsEntities as $parentEntity) {
@@ -211,19 +211,19 @@ class GetDataEntitiesApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
 
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp())
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp())
         ]));
 
         $updatedAtTarget = $updatedAt - 1;
-        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
+        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeWritableEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value, ['after' => $updatedAtTarget]));
@@ -242,7 +242,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
         $parentsEntitiesOwner = $this->generateArray(function () use ($userOwnerId, &$grants) {
             $entity = ParentFakeEntityFactory::create($userOwnerId);
             $grants[] = new EntityGranted($userOwnerId,
-                new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
+                new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()),
                 AccessLevel::all());
             return $entity;
         });

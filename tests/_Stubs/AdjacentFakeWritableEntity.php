@@ -4,11 +4,11 @@ namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Database\BaseSynchronizable;
-use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\EntityDependsOn;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
-class AdjacentFakeEntity extends EntitySynchronizable implements EntityDependsOn
+class AdjacentFakeWritableEntity extends WritableEntitySynchronizable implements EntityDependsOn
 {
 
     const string FK_PARENT_ID = "parent_id";
@@ -17,7 +17,7 @@ class AdjacentFakeEntity extends EntitySynchronizable implements EntityDependsOn
     {
         return [
             SyncParameter::createString("name", 1),
-            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, 1, ParentFakeEntity::getEntityName())
+            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, 1, ParentFakeWritableEntity::getEntityName())
         ];
     }
 
@@ -33,8 +33,8 @@ class AdjacentFakeEntity extends EntitySynchronizable implements EntityDependsOn
 
     public function dependsOn(): IEntitySynchronizable
     {
-        return $this->belongsTo(ParentFakeEntity::class,
+        return $this->belongsTo(ParentFakeWritableEntity::class,
             self::FK_PARENT_ID,
-            BaseSynchronizable::ATTR_ID)->first();
+            EntitySynchronizable::ATTR_ID)->first();
     }
 }

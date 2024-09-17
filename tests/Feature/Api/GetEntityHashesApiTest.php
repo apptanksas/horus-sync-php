@@ -4,10 +4,10 @@ namespace Api;
 
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -21,19 +21,19 @@ class GetEntityHashesApiTest extends ApiTestCase
         $ownerId = $this->faker->uuid;
         Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
 
         // When
-        $response = $this->get(route(RouteName::GET_ENTITY_HASHES->value, [ParentFakeEntity::getEntityName()]));
+        $response = $this->get(route(RouteName::GET_ENTITY_HASHES->value, [ParentFakeWritableEntity::getEntityName()]));
         // Then
         $response->assertOk();
         $response->assertJsonCount(count($parentsEntities));
         $response->assertExactJsonStructure([
             '*' => [
-                EntitySynchronizable::ATTR_ID,
-                EntitySynchronizable::ATTR_SYNC_HASH
+                WritableEntitySynchronizable::ATTR_ID,
+                WritableEntitySynchronizable::ATTR_SYNC_HASH
             ]
         ]);
     }

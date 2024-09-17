@@ -14,7 +14,7 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\QueueActionFactory;
 use Tests\TestCase;
@@ -60,19 +60,19 @@ class SyncQueueActionsTest extends TestCase
         $insertActions = $this->generateArray(fn() => QueueActionFactory::create(
             EntityOperationFactory::createEntityInsert(
                 $this->faker->uuid,
-                ParentFakeEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+                ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
             )
         ));
         $updateActions = $this->generateArray(fn() => QueueActionFactory::create(
             EntityOperationFactory::createEntityUpdate(
                 $this->faker->uuid,
-                ParentFakeEntity::getEntityName(), $this->faker->uuid, ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+                ParentFakeWritableEntity::getEntityName(), $this->faker->uuid, ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
             )
         ));
         $deleteActions = $this->generateArray(fn() => QueueActionFactory::create(
             EntityOperationFactory::createEntityDelete(
                 $this->faker->uuid,
-                ParentFakeEntity::getEntityName(), $this->faker->uuid, now()->toDateTimeImmutable()
+                ParentFakeWritableEntity::getEntityName(), $this->faker->uuid, now()->toDateTimeImmutable()
             )
         ));
 

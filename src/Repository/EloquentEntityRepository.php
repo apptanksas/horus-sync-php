@@ -14,8 +14,8 @@ use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
-use AppTank\Horus\Illuminate\Database\LookupSynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,17 +63,17 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         foreach ($operations as $operation) {
             $groupOperationByEntity[$operation->entity][] = array_merge([
-                EntitySynchronizable::ATTR_SYNC_HASH => $operation->hash(),
-                EntitySynchronizable::ATTR_SYNC_OWNER_ID => $operation->ownerId,
-                EntitySynchronizable::ATTR_SYNC_CREATED_AT => $this->dateTimeUtil->getCurrent(),
-                EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->dateTimeUtil->getCurrent(),
+                WritableEntitySynchronizable::ATTR_SYNC_HASH => $operation->hash(),
+                WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID => $operation->ownerId,
+                WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT => $this->dateTimeUtil->getCurrent(),
+                WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->dateTimeUtil->getCurrent(),
             ], $operation->toArray());
         }
 
         foreach ($groupOperationByEntity as $entity => $operations) {
 
             /**
-             * @var EntitySynchronizable $entityClass
+             * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
@@ -109,7 +109,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         $groupsIdsByEntity = $this->groupIdsByEntity(...$operations);
         $groupHashesByEntity = [];
         $groupDataToUpdateByEntity = [];
-        $columnId = EntitySynchronizable::ATTR_ID;
+        $columnId = WritableEntitySynchronizable::ATTR_ID;
 
 
         // *************************************
@@ -118,7 +118,7 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         foreach ($groupsIdsByEntity as $entity => $ids) {
             /**
-             * @var EntitySynchronizable $entityClass
+             * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
@@ -164,8 +164,8 @@ readonly class EloquentEntityRepository implements EntityRepository
         foreach ($operations as $operation) {
             $data = $operation->attributes;
             $data[$columnId] = $operation->id;
-            $data[EntitySynchronizable::ATTR_SYNC_HASH] = $groupHashesByEntity[$operation->entity][$operation->id];
-            $data[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = $this->dateTimeUtil->getCurrent();
+            $data[WritableEntitySynchronizable::ATTR_SYNC_HASH] = $groupHashesByEntity[$operation->entity][$operation->id];
+            $data[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT] = $this->dateTimeUtil->getCurrent();
             $groupDataToUpdateByEntity[$operation->entity][] = $data;
         }
 
@@ -177,7 +177,7 @@ readonly class EloquentEntityRepository implements EntityRepository
         foreach ($groupDataToUpdateByEntity as $entity => $data) {
 
             /**
-             * @var EntitySynchronizable $entityClass
+             * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
@@ -216,13 +216,13 @@ readonly class EloquentEntityRepository implements EntityRepository
         foreach ($groupOperationByEntity as $entity => $ids) {
 
             /**
-             * @var EntitySynchronizable $entityClass
+             * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
 
             $this->validateOperation($entityClass);
 
-            foreach ($entityClass::query()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get() as $eloquentModel) {
+            foreach ($entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids)->get() as $eloquentModel) {
 
                 $entityData = $this->buildEntityData($eloquentModel);
                 $idsRelated = $this->parseRelatedIds($entityData);
@@ -238,10 +238,10 @@ readonly class EloquentEntityRepository implements EntityRepository
         // Delete entities and related entities
         foreach ($dataPreparedToDelete as $entityName => $ids) {
             /**
-             * @var EntitySynchronizable $entityClass
+             * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entityName);
-            $entityClass::query()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->delete();
+            $entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids)->delete();
         }
     }
 
@@ -308,7 +308,7 @@ readonly class EloquentEntityRepository implements EntityRepository
                             ?int       $afterTimestamp = null): array
     {
         /**
-         * @var $entityClass EntitySynchronizable
+         * @var $entityClass WritableEntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
         $instanceClass = new $entityClass();
@@ -318,16 +318,16 @@ readonly class EloquentEntityRepository implements EntityRepository
          */
         $queryBuilder = $entityClass::query();
 
-        if ($instanceClass instanceof EntitySynchronizable) {
-            $queryBuilder = $queryBuilder->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
+        if ($instanceClass instanceof WritableEntitySynchronizable) {
+            $queryBuilder = $queryBuilder->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
         }
 
         if (count($ids) > 0) {
-            $queryBuilder = $queryBuilder->whereIn(EntitySynchronizable::ATTR_ID, $ids);
+            $queryBuilder = $queryBuilder->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids);
         }
 
-        if (!is_null($afterTimestamp) && $instanceClass instanceof EntitySynchronizable) {
-            $queryBuilder = $queryBuilder->where(EntitySynchronizable::ATTR_SYNC_UPDATED_AT,
+        if (!is_null($afterTimestamp) && $instanceClass instanceof WritableEntitySynchronizable) {
+            $queryBuilder = $queryBuilder->where(WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT,
                 ">",
                 $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())
             );
@@ -351,12 +351,12 @@ readonly class EloquentEntityRepository implements EntityRepository
     function getEntityHashes(string|int $ownerUserId, string $entityName): array
     {
         /**
-         * @var $entityClass EntitySynchronizable
+         * @var $entityClass WritableEntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
-        $result = $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerUserId)
-            ->orderByDesc(EntitySynchronizable::ATTR_ID)
-            ->get([EntitySynchronizable::ATTR_ID, EntitySynchronizable::ATTR_SYNC_HASH]);
+        $result = $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerUserId)
+            ->orderByDesc(WritableEntitySynchronizable::ATTR_ID)
+            ->get([WritableEntitySynchronizable::ATTR_ID, WritableEntitySynchronizable::ATTR_SYNC_HASH]);
 
         return $result->toArray();
     }
@@ -375,11 +375,11 @@ readonly class EloquentEntityRepository implements EntityRepository
     function entityExists(int|string $userId, string $entityName, string $entityId): bool
     {
         /**
-         * @var $entityClass EntitySynchronizable
+         * @var $entityClass WritableEntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
-        return $entityClass::query()->where(EntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)
-            ->where(EntitySynchronizable::ATTR_ID, $entityId)
+        return $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)
+            ->where(WritableEntitySynchronizable::ATTR_ID, $entityId)
             ->exists();
     }
 
@@ -466,7 +466,7 @@ readonly class EloquentEntityRepository implements EntityRepository
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
 
-        if ($parentEntity instanceof LookupSynchronizable) {
+        if ($parentEntity instanceof ReadableEntitySynchronizable) {
             return $entityData;
         }
 
@@ -528,10 +528,10 @@ readonly class EloquentEntityRepository implements EntityRepository
     {
         $output = $modelData;
 
-        if (isset($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))
-            $output[EntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
-        if (isset($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))
-            $output[EntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[EntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
+        if (isset($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))
+            $output[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
+        if (isset($modelData[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT]))
+            $output[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
 
         // Filter attributes null
         return array_filter($output, fn($item) => !is_null($item));
@@ -572,7 +572,7 @@ readonly class EloquentEntityRepository implements EntityRepository
                 continue;
             }
 
-            if ($key == EntitySynchronizable::ATTR_ID) {
+            if ($key == WritableEntitySynchronizable::ATTR_ID) {
                 $idsOutput[$entityName][] = $value;
             }
         }
@@ -593,7 +593,7 @@ readonly class EloquentEntityRepository implements EntityRepository
     {
         $instanceClass = new  $entityClass();
 
-        if ($instanceClass instanceof EntitySynchronizable) {
+        if ($instanceClass instanceof WritableEntitySynchronizable) {
             return;
         }
 
