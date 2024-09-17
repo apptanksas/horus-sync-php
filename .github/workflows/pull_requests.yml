@@ -1,0 +1,30 @@
+name: Enforce Branch Policies for Merging
+
+on:
+  pull_request:
+    branches:
+      - master
+      - feature/*
+
+jobs:
+  enforce_branch_policies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if the target branch is master or feature/*
+        run: |
+          # Get the target branch (e.g., master or feature/*)
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          # Get the source branch (e.g., release/*, feature/*, fix/*)
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          
+          # Rule 1: Pull requests to master must come from release/*
+          if [[ "$TARGET_BRANCH" == "master" && "$SOURCE_BRANCH" != release/* ]]; then
+            echo "Pull requests to master can only be made from release/* branches."
+            exit 1
+          fi
+          
+          # Rule 2: Pull requests to feature/* must come from feature/* or fix/*
+          if [[ "$TARGET_BRANCH" == feature/* && "$SOURCE_BRANCH" != feature/* && "$SOURCE_BRANCH" != fix/* ]]; then
+            echo "Pull requests to feature/* branches can only be made from feature/* or fix/* branches."
+            exit 1
+          fi
