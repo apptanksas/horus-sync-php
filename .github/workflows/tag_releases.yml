@@ -1,0 +1,32 @@
+name: Tag Release on Merge
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  create_tag:
+    if: startsWith(github.head_ref, 'release/') || startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Extract release version from the branch name
+      - name: Extract release version from branch name
+        id: extract_version
+        run: |
+          RELEASE_BRANCH="${GITHUB_REF##*/}"
+          echo "Release branch: $RELEASE_BRANCH"
+          echo "::set-output name=version::$RELEASE_BRANCH"
+
+      # Create a new Git tag
+      - name: Create Git tag
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag ${{ steps.extract_version.outputs.version }}
+          git push origin ${{ steps.extract_version.outputs.version }}

@@ -1,11 +1,10 @@
 {
-  "name": "apptank/horus-sync",
-  "description": "App Mobile data sync library",
-  "license": "MIT",
+  "name": "apptank/horusync",
+  "description": "Data synchronization between mobile devices and a Laravel application",
+  "license": "AGPL-3.0-only",
   "authors": [
     {
-      "name": "John Ospina",
-      "email": "johnospina.apptank@gmail.com"
+      "name": "John Ospina"
     }
   ],
   "keywords": [
@@ -24,7 +23,7 @@
   "require-dev": {
     "phpunit/phpunit": "^9.5.1|^10.5",
     "mockery/mockery": "^1.4",
-    "orchestra/testbench": "9.x-dev"
+    "orchestra/testbench": "^v9.4.0"
   },
   "autoload": {
     "psr-4": {
@@ -43,6 +42,9 @@
         "AppTank\\Horus\\Illuminate\\Provider\\HorusServiceProvider"
       ]
     }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit"
   },
   "minimum-stability": "dev",
   "config": {

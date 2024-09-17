@@ -12,6 +12,7 @@ use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\_Stubs\ChildFakeEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\LookupFakeEntity;
@@ -72,6 +73,12 @@ class GetDataEntityApiTest extends TestCase
         ],
     ];
 
+    function setUp(): void
+    {
+        parent::setUp();
+        Schema::disableForeignKeyConstraints();
+    }
+
     function testGetEntitiesIsSuccess()
     {
         $userId = $this->faker->uuid;
@@ -94,10 +101,13 @@ class GetDataEntityApiTest extends TestCase
 
     function testGetEntitiesChildIsSuccess()
     {
+
         $userId = $this->faker->uuid;
+        $parent = ParentFakeEntityFactory::create($userId);
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
-        $entities = $this->generateArray(fn() => ChildFakeEntityFactory::create(null, $userId));
+        $entities = $this->generateArray(fn() => ChildFakeEntityFactory::create($parent->getId(), $userId));
+
 
         // When
         $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ChildFakeEntity::getEntityName()));

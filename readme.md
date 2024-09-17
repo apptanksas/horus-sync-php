@@ -1,3 +1,13 @@
+
+<p align="center">
+<img src="" width="400" alt="Horusync Logo"></a>
+</p>
+
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/apptanksas/horus-sync-php/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status"></a>
+</p>
+
+
 # Horus Sync
 
 Esta libreria permite definir una estructura de modelos datos sincronizables entre el servidor y un cliente. Debe usarse
