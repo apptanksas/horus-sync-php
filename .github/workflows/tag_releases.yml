@@ -20,25 +20,24 @@ jobs:
           echo "Last commit message: $LAST_COMMIT"
           if [[ "$LAST_COMMIT" == *"Merge pull request"*release/* ]]; then
             echo "Merged from release branch"
-            echo "::set-output name=release::true"
+            echo "release=true" >> $GITHUB_ENV
           else
             echo "Not merged from a release branch"
-            echo "::set-output name=release::false"
+            echo "release=false" >> $GITHUB_ENV
           fi
 
-      # Continue only if the merge was from a release/* branch
       - name: Extract release version from branch name
         id: extract_version
-        if: steps.check_release_branch.outputs.release == 'true'
+        if: env.release == 'true'
         run: |
           RELEASE_BRANCH="${GITHUB_REF##*/}"
           echo "Release branch: $RELEASE_BRANCH"
-          echo "::set-output name=version::$RELEASE_BRANCH"
+          echo "version=$RELEASE_BRANCH" >> $GITHUB_ENV
 
       - name: Create Git tag
-        if: steps.check_release_branch.outputs.release == 'true'
+        if: env.release == 'true'
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git tag ${{ steps.extract_version.outputs.version }}
-          git push origin ${{ steps.extract_version.outputs.version }}
+          git tag ${{ env.version }}
+          git push origin ${{ env.version }}
