@@ -4,31 +4,33 @@ on:
   pull_request:
     branches:
       - master
-      - feature/*
+      - release/*
     types:
       - opened
       - synchronize
       - reopened
 
 jobs:
-  enforce_branch_policies:
+  validation_branch_rules:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if the target branch is master or feature/*
+      - name: Check branch rules
         run: |
-          # Get the target branch (e.g., master or feature/*)
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-          # Get the source branch (e.g., release/*, feature/*, fix/*)
-          SOURCE_BRANCH="${{ github.head_ref }}"
-          
-          # Rule 1: Pull requests to master must come from release/*
-          if [[ "$TARGET_BRANCH" == "master" && "$SOURCE_BRANCH" != release/* ]]; then
-            echo "Pull requests to master can only be made from release/* branches."
-            exit 1
+          TARGET_BRANCH="${{ github.ref_name }}"  # La rama a la que se hace el PR (target)
+          SOURCE_BRANCH="${{ github.head_ref }}"  # La rama desde la que se hace el PR (source)
+
+          # Validar PRs a la rama master
+          if [[ "$TARGET_BRANCH" == "master" ]]; then
+            if [[ "$SOURCE_BRANCH" != release/* ]]; then
+              echo "Pull requests to master can only be made from release/* branches."
+              exit 1
+            fi
           fi
-          
-          # Rule 2: Pull requests to feature/* must come from feature/* or fix/*
-          if [[ "$TARGET_BRANCH" == feature/* && "$SOURCE_BRANCH" != feature/* && "$SOURCE_BRANCH" != fix/* ]]; then
-            echo "Pull requests to feature/* branches can only be made from feature/* or fix/* branches."
-            exit 1
+
+          # Validar PRs a ramas release/*
+          if [[ "$TARGET_BRANCH" == release/* ]]; then
+            if [[ "$SOURCE_BRANCH" != feature/* && "$SOURCE_BRANCH" != fix/* ]]; then
+              echo "Pull requests to release/* branches can only be made from feature/* or fix/* branches."
+              exit 1
+            fi
           fi
