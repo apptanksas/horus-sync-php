@@ -3,7 +3,7 @@
 namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Hasher;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 class AdjacentFakeEntityFactory
 {
@@ -12,10 +12,10 @@ class AdjacentFakeEntityFactory
         $faker = \Faker\Factory::create();
         $data = self::newData($parentId);
 
-        $data[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($data);
-        $data[EntitySynchronizable::ATTR_SYNC_OWNER_ID] = $userId ?? $faker->uuid;
+        $data[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($data);
+        $data[WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID] = $userId ?? $faker->uuid;
 
-        $entity = new AdjacentFakeEntity($data);
+        $entity = new AdjacentFakeWritableEntity($data);
         $entity->save();
 
         return $entity;
@@ -26,9 +26,9 @@ class AdjacentFakeEntityFactory
         $faker = \Faker\Factory::create();
 
         return [
-            EntitySynchronizable::ATTR_ID => $faker->uuid,
+            WritableEntitySynchronizable::ATTR_ID => $faker->uuid,
             "name" => $faker->word,
-            AdjacentFakeEntity::FK_PARENT_ID => $parentId ?? $faker->uuid
+            AdjacentFakeWritableEntity::FK_PARENT_ID => $parentId ?? $faker->uuid
         ];
     }
 }

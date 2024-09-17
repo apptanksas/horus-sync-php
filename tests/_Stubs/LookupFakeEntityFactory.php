@@ -4,12 +4,12 @@ namespace Tests\_Stubs;
 
 class LookupFakeEntityFactory
 {
-    public static function create(): LookupFakeEntity
+    public static function create(): ReadableFakeEntity
     {
 
         $data = self::newData();
         unset($data["id"]);
-        $entity = new LookupFakeEntity($data);
+        $entity = new ReadableFakeEntity($data);
         $entity->save();
 
         return $entity;

@@ -4,7 +4,7 @@ namespace AppTank\Horus\Core\Mapper;
 
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Exception\ClientException;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 /**
  * @internal Class EntityMapper
@@ -40,7 +40,7 @@ class EntityMapper
     /**
      * Registers an entity class with the mapper.
      *
-     * @param string|EntitySynchronizable $entityClass The class name of the entity or an instance of `EntitySynchronizable`.
+     * @param string|WritableEntitySynchronizable $entityClass The class name of the entity or an instance of `EntitySynchronizable`.
      *
      * @return void
      */

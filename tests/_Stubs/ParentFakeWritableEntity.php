@@ -3,11 +3,11 @@
 namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class ParentFakeEntity extends EntitySynchronizable
+class ParentFakeWritableEntity extends WritableEntitySynchronizable
 {
 
     const string ATTR_NAME = "name";
@@ -32,8 +32,8 @@ class ParentFakeEntity extends EntitySynchronizable
             SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_DEFAULT),
             SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_DEFAULT, true),
             SyncParameter::createEnum(self::ATTR_ENUM, self::ENUM_VALUES, self::VERSION_DEFAULT),
-            SyncParameter::createRelationOneOfMany([ChildFakeEntity::class], self::VERSION_CHILDREN),
-            SyncParameter::createRelationOneOfOne([AdjacentFakeEntity::class], self::VERSION_CHILDREN)
+            SyncParameter::createRelationOneOfMany([ChildFakeWritableEntity::class], self::VERSION_CHILDREN),
+            SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN)
         ];
     }
 
@@ -59,11 +59,11 @@ class ParentFakeEntity extends EntitySynchronizable
 
     public function children(): HasMany
     {
-        return $this->hasMany(ChildFakeEntity::class, ChildFakeEntity::FK_PARENT_ID, self::ATTR_ID);
+        return $this->hasMany(ChildFakeWritableEntity::class, ChildFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
     }
 
     public function adjacent():HasOne
     {
-        return $this->hasOne(AdjacentFakeEntity::class, AdjacentFakeEntity::FK_PARENT_ID, self::ATTR_ID);
+        return $this->hasOne(AdjacentFakeWritableEntity::class, AdjacentFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
     }
 }

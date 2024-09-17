@@ -1,0 +1,28 @@
+<?php
+
+namespace {{ namespace }}\Models\Sync;
+
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
+use AppTank\Horus\Core\Entity\SyncParameter;
+
+class {{ class }} extends WritableEntitySynchronizable
+{
+    public static function parameters(): array
+       {
+           return [
+                // Define the parameters of the entity
+               // SyncParameter::createString("name", 1),
+               // SyncParameter::createInt("age", 1)
+           ];
+       }
+
+    public static function getEntityName(): string
+    {
+        // TODO("Entity name")
+    }
+
+    public static function getVersionNumber(): int
+    {
+        return 1;
+    }
+}

@@ -9,10 +9,10 @@ use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use Faker\Generator;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase;
-use Tests\_Stubs\AdjacentFakeEntity;
-use Tests\_Stubs\ChildFakeEntity;
-use Tests\_Stubs\LookupFakeEntity;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\AdjacentFakeWritableEntity;
+use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\ReadableFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 
 class ApiTestCase extends TestCase
 {
@@ -25,11 +25,11 @@ class ApiTestCase extends TestCase
     protected function setUp(): void
     {
         Horus::initialize([
-            ParentFakeEntity::class => [
-                ChildFakeEntity::class,
-                AdjacentFakeEntity::class
+            ParentFakeWritableEntity::class => [
+                ChildFakeWritableEntity::class,
+                AdjacentFakeWritableEntity::class
             ],
-            LookupFakeEntity::class
+            ReadableFakeEntity::class
         ]);
 
         Horus::setMiddlewares($this->middlewares);

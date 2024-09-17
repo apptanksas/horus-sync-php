@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.0
+- Initial release
+
 ## 2024-09-05
 - Se agrega soporte para llaves foraneas en las entidades sincronizables con eliminacion en cascada.
 - Se agrega nuevos metodos de SyncParameter para definir llaves foraneas.

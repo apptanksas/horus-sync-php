@@ -2,185 +2,171 @@
 
 namespace AppTank\Horus\Illuminate\Database;
 
+use AppTank\Horus\Core\Entity\EntityType;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Core\Entity\SyncParameterType;
+use AppTank\Horus\Core\Util\StringUtil;
+use AppTank\Horus\Horus;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Class EntitySynchronizable
+ * @internal Class EntitySynchronizable
  *
- * This abstract class extends `BaseSynchronizable` and implements `IEntitySynchronizable`.
- * It provides default implementations for managing entity synchronization with additional attributes
- * and methods. The `getEntityName` and `getVersionNumber` methods must be implemented in child classes
- * and are static because they are called from the `schema` method without creating an instance.
+ * An abstract base class for entity synchronizable models. This class extends Laravel's `Model` class
+ * and implements `IEntitySynchronizable` to provide common functionalities for entity synchronization.
+ * It includes soft delete functionality and manages entity parameters and schema.
  *
  * @package AppTank\Horus\Illuminate\Database
  */
-abstract class EntitySynchronizable extends BaseSynchronizable implements IEntitySynchronizable
+abstract class EntitySynchronizable extends Model implements IEntitySynchronizable
 {
-    public const ATTR_SYNC_OWNER_ID = "sync_owner_id";
-    public const ATTR_SYNC_HASH = "sync_hash";
-    public const ATTR_SYNC_CREATED_AT = "sync_created_at";
-    public const ATTR_SYNC_UPDATED_AT = "sync_updated_at";
-
-    public $timestamps = false;
-    public $incrementing = false;
+    use SoftDeletes;
 
     /**
-     * EntitySynchronizable constructor.
+     * Constant for the primary key attribute name.
      *
-     * Initializes entity parameters and fillable attributes.
+     * @var string
+     */
+    const string ATTR_ID = "id";
+
+    /**
+     * Constant for the sync deleted at attribute name.
+     *
+     * @var string
+     */
+    const string ATTR_SYNC_DELETED_AT = "sync_deleted_at";
+
+    /**
+     * The name of the entity.
+     *
+     * @var string
+     */
+    public string $entityName;
+
+    /**
+     * The version number of the entity.
+     *
+     * @var int
+     */
+    public int $versionNumber;
+
+    /**
+     * An array of synchronization parameters.
+     *
+     * @var SyncParameter[]
+     */
+    protected array $parameters;
+
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = self::ATTR_ID;
+
+    /**
+     * BaseSynchronizable constructor.
+     *
+     * Initializes the entity name, version number, and parameters. Sets up the fillable attributes and
+     * connection settings for the model.
      *
      * @param array $attributes Attributes to be set on the model.
      */
     public function __construct(array $attributes = [])
     {
+        $this->entityName = static::getEntityName();
+        $this->versionNumber = static::getVersionNumber();
         $this->parameters = static::parameters();
-        $this->fillable = array_merge(array_map(fn($parameter) => $parameter->name, $this->parameters), [
-            self::ATTR_ID,
-            self::ATTR_SYNC_OWNER_ID,
-            self::ATTR_SYNC_HASH,
-            self::ATTR_SYNC_CREATED_AT,
-            self::ATTR_SYNC_UPDATED_AT
-        ]);
+
+        // Merge fillable attributes
+        $this->fillable = array_merge($this->fillable, array_map(fn($parameter) => $parameter->name, $this->parameters));
 
         parent::__construct($attributes);
+
+        $this->setTable(static::getTableName());
+
+        // Set the connection name if it is not set
+        if (!is_null($connection = Horus::getInstance()->getConnectionName()) && is_null($this->connection)) {
+            $this->setConnection($connection);
+        }
     }
 
     /**
-     * Get the base synchronization parameters.
+     * Get the name of the column used for soft deletes.
      *
-     * @return SyncParameter[] List of base synchronization parameters.
+     * @return string
      */
-    public static function baseParameters(): array
+    public function getDeletedAtColumn(): string
     {
+        return self::ATTR_SYNC_DELETED_AT;
+    }
+
+    /**
+     * Get the schema for the entity.
+     *
+     * This method returns an array representing the schema of the entity, including entity name, type, attributes,
+     * and the current version number.
+     *
+     * @return array
+     */
+    public static function schema(): array
+    {
+        $attributes = [];
+        $class = get_called_class();
+
+        /**
+         * @var SyncParameter[] $parameters
+         */
+        $parameters = array_merge(static::baseParameters(), $class::parameters());
+        $filterParameters = [self::ATTR_SYNC_DELETED_AT];
+
+        foreach ($parameters as $parameter) {
+            if (in_array($parameter->name, $filterParameters)) {
+                continue;
+            }
+
+            $attribute = [];
+            $attribute["name"] = $parameter->name;
+            $attribute["version"] = $parameter->version;
+            $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
+            $attribute["nullable"] = $parameter->isNullable;
+
+            if ($parameter->linkedEntity !== null) {
+                $attribute["linked_entity"] = $parameter->linkedEntity;
+            }
+
+            if ($parameter->type == SyncParameterType::ENUM) {
+                $attribute["options"] = array_map(fn($item) => strval($item), $parameter->options);
+            }
+
+            if ($parameter->type == SyncParameterType::RELATION_ONE_OF_MANY || $parameter->type == SyncParameterType::RELATION_ONE_OF_ONE) {
+                $attribute["related"] = array_map(fn($classRelated) => $classRelated::schema(), $parameter->related);
+            }
+
+
+            $attributes[] = $attribute;
+        }
+
+        $instanceClass = new $class();
+        $entityType = ($instanceClass instanceof ReadableEntitySynchronizable) ? EntityType::READABLE : EntityType::WRITABLE;
+
         return [
-            SyncParameter::createPrimaryKeyString(self::ATTR_ID, 1),
-            SyncParameter::createString(self::ATTR_SYNC_OWNER_ID, 1),
-            SyncParameter::createString(self::ATTR_SYNC_HASH, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_CREATED_AT, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_UPDATED_AT, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, 1),
+            "entity" => $class::getEntityName(),
+            "type" => $entityType->value,
+            "attributes" => $attributes,
+            "current_version" => $class::getVersionNumber()
         ];
     }
 
     /**
-     * Get the table name for the entity.
+     * Get the ID attribute of the model.
      *
-     * @return string Table name for the entity.
+     * @return string
      */
-    final public static function getTableName(): string
+    public function getId(): string
     {
-        return "se_" . static::getEntityName();
-    }
-
-    // ------------------------------------------------------------------------
-    // GETTERS
-    // ------------------------------------------------------------------------
-
-    /**
-     * Get the owner ID of the entity.
-     *
-     * @return string|int Owner ID.
-     */
-    public function getOwnerId(): string|int
-    {
-        return $this->getAttribute(self::ATTR_SYNC_OWNER_ID);
-    }
-
-    /**
-     * Get the hash of the entity.
-     *
-     * @return string Hash.
-     */
-    public function getHash(): string
-    {
-        return $this->getAttribute(self::ATTR_SYNC_HASH);
-    }
-
-    /**
-     * Get the updated timestamp of the entity.
-     *
-     * @return \DateTimeImmutable Updated timestamp.
-     */
-    public function getUpdatedAt(): \DateTimeImmutable
-    {
-        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_SYNC_UPDATED_AT)));
-    }
-
-    /**
-     * Get the created timestamp of the entity.
-     *
-     * @return int Created timestamp.
-     */
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_SYNC_CREATED_AT)));
-    }
-
-    // ------------------------------------------------------------------------
-    // OVERRIDE
-    // ------------------------------------------------------------------------
-
-    /**
-     * Save the entity to the database.
-     *
-     * Sets creation and update timestamps if they are not already set.
-     *
-     * @param array $options Options for the save operation.
-     * @return bool True if the save was successful, otherwise false.
-     */
-    function save(array $options = []): bool
-    {
-        if (!$this->exists && !$this->getAttribute(self::ATTR_SYNC_CREATED_AT)) {
-            $this->setAttribute(self::ATTR_SYNC_CREATED_AT, time());
-        }
-
-        if (!$this->exists && !$this->getAttribute(self::ATTR_SYNC_UPDATED_AT)) {
-            $this->setAttribute(self::ATTR_SYNC_UPDATED_AT, time());
-        }
-
-        return parent::save($options);
-    }
-
-    // ------------------------------------------------------------------------
-    // RELATIONS
-    // ------------------------------------------------------------------------
-
-    /**
-     * Get one-to-many relation methods.
-     *
-     * @return string[] List of one-to-many relation methods.
-     */
-    public function getRelationsOneOfMany(): array
-    {
-        return [];
-    }
-
-    /**
-     * Get one-to-one relation methods.
-     *
-     * @return string[] List of one-to-one relation methods.
-     */
-    public function getRelationsOneOfOne(): array
-    {
-        return [];
-    }
-
-    // ------------------------------------------------------------------------
-    // PERMISSIONS
-    // ------------------------------------------------------------------------
-
-    /**
-     * Check if a user is the owner of the entity.
-     *
-     * @param string $entityId Entity ID.
-     * @param string|int $userId User ID.
-     * @return bool True if the user is the owner, otherwise false.
-     */
-    public static function isOwner(string $entityId, string|int $userId): bool
-    {
-        $class = get_called_class();
-        return $class::where(self::ATTR_SYNC_OWNER_ID, $userId)->where(self::ATTR_ID, $entityId)->exists();
+        return $this->getAttribute(self::ATTR_ID);
     }
 }
