@@ -10,35 +10,34 @@
 
 # Horus Sync
 
-Esta libreria permite manejar de una manera sencilla la sincronización de datos entre una base de datos remota en un servidor y una base de datos local en un dispositivo móvil. Para ello, se define un conjunto de entidades sincronizables definiendo sus parametros y relaciones con otras entidades.
+This library provides an easy way to manage data synchronization between a remote database on a server and a local database on a mobile device. It defines a set of synchronizable entities by specifying their parameters and relationships with other entities.
 
-### Características
-* **Sincronización de datos:** Permite sincronizar los datos de las entidades definidas en la base de datos local con la base de datos remota.
-* **Migración de esquema:** Permite obtener el esquema de las entidades sincronizables y sus relaciones.
-* **Validación de integridad:** Permite validar la integridad de los datos sincronizados.
-* **Autenticación y permisos:** Permite definir un usuario autenticado y los permisos asociados a las entidades.
-* **Middlewares:** Permite definir middlewares personalizados para las rutas de sincronización.
-* **Soporte para UUID:** Permite definir si se usara UUID en vez de Int como clave primaria de las entidades.
-* **Soporte para llaves foraneas:** Permite definir llaves foraneas en las entidades sincronizables con eliminacion en cascada.
-* **Soporte para UserActingAs:** Permite indicar si el usuario tiene permisos para actuar como otro usuario y acceder a las entidades donde se le ha otoragado permisos.
-* **Soporte para tipos de entidades sincronizables:** Permite definir dos tipos de entidades sincronizables: EntitySynchronizable y LookupSynchronizable que permiten definir si una entidade es editable o solo de lectura respectivamente.
+### Features
+* **Data Synchronization:** Enables synchronization of the defined entities' data between the local database and the remote database.
+* **Schema Migration:** Allows retrieval of the schema for synchronizable entities and their relationships.
+* **Integrity Validation:** Ensures the integrity of synchronized data.
+* **Authentication and Permissions:** Defines an authenticated user and the permissions associated with the entities.
+* **Middlewares:** Supports defining custom middlewares for synchronization routes.
+* **UUID Support:** Allows specifying whether UUIDs or Int will be used as the primary key for entities.
+* **Foreign Key Support:** Supports defining foreign keys in synchronizable entities with cascading delete functionality.
+* **UserActingAs Support:** Indicates if a user has permission to act as another user and access the entities where permissions have been granted.
+* **Support for Synchronizable Entity Types:** Supports defining entities as writable or readable, depending on whether they can be edited or not.
 
-## Instalación
+## Installation
 
-Esta libreria debe ser usada con la versión de Laravel 11 o superior.
+This library must be used with Laravel version 11 or higher.
 
+Use the following command to install the package using Composer:
 ```bash
 composer require apptank/horusync
 ```
 
-## Modo de uso
+## Usage
 
-Todos los modelos sincronizables deben heredar de `AppTank\Horus\Illuminate\Database\EntitySynchronizable` definiendo
-las propiedades que la componen.
+All synchronizable models with editable records must inherit from `WritableEntitySynchronizable`, defining the properties they contain. If you want a read-only entity, you should inherit from `ReadableEntitySynchronizable`.
 
-Puede usar un comando de artisan para generar un modelo sincronizable por ti. Solo deben indicar la ruta en donde debes
-guardar el modelo. El ejemplo
-a continuación creara un modelo en App/Models/Sync/MyModelSync
+You can use an artisan command to generate a synchronizable model for you. You just need to specify the path where the model should be stored. The following example will create a model in `App/Models/Sync/MyModelSync`:
+
 
 ```bash
 php artisan horus:entity MyModelSync
@@ -78,16 +77,19 @@ class MyModel extends WritableEntitySynchronizable
 }
 ```
 
-## Inicialización
+If you want to create a read-only entity, you can add the `--readable` option to the artisan command.
 
-### Inicializar container
+```bash
+php artisan horus:entity MyModelSync --readable
+```
 
-Es necesario inicializar el contenedor de Horus en el AppServiceProvider de laravel pasando como parametro un array con
-el
-mapa jeraquico de entidades.
+## Initialization
 
-* Puedes definir el nombre de la conexión a la base de datos y si se usara UUID en vez de Int como clave primaria de
-  forma opcional.
+### Initialize Container
+
+It is necessary to initialize the Horus container in the `AppServiceProvider` of Laravel by passing an array with the hierarchical map of entities.
+
+* You can optionally define the database connection name and whether UUIDs or Int will be used as the primary key.
 
 ```php
 class AppServiceProvider extends ServiceProvider
@@ -111,10 +113,9 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-### Ejecutar migraciones
+### Run Migrations
 
-Una vez que se ha inicializado el contenedor de Horus, es necesario ejecutar las migraciones de las tablas de
-sincronización.
+Once the Horus container has been initialized, you need to run the synchronization tables migrations.
 
 ```bash
 php artisan migrate
@@ -122,8 +123,7 @@ php artisan migrate
 
 ### Middlewares
 
-Si quieres implementar middleware personalizados paras las rutas de sincronización, puedes hacerlo de la siguiente forma
-en tu Service Provider:
+If you want to implement custom middlewares for the synchronization routes, you can do so in your Service Provider as follows:
 
 ```php
 
@@ -131,10 +131,9 @@ Horus::setMiddleware([MyMiddleware::class,'throttle:60,1']);
 
 ```
 
-### Autenticación y permisos
+### Authentication and Permissions
 
-El siguiente código muestra cómo se configura la autenticación de un usuario y los permisos asociados a las entidades.
-Utilizando la clase **UserAuth**, se define un usuario autenticado junto con las entidades a las que tiene acceso y los permisos correspondientes.
+The following code shows how to configure user authentication and the permissions associated with entities. Using the UserAuth class, you define an authenticated user along with the entities they have access to and the corresponding permissions.
 
 ```php
 Horus::getInstance()->setUserAuthenticated(
@@ -154,13 +153,11 @@ Horus::getInstance()->setUserAuthenticated(
 );
 ```
 
-# Rutas
+# Routes
 
-### Esquema de migración
+### Migration Schema
 
-Devuelve un esquema de migración de las entidades sincronizables. Indicando los atributos de cada entidad
-y sus relaciones. Ademas de la versión actual de la entidad y cual es la versión actual de cada atributo, para saber
-si se debe migrar la base de datos del cliente a una nueva versión.
+Returns a migration schema for the synchronizable entities. It indicates the attributes of each entity and their relationships. It also includes the current version of the entity and the current version of each attribute to determine if the client's database needs to be migrated to a new version.
 
 #### URL: GET
 
@@ -168,10 +165,10 @@ si se debe migrar la base de datos del cliente a una nueva versión.
 /sync/migration
  ```
 
-#### Respuesta
+#### Response
 
 <details>
-  <summary>Haz clic aquí ver la respuesta</summary>
+  <summary>Click here to see the response</summary>
 
 ```json
 [
@@ -326,10 +323,10 @@ si se debe migrar la base de datos del cliente a una nueva versión.
 
 </details>
 
-### Enviar datos a sincronizar
+### Send Data to Synchronize
 
-Este endpoint recibe un array de acciones a realizar en la base de datos. Cada acción debe tener un tipo de acción, la
-entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la que se realizo la acción.
+This endpoint receives an array of actions to be performed in the database. Each action must specify the action type, the entity it refers to, the data to be modified, and the date when the action was performed.
+
 
 #### URL: POST
 
@@ -337,10 +334,10 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 /sync/queue/actions 
 ```
 
-#### Request data de ejemplo
+#### Example request data
 
 <details>
-<summary>Haz click aqui para ver la request</summary>
+<summary>Click here to see the example request</summary>
 
 ```json
 [
@@ -381,7 +378,7 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 
 #### Response: 201 - Accepted
 
-## Obtener las acciones de sincronización realizas en orden cronoógico
+## Get the synchronization actions performed in chronological order
 
 #### URL: GET
 
@@ -389,7 +386,7 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 /sync/queue/actions 
 ```
 
-### Obtener los datos sincronizados de todas las entidades
+### Get the synchronized data of all entities
 
 #### URL: GET
 
@@ -397,23 +394,23 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 /sync/data
 ```
 
-#### Parametros opcionales
-* **after (timestamp:int):** Filtra los datos que se han sincronizado después de la fecha  indicada.
+#### Optional parameters
+* **after (timestamp:int):** Filters the data that has been synchronized after the indicated date.
 
-
-## Obtener los datos sincronizados de una entidad especifica
+## Get the synchronized data of a specific entity
 
 #### URL: GET
 
 ``` 
 /sync/{entity}
 ```
-#### Parametros opcionales
-* **after (timestamp:int):** Filtra los datos que se han sincronizado después de la fecha  indicada.
-* **ids (array):** Filtra los datos que se han sincronizado con los ids indicados.
+
+### Optional parameters
+* **after (timestamp:int):** Filters the data that has been synchronized after the indicated date.
+* **ids (array):** Filters the data that has been synchronized with the given ids.
 
 
-## Obtener la última acción sincronizada
+## Get the last synchronization action performed
 
 #### URL: GET
 
@@ -421,7 +418,7 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 /sync/queue/actions/last
 ```
 
-## Obtener los hashes de los registros sincronizados de una entidad
+## Get the hashes of the synchronized records of an entity
 
 #### URL: GET
 
@@ -429,10 +426,10 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 /sync/entity/{entity}/hashes
 ```
 
-#### Respuesta
+#### Response
 
 <details>
-  <summary>Haz clic aquí ver la respuesta de ejemplo</summary>
+  <summary>Click here to see the example response</summary>
 
 ```json
 [
@@ -453,10 +450,9 @@ entidad a la que se refiere y los datos a modificar. Ademas de la fecha en la qu
 </details>
 
 
-## Validar la integridad de los datos sincronizados
+## Validate Synchronized Data Integrity
 
-Este endpoint recibe un array de entidades y sus hashes, y devuelve un array con cada entidad y si el hash coincide con el
-hash de la entidad en la base de datos significa que la integridad de los datos esta correcta.
+This endpoint receives an array of entities and their hashes, and returns an array with each entity and whether the hash matches the hash of the entity in the database, indicating that the data integrity is correct.
 
 
 #### URL: POST
@@ -468,7 +464,7 @@ hash de la entidad en la base de datos significa que la integridad de los datos 
 #### Request data de ejemplo
 
 <details>
-<summary>Haz click aqui para ver la request</summary>
+<summary>Click here to see the example request</summary>
 
 ```json
 [
@@ -479,10 +475,10 @@ hash de la entidad en la base de datos significa que la integridad de los datos 
 ]
 ```
 
-#### Respuesta de ejemplo
+#### Example response
 
 <details>
-    <summary>Haz clic aquí ver la respuesta de ejemplo</summary>
+    <summary>Click here to see the example response</summary>
     
 ```json
 [
@@ -498,10 +494,9 @@ hash de la entidad en la base de datos significa que la integridad de los datos 
 ```
 </details>
 
-## Validar el algoritmo de hashing de las entidades
+## Validate Entity Hashing Algorithm
 
-Este endpoint recibe un array de atributos y un hash indicando el hash de salida del algoritmo del cliente para hashear esos atributos. 
-El servidor realiza el mismo proceso y compara el hash obtenido con el hash recibido del cliente, para validar que el algoritmo de hashing sea el mismo.
+This endpoint receives an array of attributes and a hash indicating the client-side hash of these attributes. The server performs the same process and compares the obtained hash with the hash received from the client to validate that the hashing algorithm is the same.
 
 #### URL: POST
 
@@ -509,7 +504,7 @@ El servidor realiza el mismo proceso y compara el hash obtenido con el hash reci
 /sync/validate/hashing
 ```
 
-#### Request data de ejemplo
+#### Example request data
 ```json
 {
   "data": {
@@ -522,7 +517,7 @@ El servidor realiza el mismo proceso y compara el hash obtenido con el hash reci
 }
 ```
 
-#### Respuesta de ejemplo
+#### Example response
 
 ```json
 {

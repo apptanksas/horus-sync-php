@@ -46,7 +46,10 @@ class CreateEntitySynchronizableCommand extends GeneratorCommand
      */
     protected function getStub(): string
     {
-        return __DIR__ . '/stubs/entity.stub';
+        if ($this->hasOption("readable")) {
+            return __DIR__ . '/stubs/readable_entity.stub';
+        }
+        return __DIR__ . '/stubs/writable_entity.stub';
     }
 
     /**
