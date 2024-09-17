@@ -1,7 +1,8 @@
 name: Tag Release on Merge
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
@@ -13,26 +14,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check if last merged branch was a release/*
+      - name: Validate and extract release branch
         id: check_release_branch
         run: |
-          LAST_COMMIT=$(git log -1 --pretty=%B)
-          echo "Last commit message: $LAST_COMMIT"
-          if [[ "$LAST_COMMIT" == *"Merge pull request"*release/* ]]; then
-            echo "Merged from release branch"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          echo "Branch name: $BRANCH_NAME"
+          if [[ "$BRANCH_NAME" == release/* ]]; then
             echo "release=true" >> $GITHUB_ENV
+            echo "version=$BRANCH_NAME" >> $GITHUB_ENV
           else
-            echo "Not merged from a release branch"
             echo "release=false" >> $GITHUB_ENV
           fi
-
-      - name: Extract release version from branch name
-        id: extract_version
-        if: env.release == 'true'
-        run: |
-          RELEASE_BRANCH="${GITHUB_REF##*/}"
-          echo "Release branch: $RELEASE_BRANCH"
-          echo "version=$RELEASE_BRANCH" >> $GITHUB_ENV
 
       - name: Create Git tag
         if: env.release == 'true'
