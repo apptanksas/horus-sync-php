@@ -1,7 +1,7 @@
 {
   "name": "apptank/horusync",
   "description": "Data synchronization between mobile devices and a Laravel application",
-  "license": "AGPL",
+  "license": "AGPL-3.0-only",
   "authors": [
     {
       "name": "John Ospina"
