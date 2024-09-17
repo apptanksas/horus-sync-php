@@ -5,6 +5,10 @@ on:
     branches:
       - master
       - feature/*
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   enforce_branch_policies:
