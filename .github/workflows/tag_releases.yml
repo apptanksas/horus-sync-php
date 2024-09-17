@@ -14,14 +14,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate and extract release branch
+      - name: Check if branch is a release branch
         id: check_release_branch
         run: |
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           echo "Branch name: $BRANCH_NAME"
           if [[ "$BRANCH_NAME" == release/* ]]; then
+            VERSION="${BRANCH_NAME#release/}"
+            TAG="v$VERSION"
             echo "release=true" >> $GITHUB_ENV
-            echo "version=$BRANCH_NAME" >> $GITHUB_ENV
+            echo "version=$TAG" >> $GITHUB_ENV
           else
             echo "release=false" >> $GITHUB_ENV
           fi
