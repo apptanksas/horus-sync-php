@@ -15,12 +15,12 @@ namespace AppTank\Horus\Core\Entity;
 enum EntityType: string
 {
     /**
-     * Represents an editable entity type.
+     * Represents a writable entity type.
      */
-    case EDITABLE = "editable";
+    case WRITABLE = "writable";
 
     /**
-     * Represents a lookup entity type.
+     * Represents a readable entity type.
      */
-    case LOOKUP = "lookup";
+    case READABLE = "readable";
 }

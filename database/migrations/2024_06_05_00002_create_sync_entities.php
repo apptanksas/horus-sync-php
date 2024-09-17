@@ -5,8 +5,8 @@ use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Database\BaseSynchronizable;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -61,7 +61,7 @@ return new class extends Migration {
         Schema::connection($container->getConnectionName())->disableForeignKeyConstraints();
 
         /**
-         * @var EntitySynchronizable $entityClass
+         * @var WritableEntitySynchronizable $entityClass
          */
         foreach ($container->getEntities() as $entityClass) {
             $tableName = $entityClass::getTableName();
@@ -79,12 +79,12 @@ return new class extends Migration {
     private function createColumn(Blueprint $table, SyncParameter $parameter): void
     {
 
-        if ($parameter->name == BaseSynchronizable::ATTR_SYNC_DELETED_AT) {
-            $table->softDeletes(BaseSynchronizable::ATTR_SYNC_DELETED_AT);
+        if ($parameter->name == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
+            $table->softDeletes(EntitySynchronizable::ATTR_SYNC_DELETED_AT);
             return;
         }
 
-        if ($parameter->name == EntitySynchronizable::ATTR_SYNC_HASH) {
+        if ($parameter->name == WritableEntitySynchronizable::ATTR_SYNC_HASH) {
             $table->string($parameter->name, Hasher::getHashLength());
             return;
         }
@@ -93,15 +93,15 @@ return new class extends Migration {
         if ($parameter->linkedEntity !== null) {
 
             /**
-             * @var BaseSynchronizable $entityClass
+             * @var EntitySynchronizable $entityClass
              */
             $entityClass = Horus::getInstance()->getEntityMapper()->getEntityClass($parameter->linkedEntity);
             $tableRelatedName = $entityClass::getTableName();
 
             match ($parameter->type) {
-                SyncParameterType::STRING => $table->foreign($parameter->name)->references(BaseSynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
-                SyncParameterType::INT => $table->foreignId($parameter->name)->references(BaseSynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
-                SyncParameterType::UUID => $table->foreignUuid($parameter->name)->references(BaseSynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
+                SyncParameterType::STRING => $table->foreign($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
+                SyncParameterType::INT => $table->foreignId($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
+                SyncParameterType::UUID => $table->foreignUuid($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
                 default => null,
             };
             return;

@@ -10,18 +10,18 @@ use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
-use Tests\_Stubs\AdjacentFakeEntity;
+use Tests\_Stubs\AdjacentFakeWritableEntity;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
-use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
-use Tests\_Stubs\LookupFakeEntity;
+use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\LookupFakeEntityFactory;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
 
@@ -34,8 +34,8 @@ class EloquentEntityRepositoryTest extends TestCase
     function setUp(): void
     {
         Horus::initialize([
-            ParentFakeEntity::class => [
-                ChildFakeEntity::class
+            ParentFakeWritableEntity::class => [
+                ChildFakeWritableEntity::class
             ]
         ]);
 
@@ -50,22 +50,22 @@ class EloquentEntityRepositoryTest extends TestCase
     function testInsertWithNullableIsSuccess()
     {
         // Given
-        ChildFakeEntity::query()->forceDelete();
-        ParentFakeEntity::query()->forceDelete();
+        ChildFakeWritableEntity::query()->forceDelete();
+        ParentFakeWritableEntity::query()->forceDelete();
 
         /**
          * @var EntityOperation[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ParentFakeEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
         ));
         /**
          * @var EntityOperation[] $childEntities
          */
         $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
+            ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
         ));
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
@@ -74,19 +74,19 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$operations);
 
         // Then
-         $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($childEntities));
-         $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
+         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + count($childEntities));
+         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities));
 
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
-            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
-            $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+            $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
 
         foreach ($childEntities as $entity) {
             $expectedData = $entity->toArray();
-            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
-            $this->assertDatabaseHas(ChildFakeEntity::getTableName(), $expectedData);
+            $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), $expectedData);
         }
     }
 
@@ -99,14 +99,14 @@ class EloquentEntityRepositoryTest extends TestCase
          */
         $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ParentFakeEntity::getEntityName(), ParentFakeEntityFactory::newData($this->faker->name), now()->toDateTimeImmutable()
+            ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData($this->faker->name), now()->toDateTimeImmutable()
         ));
         /**
          * @var EntityOperation[] $childEntities
          */
         $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ChildFakeEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
+            ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData(ParentFakeEntityFactory::create()->getId()), now()->toDateTimeImmutable()
         ));
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
@@ -115,19 +115,19 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$operations);
 
         // Then
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($childEntities));
-        $this->assertDatabaseCount(ChildFakeEntity::getTableName(), count($childEntities));
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + count($childEntities));
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities));
 
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
-            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
-            $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+            $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
 
         foreach ($childEntities as $entity) {
             $expectedData = $entity->toArray();
-            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
-            $this->assertDatabaseHas(ChildFakeEntity::getTableName(), $expectedData);
+            $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), $expectedData);
         }
     }
 
@@ -138,9 +138,9 @@ class EloquentEntityRepositoryTest extends TestCase
         /**
          * @var EntityUpdate[] $updateOperations
          */
-        $updateOperations = array_map(function (ParentFakeEntity $entity) use ($ownerId) {
-            $entityName = ParentFakeEntity::getEntityName();
-            $attributes = [ParentFakeEntity::ATTR_COLOR => $this->faker->colorName];
+        $updateOperations = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId) {
+            $entityName = ParentFakeWritableEntity::getEntityName();
+            $attributes = [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName];
             return EntityOperationFactory::createEntityUpdate($ownerId, $entityName, $entity->getId(), $attributes, now()->toDateTimeImmutable());
         }, $parentsEntities);
 
@@ -152,19 +152,19 @@ class EloquentEntityRepositoryTest extends TestCase
 
             $expectedData = array_merge(
                 ["id" => $operation->id,
-                    ParentFakeEntity::ATTR_NAME => $parentsEntities[$index]->name,
-                    ParentFakeEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum
+                    ParentFakeWritableEntity::ATTR_NAME => $parentsEntities[$index]->name,
+                    ParentFakeWritableEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum
                 ],
                 $operation->attributes
             );
 
-            if (!is_null($parentsEntities[$index]->{ParentFakeEntity::ATTR_VALUE_NULLABLE})) {
-                $expectedData[ParentFakeEntity::ATTR_VALUE_NULLABLE] = $parentsEntities[$index]->{ParentFakeEntity::ATTR_VALUE_NULLABLE};
+            if (!is_null($parentsEntities[$index]->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE})) {
+                $expectedData[ParentFakeWritableEntity::ATTR_VALUE_NULLABLE] = $parentsEntities[$index]->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE};
             }
 
             $hashExpected = Hasher::hash($expectedData);
-            $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
-            $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+            $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
+            $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
     }
 
@@ -175,9 +175,9 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $updateOperations = $this->generateCountArray(fn() => EntityOperationFactory::createEntityUpdate(
             $ownerId,
-            ParentFakeEntity::getEntityName(),
+            ParentFakeWritableEntity::getEntityName(),
             $parentEntity->getId(),
-            [ParentFakeEntity::ATTR_COLOR => $this->faker->colorName],
+            [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName],
             \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
         ), 10);
 
@@ -192,18 +192,18 @@ class EloquentEntityRepositoryTest extends TestCase
         $lastOperation = end($updateOperations);
         $expectedData = array_merge(
             ["id" => $lastOperation->id,
-                ParentFakeEntity::ATTR_NAME => $parentEntity->name,
-                ParentFakeEntity::ATTR_ENUM => $parentEntity->value_enum],
+                ParentFakeWritableEntity::ATTR_NAME => $parentEntity->name,
+                ParentFakeWritableEntity::ATTR_ENUM => $parentEntity->value_enum],
             $lastOperation->attributes
         );
 
-        if (!is_null($parentEntity->{ParentFakeEntity::ATTR_VALUE_NULLABLE})) {
-            $expectedData[ParentFakeEntity::ATTR_VALUE_NULLABLE] = $parentEntity->{ParentFakeEntity::ATTR_VALUE_NULLABLE};
+        if (!is_null($parentEntity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE})) {
+            $expectedData[ParentFakeWritableEntity::ATTR_VALUE_NULLABLE] = $parentEntity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE};
         }
 
         $hashExpected = Hasher::hash($expectedData);
-        $expectedData[EntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+        $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
     }
 
     function testUpdateRowSoftDeletedIsSuccess()
@@ -214,9 +214,9 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $updateOperation = EntityOperationFactory::createEntityUpdate(
             $ownerId,
-            ParentFakeEntity::getEntityName(),
+            ParentFakeWritableEntity::getEntityName(),
             $parentEntity->getId(),
-            [ParentFakeEntity::ATTR_COLOR => $this->faker->colorName],
+            [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName],
             \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
         );
 
@@ -225,11 +225,11 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $expectedData = array_merge(
-            ["id" => $updateOperation->id, ParentFakeEntity::ATTR_NAME => $parentEntity->name],
+            ["id" => $updateOperation->id, ParentFakeWritableEntity::ATTR_NAME => $parentEntity->name],
             $updateOperation->attributes
         );
-        $this->assertSoftDeleted(ParentFakeEntity::getTableName(), $expectedData, deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
-        $this->assertDatabaseHas(ParentFakeEntity::getTableName(), $expectedData);
+        $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), $expectedData, deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
     }
 
     function testDeleteIsSuccess()
@@ -239,7 +239,7 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $deleteOperation = EntityOperationFactory::createEntityDelete(
             $ownerId,
-            ParentFakeEntity::getEntityName(),
+            ParentFakeWritableEntity::getEntityName(),
             $parentEntity->getId(),
             \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
         );
@@ -249,9 +249,9 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $expectedData = ["id" => $deleteOperation->id];
-        $this->assertSoftDeleted(ParentFakeEntity::getTableName(),
+        $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(),
             $expectedData,
-            deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+            deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
     }
 
     function testSoftDeleteEntityParentAndSoftDeleteOnCascadeChildrenIsSuccess()
@@ -260,7 +260,7 @@ class EloquentEntityRepositoryTest extends TestCase
         Schema::disableForeignKeyConstraints();
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $childEntities = [];
@@ -269,10 +269,10 @@ class EloquentEntityRepositoryTest extends TestCase
             $childEntities = array_merge($childEntities, $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId)));
         }
 
-        $deleteOperations = array_map(function (ParentFakeEntity $entity) use ($ownerId) {
+        $deleteOperations = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId) {
             return EntityOperationFactory::createEntityDelete(
                 $ownerId,
-                ParentFakeEntity::getEntityName(),
+                ParentFakeWritableEntity::getEntityName(),
                 $entity->getId(),
                 \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
             );
@@ -286,16 +286,16 @@ class EloquentEntityRepositoryTest extends TestCase
         // Validate parent entities are soft deleted
         foreach ($parentsEntities as $parentFakeEntity) {
             $expectedData = ["id" => $parentFakeEntity->getId()];
-            $this->assertSoftDeleted(ParentFakeEntity::getTableName(),
+            $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(),
                 $expectedData,
-                deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+                deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
         }
         // Validate child entities are soft deleted
         foreach ($childEntities as $childFakeEntity) {
             $expectedData = ["id" => $childFakeEntity->getId()];
-            $this->assertSoftDeleted(ChildFakeEntity::getTableName(),
+            $this->assertSoftDeleted(ChildFakeWritableEntity::getTableName(),
                 $expectedData,
-                deletedAtColumn: EntitySynchronizable::ATTR_SYNC_DELETED_AT);
+                deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
         }
     }
 
@@ -304,12 +304,12 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $childEntities = [];
         /**
-         * @var AdjacentFakeEntity[] $adjacentEntities
+         * @var AdjacentFakeWritableEntity[] $adjacentEntities
          */
         $adjacentEntities = [];
 
@@ -336,8 +336,8 @@ class EloquentEntityRepositoryTest extends TestCase
             $parentEntityResult = array_merge([], array_filter($result, fn(EntityData $entity) => $entity->getData()["id"] === $parentEntity->getId()))[0];
 
             $this->assertEquals($parentEntity->getId(), $parentEntityResult->getData()["id"]);
-            $this->assertEquals($parentEntity->name, $parentEntityResult->getData()[ParentFakeEntity::ATTR_NAME]);
-            $this->assertEquals($parentEntity->color, $parentEntityResult->getData()[ParentFakeEntity::ATTR_COLOR]);
+            $this->assertEquals($parentEntity->name, $parentEntityResult->getData()[ParentFakeWritableEntity::ATTR_NAME]);
+            $this->assertEquals($parentEntity->color, $parentEntityResult->getData()[ParentFakeWritableEntity::ATTR_COLOR]);
 
             $children = $parentEntityResult->getData()["_children"];
             /**
@@ -347,31 +347,31 @@ class EloquentEntityRepositoryTest extends TestCase
 
             foreach ($childEntities[$parentEntity->getId()] as $childEntity) {
                 $childEntityResult = array_merge([], array_filter($children, fn($entity) => $entity->getData()["id"] == $childEntity->getId()))[0]->getData();
-                $this->assertEquals($childEntity->getId(), $childEntityResult[ChildFakeEntity::ATTR_ID]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_BOOLEAN_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_BOOLEAN_VALUE]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_INT_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_INT_VALUE]);
-                $this->assertEquals(round(floatval($childEntity->{ChildFakeEntity::ATTR_FLOAT_VALUE}), 2), round(floatval($childEntityResult[ChildFakeEntity::ATTR_FLOAT_VALUE]), 2), 2);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_STRING_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_STRING_VALUE]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_TIMESTAMP_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_TIMESTAMP_VALUE]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_PRIMARY_INT_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_PRIMARY_INT_VALUE]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_PRIMARY_STRING_VALUE}, $childEntityResult[ChildFakeEntity::ATTR_PRIMARY_STRING_VALUE]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::FK_PARENT_ID}, $childEntityResult[ChildFakeEntity::FK_PARENT_ID]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_HASH}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_HASH]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_OWNER_ID}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_OWNER_ID]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_CREATED_AT}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT]);
-                $this->assertEquals($childEntity->{ChildFakeEntity::ATTR_SYNC_UPDATED_AT}, $childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT]);
+                $this->assertEquals($childEntity->getId(), $childEntityResult[ChildFakeWritableEntity::ATTR_ID]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_BOOLEAN_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_BOOLEAN_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_INT_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_INT_VALUE]);
+                $this->assertEquals(round(floatval($childEntity->{ChildFakeWritableEntity::ATTR_FLOAT_VALUE}), 2), round(floatval($childEntityResult[ChildFakeWritableEntity::ATTR_FLOAT_VALUE]), 2), 2);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_STRING_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_STRING_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_PRIMARY_INT_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_PRIMARY_INT_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_PRIMARY_STRING_VALUE}, $childEntityResult[ChildFakeWritableEntity::ATTR_PRIMARY_STRING_VALUE]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::FK_PARENT_ID}, $childEntityResult[ChildFakeWritableEntity::FK_PARENT_ID]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_SYNC_HASH}, $childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_HASH]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID}, $childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_SYNC_CREATED_AT}, $childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_CREATED_AT]);
+                $this->assertEquals($childEntity->{ChildFakeWritableEntity::ATTR_SYNC_UPDATED_AT}, $childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_UPDATED_AT]);
 
-                $this->assertIsInt($childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT]);
-                $this->assertIsInt($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT]);
-                $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_UPDATED_AT] > 0);
-                $this->assertTrue($childEntityResult[ChildFakeEntity::ATTR_SYNC_CREATED_AT] > 0);
+                $this->assertIsInt($childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_UPDATED_AT]);
+                $this->assertIsInt($childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_CREATED_AT]);
+                $this->assertTrue($childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_UPDATED_AT] > 0);
+                $this->assertTrue($childEntityResult[ChildFakeWritableEntity::ATTR_SYNC_CREATED_AT] > 0);
             }
 
             // Adjacent
             $this->assertEquals($adjacentEntities[$parentEntity->getId()]->name, $adjacentResult->getData()["name"]);
-            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_HASH}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_HASH]);
-            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_OWNER_ID}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_OWNER_ID]);
-            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{EntitySynchronizable::ATTR_SYNC_CREATED_AT}, $adjacentResult->getData()[EntitySynchronizable::ATTR_SYNC_CREATED_AT]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{WritableEntitySynchronizable::ATTR_SYNC_HASH}, $adjacentResult->getData()[WritableEntitySynchronizable::ATTR_SYNC_HASH]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID}, $adjacentResult->getData()[WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID]);
+            $this->assertEquals($adjacentEntities[$parentEntity->getId()]->{WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT}, $adjacentResult->getData()[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]);
         }
     }
 
@@ -380,7 +380,7 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         //Parents entities soft deleted
@@ -398,7 +398,7 @@ class EloquentEntityRepositoryTest extends TestCase
         // Then
         $this->assertCount(count($parentsEntities), $result);
         // Validate soft deleted entities and entities not soft deleted are in the database
-        $this->assertDatabaseCount(ParentFakeEntity::getTableName(), count($parentsEntities) + count($parentsEntitiesDeleted));
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + count($parentsEntitiesDeleted));
     }
 
     function testSearchEntitiesAfterUpdatedAtIsSuccess()
@@ -406,19 +406,19 @@ class EloquentEntityRepositoryTest extends TestCase
         $ownerId = $this->faker->uuid;
         $updatedAt = $this->faker->dateTimeBetween()->getTimestamp();
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($updatedAt)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp()
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->faker->dateTimeBetween(endDate: $updatedAt)->getTimestamp()
         ]));
 
         $updatedAtTarget = $updatedAt - 1;
-        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
+        $countExpected = count(array_filter($parentsEntities, fn(ParentFakeWritableEntity $entity) => $entity->getUpdatedAt()->getTimestamp() > $updatedAtTarget));
 
         // When
         $result = $this->entityRepository->searchEntitiesAfterUpdatedAt($ownerId, $updatedAtTarget);
@@ -432,14 +432,14 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         // Others records
         $this->generateArray(fn() => ParentFakeEntityFactory::create());
 
         // When
-        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName());
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName());
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
@@ -450,14 +450,14 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $parentsEntitiesToSearch = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
-        $idsExpected = array_map(fn(ParentFakeEntity $entity) => $entity->getId(), $parentsEntitiesToSearch);
+        $idsExpected = array_map(fn(ParentFakeWritableEntity $entity) => $entity->getId(), $parentsEntitiesToSearch);
 
         // When
-        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), $idsExpected);
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName(), $idsExpected);
 
         // Then
         $this->assertCount(count($idsExpected), $result);
@@ -473,19 +473,19 @@ class EloquentEntityRepositoryTest extends TestCase
         $ownerId = $this->faker->uuid;
         $timestamp = $this->faker->dateTimeBetween()->getTimestamp();
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
         ]));
 
         // Generate entities before the updatedAt
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
-            EntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp())
+            WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp())
         ]));
 
         // When
-        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeEntity::getEntityName(), [], $timestamp - 1);
+        $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName(), [], $timestamp - 1);
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
@@ -496,19 +496,19 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         /**
-         * @var ParentFakeEntity[] $parentsEntities
+         * @var ParentFakeWritableEntity[] $parentsEntities
          */
         $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
 
         // When
-        $result = $this->entityRepository->getEntityHashes($ownerId, ParentFakeEntity::getEntityName());
+        $result = $this->entityRepository->getEntityHashes($ownerId, ParentFakeWritableEntity::getEntityName());
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
 
         foreach ($parentsEntities as $parentEntity) {
-            $this->assertNotEmpty(array_filter($result, fn($item) => $item[EntitySynchronizable::ATTR_ID] == $parentEntity->getId()));
-            $this->assertNotEmpty(array_filter($result, fn($item) => $item[EntitySynchronizable::ATTR_SYNC_HASH] == $parentEntity->getHash()));
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[WritableEntitySynchronizable::ATTR_ID] == $parentEntity->getId()));
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[WritableEntitySynchronizable::ATTR_SYNC_HASH] == $parentEntity->getHash()));
         }
     }
 
@@ -519,7 +519,7 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $operation = EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            LookupFakeEntity::getEntityName(), LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ReadableFakeEntity::getEntityName(), LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
         );
 
         // When
@@ -534,7 +534,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $lookup = LookupFakeEntityFactory::create();
         $operation = EntityOperationFactory::createEntityUpdate(
             $lookup->getId(),
-            LookupFakeEntity::getEntityName(),
+            ReadableFakeEntity::getEntityName(),
             $this->faker->uuid,
             LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
         );
@@ -551,7 +551,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $lookup = LookupFakeEntityFactory::create();
         $operation = EntityOperationFactory::createEntityDelete(
             $lookup->getId(),
-            LookupFakeEntity::getEntityName(),
+            ReadableFakeEntity::getEntityName(),
             $this->faker->uuid,
             now()->toDateTimeImmutable()
         );
@@ -567,7 +567,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
 
         // When
-        $lookupEntity = $this->entityRepository->searchEntities($ownerId, LookupFakeEntity::getEntityName());
+        $lookupEntity = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
 
         // Then
         $this->assertCount(count($entities), $lookupEntity);
@@ -579,11 +579,11 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
-        $ids = array_map(fn(LookupFakeEntity $entity) => $entity->getId(), $entities);
+        $ids = array_map(fn(ReadableFakeEntity $entity) => $entity->getId(), $entities);
         $this->generateArray(fn() => LookupFakeEntityFactory::create());
 
         // When
-        $lookupEntity = $this->entityRepository->searchEntities($ownerId, LookupFakeEntity::getEntityName(), $ids);
+        $lookupEntity = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName(), $ids);
 
         // Then
         $this->assertCount(count($entities), $lookupEntity);
@@ -596,7 +596,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $entity = ParentFakeEntityFactory::create($ownerId);
 
         // When
-        $result = $this->entityRepository->entityExists($ownerId, ParentFakeEntity::getEntityName(), $entity->getId());
+        $result = $this->entityRepository->entityExists($ownerId, ParentFakeWritableEntity::getEntityName(), $entity->getId());
 
         // Then
         $this->assertTrue($result);
@@ -609,7 +609,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $entity = ParentFakeEntityFactory::create($ownerId);
 
         // When
-        $result = $this->entityRepository->entityExists($ownerId, ParentFakeEntity::getEntityName(), $this->faker->uuid);
+        $result = $this->entityRepository->entityExists($ownerId, ParentFakeWritableEntity::getEntityName(), $this->faker->uuid);
 
         // Then
         $this->assertFalse($result);

@@ -1,6 +1,6 @@
 
 <p align="center">
-<img src="" width="400" alt="Horusync Logo"></a>
+<img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo"></a>
 </p>
 
 <p align="center">
@@ -10,26 +10,25 @@
 
 # Horus Sync
 
-Esta libreria permite definir una estructura de modelos datos sincronizables entre el servidor y un cliente. Debe usarse
-con la libreria cliente de horus.
+Esta libreria permite manejar de una manera sencilla la sincronización de datos entre una base de datos remota en un servidor y una base de datos local en un dispositivo móvil. Para ello, se define un conjunto de entidades sincronizables definiendo sus parametros y relaciones con otras entidades.
+
+### Características
+* **Sincronización de datos:** Permite sincronizar los datos de las entidades definidas en la base de datos local con la base de datos remota.
+* **Migración de esquema:** Permite obtener el esquema de las entidades sincronizables y sus relaciones.
+* **Validación de integridad:** Permite validar la integridad de los datos sincronizados.
+* **Autenticación y permisos:** Permite definir un usuario autenticado y los permisos asociados a las entidades.
+* **Middlewares:** Permite definir middlewares personalizados para las rutas de sincronización.
+* **Soporte para UUID:** Permite definir si se usara UUID en vez de Int como clave primaria de las entidades.
+* **Soporte para llaves foraneas:** Permite definir llaves foraneas en las entidades sincronizables con eliminacion en cascada.
+* **Soporte para UserActingAs:** Permite indicar si el usuario tiene permisos para actuar como otro usuario y acceder a las entidades donde se le ha otoragado permisos.
+* **Soporte para tipos de entidades sincronizables:** Permite definir dos tipos de entidades sincronizables: EntitySynchronizable y LookupSynchronizable que permiten definir si una entidade es editable o solo de lectura respectivamente.
 
 ## Instalación
 
 Esta libreria debe ser usada con la versión de Laravel 11 o superior.
 
 ```bash
-composer require apptank/horus-sync
-```
-
-Agregar en su archivo de composer.json
-
-```json
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/apptanksas/horus-sync-php.git"
-    }
-  ]
+composer require apptank/horusync
 ```
 
 ## Modo de uso
@@ -49,9 +48,9 @@ php artisan horus:entity MyModelSync
 namespace App\Models\Sync;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
-class MyModel extends EntitySynchronizable
+class MyModel extends WritableEntitySynchronizable
 {
     public static function parameters(): array
     {

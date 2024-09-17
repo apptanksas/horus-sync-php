@@ -11,9 +11,9 @@ use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
-use Tests\_Stubs\ChildFakeEntity;
+use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
 
@@ -36,7 +36,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         $userOwnerId = $this->faker->uuid;
 
         $entity = ParentFakeEntityFactory::create($userOwnerId);
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $entityId = $entity->getId();
 
         $userAuth = new UserAuth($userOwnerId);
@@ -52,7 +52,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
     function test_when_any_user_then_can_not_access_entity()
     {
         $entity = ParentFakeEntityFactory::create();
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $entityId = $entity->getId();
 
         $userAuth = new UserAuth($this->faker->uuid);
@@ -71,7 +71,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         $userOwnerId = $this->faker->uuid;
 
         $entity = ParentFakeEntityFactory::create($userOwnerId);
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $entityId = $entity->getId();
 
         $userAuth = new UserAuth($userInvitedId, [
@@ -93,7 +93,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         $userOwnerId = $this->faker->uuid;
 
         $entity = ParentFakeEntityFactory::create($userOwnerId);
-        $entityName = ParentFakeEntity::getEntityName();
+        $entityName = ParentFakeWritableEntity::getEntityName();
         $entityId = $entity->getId();
 
         $userAuth = new UserAuth($userInvitedId, [
@@ -119,12 +119,12 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
 
         $userAuth = new UserAuth($userInvitedId, [
             new EntityGranted($userOwnerId,
-                new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
+                new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()),
                 AccessLevel::new(Permission::READ))
         ]);
 
         // When
-        $entityName = ChildFakeEntity::getEntityName();
+        $entityName = ChildFakeWritableEntity::getEntityName();
         $entityId = $childEntity->getId();
         $canAccess = $this->repository->canAccessEntity($userAuth, new EntityReference($entityName, $entityId), Permission::READ);
 
@@ -142,12 +142,12 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
 
         $userAuth = new UserAuth($userInvitedId, [
             new EntityGranted($userOwnerId,
-                new EntityReference(ParentFakeEntity::getEntityName(), $entity->getId()),
+                new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()),
                 AccessLevel::new(Permission::READ, Permission::CREATE))
         ]);
 
         // When
-        $entityName = ChildFakeEntity::getEntityName();
+        $entityName = ChildFakeWritableEntity::getEntityName();
         $entityId = $childEntity->getId();
         $canAccess = $this->repository->canAccessEntity($userAuth, new EntityReference($entityName, $entityId), Permission::DELETE);
 

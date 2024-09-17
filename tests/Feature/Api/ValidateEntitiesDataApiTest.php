@@ -7,7 +7,7 @@ use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\_Stubs\ParentFakeEntity;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -35,17 +35,17 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
 
         $entities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
 
-        $hashExpected = Hasher::hash(array_map(fn(ParentFakeEntity $entity) => Hasher::hash([
-            ParentFakeEntity::ATTR_ID => $entity->getId(),
-            ParentFakeEntity::ATTR_NAME => $entity->name,
-            ParentFakeEntity::ATTR_COLOR => $entity->color,
-            ParentFakeEntity::ATTR_ENUM => $entity->value_enum,
-            ParentFakeEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeEntity::ATTR_VALUE_NULLABLE},
+        $hashExpected = Hasher::hash(array_map(fn(ParentFakeWritableEntity $entity) => Hasher::hash([
+            ParentFakeWritableEntity::ATTR_ID => $entity->getId(),
+            ParentFakeWritableEntity::ATTR_NAME => $entity->name,
+            ParentFakeWritableEntity::ATTR_COLOR => $entity->color,
+            ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
+            ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
         ]), $entities));
 
 
         $data = [[
-            'entity' => ParentFakeEntity::getEntityName(),
+            'entity' => ParentFakeWritableEntity::getEntityName(),
             'hash' => $hashExpected
         ]];
 
@@ -73,7 +73,7 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
 
 
         $data = [[
-            'entity' => ParentFakeEntity::getEntityName(),
+            'entity' => ParentFakeWritableEntity::getEntityName(),
             'hash' => $hashExpected
         ]];
 

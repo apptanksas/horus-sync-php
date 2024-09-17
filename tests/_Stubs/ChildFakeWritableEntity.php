@@ -4,11 +4,11 @@ namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Database\BaseSynchronizable;
-use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\EntityDependsOn;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
-class ChildFakeEntity extends EntitySynchronizable implements EntityDependsOn
+class ChildFakeWritableEntity extends WritableEntitySynchronizable implements EntityDependsOn
 {
 
     const ATTR_PRIMARY_INT_VALUE = "primary_int_value";
@@ -49,7 +49,7 @@ class ChildFakeEntity extends EntitySynchronizable implements EntityDependsOn
             SyncParameter::createString(self::ATTR_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createBoolean(self::ATTR_BOOLEAN_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES),
-            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES, ParentFakeEntity::getEntityName())
+            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES, ParentFakeWritableEntity::getEntityName())
         ];
     }
 
@@ -66,6 +66,6 @@ class ChildFakeEntity extends EntitySynchronizable implements EntityDependsOn
 
     public function dependsOn(): IEntitySynchronizable
     {
-        return $this->belongsTo(ParentFakeEntity::class, self::FK_PARENT_ID, BaseSynchronizable::ATTR_ID)->first();
+        return $this->belongsTo(ParentFakeWritableEntity::class, self::FK_PARENT_ID, EntitySynchronizable::ATTR_ID)->first();
     }
 }

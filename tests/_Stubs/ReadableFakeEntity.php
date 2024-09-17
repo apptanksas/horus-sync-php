@@ -3,9 +3,9 @@
 namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Illuminate\Database\LookupSynchronizable;
+use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 
-class LookupFakeEntity extends LookupSynchronizable
+class ReadableFakeEntity extends ReadableEntitySynchronizable
 {
 
     public static function parameters(): array
@@ -17,7 +17,7 @@ class LookupFakeEntity extends LookupSynchronizable
 
     public static function getEntityName(): string
     {
-        return "lookup_table";
+        return "readable_fake_entity";
     }
 
     public static function getVersionNumber(): int
