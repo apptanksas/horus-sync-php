@@ -1,11 +1,10 @@
 {
-  "name": "apptank/horus-sync",
-  "description": "App Mobile data sync library",
-  "license": "MIT",
+  "name": "apptank/horusync",
+  "description": "Data synchronization between mobile devices and a Laravel application",
+  "license": "AGPL",
   "authors": [
     {
-      "name": "John Ospina",
-      "email": "johnospina.apptank@gmail.com"
+      "name": "John Ospina"
     }
   ],
   "keywords": [
