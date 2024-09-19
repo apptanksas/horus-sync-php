@@ -16,8 +16,8 @@ jobs:
     steps:
       - name: Check branch rules
         run: |
-          TARGET_BRANCH="${{ github.ref_name }}"  # La rama a la que se hace el PR (target)
-          SOURCE_BRANCH="${{ github.head_ref }}"  # La rama desde la que se hace el PR (source)
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"  # La rama a la que se hace el PR (target)
+          SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"  # La rama desde la que se hace el PR (source)
 
           # Validar PRs a la rama master
           if [[ "$TARGET_BRANCH" == "master" ]]; then
