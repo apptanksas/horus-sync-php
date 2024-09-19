@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.5
+- Se agrega notificacion a packagist cuando se realiza un release en github.
+- Se modifica el workflow de tag releases para crear automaticamente el release en github.
+
 ## v0.1.4
 ### Fixed
 - Tag releases workflow to create tag from release version

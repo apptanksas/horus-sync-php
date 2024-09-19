@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Illuminate\Console;
 
 use Illuminate\Console\GeneratorCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * @internal Class CreateEntitySynchronizableCommand
@@ -63,5 +64,17 @@ class CreateEntitySynchronizableCommand extends GeneratorCommand
     protected function getPath($name): string
     {
         return parent::getPath("Models/Sync/" . $name);
+    }
+
+    /**
+     * Get the options for the command.
+     *
+     * @return array[]
+     */
+    protected function getOptions(): array
+    {
+        return [
+            ['readable', null, InputOption::VALUE_NONE, 'Generate a readable entity.'],
+        ];
     }
 }
