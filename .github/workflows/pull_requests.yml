@@ -9,6 +9,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - edited
 
 jobs:
   validation_branch_rules:
@@ -16,8 +17,8 @@ jobs:
     steps:
       - name: Check branch rules
         run: |
-          TARGET_BRANCH="${{ github.ref_name }}"  # La rama a la que se hace el PR (target)
-          SOURCE_BRANCH="${{ github.head_ref }}"  # La rama desde la que se hace el PR (source)
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"  # The branch to which the PR is made (target)
+          SOURCE_BRANCH="${{ github.event.pull_request.head.ref }}"  # The branch from which the PR is made (source)
 
           # Validar PRs a la rama master
           if [[ "$TARGET_BRANCH" == "master" ]]; then
