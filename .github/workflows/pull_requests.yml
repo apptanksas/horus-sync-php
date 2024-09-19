@@ -9,6 +9,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - edited
 
 jobs:
   validation_branch_rules:
