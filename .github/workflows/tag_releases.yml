@@ -1,4 +1,4 @@
-name: Tag Release on Merge
+name: Release stable version
 
 on:
   pull_request:
@@ -28,6 +28,23 @@ jobs:
             echo "release=false" >> $GITHUB_ENV
           fi
 
+      # Step to delete all -rc tags for the same version
+      - name: Delete all RC tags for this version
+        if: env.release == 'true'
+        run: |
+          VERSION=${{ env.version }}
+          echo "Deleting all RC tags for version: $VERSION"
+          
+          # Fetch all tags to ensure we have the latest
+          git fetch --tags
+          
+          # Find and delete RC tags matching this version (vX.Y.Z-rcN)
+          for TAG in $(git tag --list "${VERSION}-rc*"); do
+            echo "Deleting tag: $TAG"
+            git tag -d "$TAG"
+            git push --delete origin "$TAG"
+          done
+
       - name: Create Git tag
         if: env.release == 'true'
         run: |
@@ -38,7 +55,7 @@ jobs:
 
       - name: Notify Packagist
         run: |
-          curl -X POST "https://packagist.org/api/update-package?username=jospina_apptank&apiToken=${{secrets.PACKAGIST_TOKEN}}"
+          curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=jospina_apptank&apiToken=${{secrets.PACKAGIST_TOKEN}}' -d'{"repository":{"url":"${{vars.PACKAGIST_PACKAGE_URL}}"}}'
 
       - name: Create GitHub Release
         if: env.release == 'true'
@@ -49,4 +66,4 @@ jobs:
           tag_name: ${{ env.version }}
           release_name: ${{ env.version }}
           draft: false
-          prerelease: false
+          prerelease: true
