@@ -1,6 +1,5 @@
-<div style="border: 2px solid red; padding: 10px; color: white;margin:20px;background:red;font-weight:bold;">
-Attention: This library currently is testing stage until publish the version 1.0.0. 
-</div>
+**Attention:** This library currently is testing stage until publish the version 1.0.0.
+
 
 <p align="center">
 
