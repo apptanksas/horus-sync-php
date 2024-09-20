@@ -28,12 +28,14 @@ jobs:
             echo "release=false" >> $GITHUB_ENV
           fi
 
-      # Step to delete all -rc tags for the same version
-      - name: Delete all RC tags for this version
+      # Step to delete all RC tags and releases for this version
+      - name: Delete all RC tags and GitHub releases for this version
         if: env.release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${{ env.version }}
-          echo "Deleting all RC tags for version: $VERSION"
+          echo "Deleting all RC tags and releases for version: $VERSION"
           
           # Fetch all tags to ensure we have the latest
           git fetch --tags
@@ -43,6 +45,13 @@ jobs:
             echo "Deleting tag: $TAG"
             git tag -d "$TAG"
             git push --delete origin "$TAG"
+          
+            # Find and delete the GitHub release associated with this tag
+            RELEASE_ID=$(gh release view "$TAG" --json id --jq ".id" || echo "")
+            if [[ -n "$RELEASE_ID" ]]; then
+              echo "Deleting GitHub release for tag: $TAG (Release ID: $RELEASE_ID)"
+              gh release delete "$RELEASE_ID" --yes
+            fi
           done
 
       - name: Create Git tag
@@ -66,4 +75,4 @@ jobs:
           tag_name: ${{ env.version }}
           release_name: ${{ env.version }}
           draft: false
-          prerelease: true
+          prerelease: false
