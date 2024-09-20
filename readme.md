@@ -1,14 +1,14 @@
-**Attention:** This library currently is testing stage until publish the version 1.0.0.
-
 
 <p align="center">
 
 <img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo">
 <br/>
 <img src="https://github.com/apptanksas/horus-sync-php/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status">
-<img src="https://img.shields.io/packagist/v/apptanksas/horus-sync-php" alt="Latest Stable Version">
-<img src="https://img.shields.io/packagist/l/apptanksas/horus-sync-php" alt="License">
+<img src="https://img.shields.io/packagist/v/apptank/horusync" alt="Latest Stable Version">
+<img src="https://img.shields.io/github/license/apptanksas/horus-sync-php" alt="License">
 </p>
+
+**Please note:** This library currently is in testing stage until publish the version 1.0.0.
 
 # Horus Sync
 
