@@ -1,5 +1,6 @@
 # Changelog
 
+## v0.1.8
 ## v0.1.7
 - Added remove releases candidates in github when a release is made.
 - Fixed release stable version when a release is made.
