@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.7
+- Added remove releases candidates in github when a release is made.
+- Fixed release stable version when a release is made.
+
 ## v0.1.6
 - Added new workflow to generate pre-release  when is merged changes into a release branch.
 
