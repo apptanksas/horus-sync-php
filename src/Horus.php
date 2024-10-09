@@ -5,6 +5,7 @@ namespace AppTank\Horus;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\EntityMap;
+use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 
 /**
@@ -18,6 +19,8 @@ class Horus
     private static ?self $instance = null;
 
     private Config $config;
+
+    private IFileHandler $fileHandler;
 
     private UserAuth|null $userAuth = null;
 
@@ -134,6 +137,17 @@ class Horus
         self::getInstance()->middlewares = $middlewares;
     }
 
+    /**
+     * Sets the file handler for the container.
+     *
+     * @param IFileHandler $fileHandler The file handler instance.
+     * @return void
+     */
+    public static function setFileHandler(IFileHandler $fileHandler)
+    {
+        self::getInstance()->fileHandler = $fileHandler;
+    }
+
     // --------------------------------
     // GETTERS
     // --------------------------------
@@ -230,5 +244,15 @@ class Horus
     public function getMiddlewares(): array
     {
         return $this->middlewares;
+    }
+
+    /**
+     * Gets the file handler.
+     *
+     * @return IFileHandler The file handler instance.
+     */
+    public static function getFileHandler(): IFileHandler
+    {
+        return self::getInstance()->fileHandler;
     }
 }

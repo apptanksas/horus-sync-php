@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
@@ -17,6 +18,7 @@ use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
+use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use Carbon\Laravel\ServiceProvider;
@@ -95,6 +97,12 @@ class HorusServiceProvider extends ServiceProvider
                 Horus::getInstance()->getConfig()
             );
         });
+
+        $this->app->singleton(FileUploadedRepository::class, function () {
+            return new EloquentFileUploadedRepository(Horus::getInstance()->getConnectionName());
+        });
+
+
     }
 
     /**

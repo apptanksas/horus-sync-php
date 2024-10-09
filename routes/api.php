@@ -8,6 +8,7 @@ use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
 use AppTank\Horus\Illuminate\Http\Controller\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\SearchEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\UploadFileController;
 use AppTank\Horus\Illuminate\Http\Controller\ValidateEntitiesDataController;
 use AppTank\Horus\Illuminate\Http\Controller\ValidateHashingController;
 use AppTank\Horus\RouteName;
@@ -89,6 +90,8 @@ Route::post("validate/hashing", [
     'middleware' => $middlewares
 ]);
 
-Route::post("upload/images",[
-
+Route::post("upload/file",[
+    'uses' => UploadFileController::class,
+    'as' => RouteName::POST_UPLOAD_FILE->value,
+    'middleware' => $middlewares
 ]);
