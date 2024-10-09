@@ -88,3 +88,7 @@ Route::post("validate/hashing", [
     'as' => RouteName::POST_VALIDATE_HASHING->value,
     'middleware' => $middlewares
 ]);
+
+Route::post("upload/images",[
+
+]);

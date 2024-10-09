@@ -29,6 +29,8 @@ enum SyncParameterType: string
     case TIMESTAMP = "timestamp";
     case UUID = "uuid";
 
+    case IMAGE = "image";
+
     case RELATION_ONE_OF_MANY = "relation_one_of_many";
     case RELATION_ONE_OF_ONE = "relation_one_of_one";
 
