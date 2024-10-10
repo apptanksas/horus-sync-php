@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Illuminate\Http\Controller;

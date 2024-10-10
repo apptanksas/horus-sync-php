@@ -33,6 +33,7 @@ class ParentFakeEntityFactory
             ParentFakeWritableEntity::ATTR_COLOR => $faker->colorName,
             ParentFakeWritableEntity::ATTR_ENUM => ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)],
             ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $valueNullable ?? ($faker->boolean ? $faker->word : null),
+            ParentFakeWritableEntity::ATTR_IMAGE => $faker->uuid
         ];
     }
 }

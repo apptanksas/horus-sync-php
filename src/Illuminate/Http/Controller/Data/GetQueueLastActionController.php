@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Get\GetQueueLastAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;

@@ -41,6 +41,7 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_COLOR => $entity->color,
             ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
             ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
         ]), $entities));
 
 

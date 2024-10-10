@@ -71,11 +71,12 @@ readonly class UserAuth
      *
      * @param string $entityName The name of the entity.
      * @param string $entityId The ID of the entity.
+     * @param Permission $permission The permission to check.
      * @return bool True if not granted, otherwise false.
      */
-    function hasNotGranted(string $entityName, string $entityId): bool
+    function hasNotGranted(string $entityName, string $entityId, Permission $permission): bool
     {
-        return !$this->hasGranted($entityName, $entityId);
+        return !$this->hasGranted($entityName, $entityId, $permission);
     }
 
     /**

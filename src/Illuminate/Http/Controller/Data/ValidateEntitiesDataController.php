@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Validate\ValidateEntitiesData;
 use AppTank\Horus\Core\Model\EntityHash;
