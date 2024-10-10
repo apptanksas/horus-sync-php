@@ -25,4 +25,11 @@ interface IFileHandler
      * @return void
      */
     function delete(FileUploaded $file): void;
+
+    /**
+     * Gets the MIME types allowed for file uploads.
+     *
+     * @return array
+     */
+    function getMimeTypesAllowed(): array;
 }

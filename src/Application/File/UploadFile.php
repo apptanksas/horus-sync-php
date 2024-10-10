@@ -43,13 +43,22 @@ readonly class UploadFile
         $fileUploaded = null;
 
         try {
+
+            $mimeType = $file->getMimeType();
+            $mimeTypesAllowed = $this->fileHandler->getMimeTypesAllowed();
+
+            if (!in_array($mimeType, $mimeTypesAllowed)) {
+                throw new UploadFileException("Invalid file type [$mimeType]. Only " . implode(', ', $mimeTypesAllowed) . " files are allowed.");
+            }
+
             $fileUploaded = $this->fileHandler->upload($userAuth->userId, $fileId, $file);
             $this->fileUploadedRepository->save($fileUploaded);
+
         } catch (\Exception $e) {
             if (!is_null($fileUploaded)) {
                 $this->fileHandler->delete($fileUploaded);
             }
-            throw new UploadFileException('Failed to upload file');
+            throw new UploadFileException('Failed to upload file: ' . $e->getMessage(), $e->getCode(), $e);
         }
 
         return ["url" => $fileUploaded->publicUrl];

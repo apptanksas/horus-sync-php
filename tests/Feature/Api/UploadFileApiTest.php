@@ -5,6 +5,7 @@ namespace Api;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\MimeType;
 use AppTank\Horus\Horus;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,6 +39,7 @@ class UploadFileApiTest extends ApiTestCase
         $fileUploadedExpected = FileUploadedFactory::create($userId);
         $fileId = $fileUploadedExpected->id;
         $this->fileHandler->shouldReceive('upload')->once()->with($userId, $fileUploadedExpected->id, $file)->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
 
         // When
         $response = $this->postJson(route(RouteName::POST_UPLOAD_FILE->value),["id" => $fileId, "file" =>$file ]);

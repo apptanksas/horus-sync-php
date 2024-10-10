@@ -6,6 +6,7 @@ use AppTank\Horus\Application\File\UploadFile;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Exception\UploadFileException;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\MimeType;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use Illuminate\Http\UploadedFile;
 use Mockery\Mock;
@@ -35,7 +36,10 @@ class UploadFileTest extends TestCase
         $file = UploadedFile::fake()->image('photo.jpg');
         $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
 
-        $this->fileHandler->shouldReceive('upload')->once()->with($userAuth->userId, $fileUploadedExpected->id, $file)->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('upload')->once()->with($userAuth->userId, $fileUploadedExpected->id, $file)
+            ->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
+
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected);
 
         // When
@@ -43,6 +47,20 @@ class UploadFileTest extends TestCase
 
         // Then
         $this->assertEquals($fileUploadedExpected->publicUrl, $result["url"]);
+    }
+
+    function testInvokeThrowExceptionInvalidMimeType()
+    {
+        // Given
+        $userAuth = new UserAuth($this->faker->uuid);
+        $file = UploadedFile::fake()->create('document.pdf');
+        $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
+
+        $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
+
+        // When
+        $this->expectException(UploadFileException::class);
+        $this->uploadFile->__invoke($userAuth, $fileUploadedExpected->id, $file);
     }
 
     function testInvokeThrowException()
@@ -53,6 +71,7 @@ class UploadFileTest extends TestCase
         $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
 
         $this->fileHandler->shouldReceive('upload')->once()->with($userAuth->userId, $fileUploadedExpected->id, $file)->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected)->andThrow(new \Exception());
         $this->fileHandler->shouldReceive('delete')->once()->with($fileUploadedExpected);
 
