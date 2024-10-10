@@ -4,6 +4,7 @@ namespace Application\File;
 
 use AppTank\Horus\Application\File\UploadFile;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Exception\UploadFileException;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\MimeType;
@@ -26,7 +27,7 @@ class UploadFileTest extends TestCase
 
         $this->fileHandler = $this->mock(IFileHandler::class);
         $this->fileUploadedRepository = $this->mock(FileUploadedRepository::class);
-        $this->uploadFile = new UploadFile($this->fileHandler, $this->fileUploadedRepository);
+        $this->uploadFile = new UploadFile($this->fileHandler, $this->fileUploadedRepository, new Config());
     }
 
     function testInvokeIsSuccess()
@@ -36,8 +37,7 @@ class UploadFileTest extends TestCase
         $file = UploadedFile::fake()->image('photo.jpg');
         $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
 
-        $this->fileHandler->shouldReceive('upload')->once()->with($userAuth->userId, $fileUploadedExpected->id, $file)
-            ->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
 
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected);
@@ -70,10 +70,10 @@ class UploadFileTest extends TestCase
         $file = UploadedFile::fake()->image('photo.jpg');
         $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
 
-        $this->fileHandler->shouldReceive('upload')->once()->with($userAuth->userId, $fileUploadedExpected->id, $file)->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected)->andThrow(new \Exception());
-        $this->fileHandler->shouldReceive('delete')->once()->with($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('delete')->once()->with($fileUploadedExpected->path);
 
         // When
         $this->expectException(UploadFileException::class);

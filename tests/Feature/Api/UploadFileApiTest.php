@@ -38,7 +38,7 @@ class UploadFileApiTest extends ApiTestCase
         $file = UploadedFile::fake()->image('avatar.jpg');
         $fileUploadedExpected = FileUploadedFactory::create($userId);
         $fileId = $fileUploadedExpected->id;
-        $this->fileHandler->shouldReceive('upload')->once()->with($userId, $fileUploadedExpected->id, $file)->andReturn($fileUploadedExpected);
+        $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
 
         // When

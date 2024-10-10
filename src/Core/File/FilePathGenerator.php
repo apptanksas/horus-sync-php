@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\File;
 
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Repository\EntityRepository;
 
@@ -12,10 +13,11 @@ readonly class FilePathGenerator
      * Constructor of the `FilePathGenerator` class.
      *
      * @param EntityRepository $entityRepository Repository for entity operations.
+     * @param Config $config Configuration for the file path generator.
      */
     function __construct(
         private EntityRepository $entityRepository,
-        private string           $basePath = "upload"
+        private Config           $config
     )
     {
 
@@ -32,7 +34,8 @@ readonly class FilePathGenerator
     function create(UserAuth        $userAuth,
                     EntityReference $entityReference): string
     {
-        $path = "{$this->basePath}/{$userAuth->getEffectiveUserId()}/";
+
+        $path = "{$this->config->basePathFiles}/{$userAuth->getEffectiveUserId()}/";
         $entityHierarchy = $this->entityRepository->getEntityPathHierarchy($entityReference);
 
         foreach ($entityHierarchy as $entity) {
