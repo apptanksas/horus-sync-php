@@ -94,7 +94,8 @@ class HorusServiceProvider extends ServiceProvider
         $this->app->singleton(EntityAccessValidatorRepository::class, function () {
             return new EloquentEntityAccessValidatorRepository(
                 $this->app->make(EntityMapper::class),
-                Horus::getInstance()->getConfig()
+                Horus::getInstance()->getConfig(),
+                $this->app->make(EntityRepository::class)
             );
         });
 

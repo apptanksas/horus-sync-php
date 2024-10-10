@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Repository;
 
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
@@ -14,6 +15,8 @@ use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
+use AppTank\Horus\Illuminate\Database\EntityDependsOn;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use Carbon\Carbon;
@@ -384,6 +387,45 @@ readonly class EloquentEntityRepository implements EntityRepository
     }
 
     /**
+     * Builds a hierarchy of paths based on the referenced entity, considering its relationship with parent entities.
+     *
+     * @param EntityReference $entityRefChild Reference to the child entity to build the hierarchy.
+     *
+     * @return EntitySynchronizable[] Returns an array with the entity hierarchy.
+     */
+    function getEntityPathHierarchy(EntityReference $entityRefChild): array
+    {
+        $entityHierarchy = [];
+
+        /**
+         * @var EntitySynchronizable $entityClass
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityRefChild->entityName);
+        // Get foreign keys of the entity
+        $foreignKeys = array_map(fn(SyncParameter $parameter) => $parameter->name,
+            array_filter($entityClass::parameters(), fn(SyncParameter $parameter) => $parameter->linkedEntity != null));
+
+        $entity = $entityClass::query()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first(array_merge($foreignKeys, [EntitySynchronizable::ATTR_ID]));
+
+        if ($entity instanceof EntityDependsOn) {
+            /**
+             * @var WritableEntitySynchronizable $entityParent
+             */
+            $entityParent = $entity->dependsOn();
+
+            $entityHierarchy = array_merge($entityHierarchy,
+                $this->getEntityPathHierarchy(
+                    new EntityReference($entityParent::class::getEntityName(), $entityParent->getId())
+                )
+            );
+        }
+
+        $entityHierarchy[] = $entity;
+
+        return $entityHierarchy;
+    }
+
+    /**
      * Groups entity IDs by entity name from a list of operations.
      *
      * This method organizes entity IDs from the provided operations into groups based on the entity name.
@@ -599,5 +641,6 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
     }
+
 
 }

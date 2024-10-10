@@ -3,6 +3,7 @@
 namespace Tests\Unit\Repository;
 
 
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
@@ -616,5 +617,23 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertFalse($result);
+    }
+
+    function testGetEntityPathHierarchy()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+        $childEntity = ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+
+        $entityReference = new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId());
+
+        // When
+        $result = $this->entityRepository->getEntityPathHierarchy($entityReference);
+
+        // Then
+        $this->assertCount(2, $result);
+        $this->assertEquals($parentEntity->getId(), $result[0]->getId());
+        $this->assertEquals($childEntity->getId(), $result[1]->getId());
     }
 }
