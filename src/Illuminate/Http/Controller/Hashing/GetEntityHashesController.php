@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Hashing;
 
 use AppTank\Horus\Application\Get\GetEntityHashes;
 use AppTank\Horus\Core\Repository\EntityRepository;

@@ -1,17 +1,18 @@
 <?php
 
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
-use AppTank\Horus\Illuminate\Http\Controller\GetEntityHashesController;
-use AppTank\Horus\Illuminate\Http\Controller\GetFileUploadedInfoController;
-use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
-use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
-use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
-use AppTank\Horus\Illuminate\Http\Controller\PostSyncQueueActionsController;
-use AppTank\Horus\Illuminate\Http\Controller\SearchEntitiesController;
-use AppTank\Horus\Illuminate\Http\Controller\UploadFileController;
-use AppTank\Horus\Illuminate\Http\Controller\ValidateEntitiesDataController;
-use AppTank\Horus\Illuminate\Http\Controller\ValidateHashingController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\GetDataEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\GetMigrationSchemaController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueActionsController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueLastActionController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\PostSyncQueueActionsController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\SearchEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\ValidateEntitiesDataController;
+use AppTank\Horus\Illuminate\Http\Controller\File\GetFileUploadedInfoController;
+use AppTank\Horus\Illuminate\Http\Controller\File\GetFileWrapperController;
+use AppTank\Horus\Illuminate\Http\Controller\File\UploadFileController;
+use AppTank\Horus\Illuminate\Http\Controller\Hashing\GetEntityHashesController;
+use AppTank\Horus\Illuminate\Http\Controller\Hashing\ValidateHashingController;
 use AppTank\Horus\RouteName;
 use Illuminate\Support\Facades\Route;
 
@@ -102,5 +103,11 @@ Route::post("upload/file", [
 Route::get("upload/file/{id}", [
     'uses' => GetFileUploadedInfoController::class,
     'as' => RouteName::GET_UPLOADED_FILE->value,
+    'middleware' => $middlewares
+]);
+
+Route::get("wrapper/file/{id}", [
+    'uses' => GetFileWrapperController::class,
+    'as' => RouteName::GET_WRAPPER_FILE->value,
     'middleware' => $middlewares
 ]);

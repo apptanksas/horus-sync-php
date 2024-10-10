@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\File;
 
 use AppTank\Horus\Application\File\UploadFile;
 use AppTank\Horus\Core\File\IFileHandler;

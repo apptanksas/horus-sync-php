@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Search\SearchDataEntities;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
