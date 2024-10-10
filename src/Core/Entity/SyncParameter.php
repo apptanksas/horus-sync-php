@@ -192,16 +192,16 @@ class SyncParameter
     }
 
     /**
-     * Creates an image parameter.
+     * Creates a reference file parameter.
      *
      * @param string $name The name of the parameter.
      * @param int $version The version of the parameter.
      * @param bool $isNullable Indicates if the parameter is nullable.
      * @return self A new instance of SyncParameter.
      */
-    public static function createImage(string $name, int $version, bool $isNullable = false): self
+    public static function createReferenceFile(string $name, int $version, bool $isNullable = false): self
     {
-        return new SyncParameter($name, SyncParameterType::IMAGE, $version, $isNullable);
+        return new SyncParameter($name, SyncParameterType::REFERENCE_FILE, $version, $isNullable);
     }
 
     /**
