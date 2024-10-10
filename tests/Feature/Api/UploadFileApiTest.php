@@ -11,9 +11,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Mockery\Mock;
 use Tests\_Stubs\FileUploadedFactory;
-use Tests\TestCase;
+use Tests\Feature\Api\ApiTestCase;
 
-class UploadFileApiTest extends TestCase
+class UploadFileApiTest extends ApiTestCase
 {
     use RefreshDatabase;
 

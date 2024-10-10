@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit\Application\Upload;
+namespace Application\File;
 
-use AppTank\Horus\Application\Upload\UploadFile;
+use AppTank\Horus\Application\File\UploadFile;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Exception\UploadFileException;
 use AppTank\Horus\Core\File\IFileHandler;

@@ -3,6 +3,7 @@
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Http\Controller\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\GetEntityHashesController;
+use AppTank\Horus\Illuminate\Http\Controller\GetFileUploadedInfoController;
 use AppTank\Horus\Illuminate\Http\Controller\GetMigrationSchemaController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\GetQueueLastActionController;
@@ -94,5 +95,12 @@ Route::post("validate/hashing", [
 Route::post("upload/file", [
     'uses' => UploadFileController::class,
     'as' => RouteName::POST_UPLOAD_FILE->value,
+    'middleware' => $middlewares
+]);
+
+// Route to get uploaded file
+Route::get("upload/file/{id}", [
+    'uses' => GetFileUploadedInfoController::class,
+    'as' => RouteName::GET_UPLOADED_FILE->value,
     'middleware' => $middlewares
 ]);

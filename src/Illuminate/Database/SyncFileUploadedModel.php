@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class SyncFileUploadedModel extends Model
 {
-    const TABLE_NAME = 'sync_files_uploaded';
+    const string TABLE_NAME = 'sync_files_uploaded';
 
 
-    const ATTR_ID = 'id';
-    const ATTR_MIME_TYPE = 'mime_type';
-    const ATTR_PATH = 'path';
-    const ATTR_PUBLIC_URL = 'public_url';
+    const string ATTR_ID = 'id';
+    const string ATTR_MIME_TYPE = 'mime_type';
+    const string ATTR_PATH = 'path';
+    const string ATTR_PUBLIC_URL = 'public_url';
 
     const string FK_OWNER_ID = "owner_id";
 

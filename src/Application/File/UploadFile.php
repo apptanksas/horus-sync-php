@@ -1,6 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Application\Upload;
+namespace AppTank\Horus\Application\File;
 
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Exception\UploadFileException;
@@ -29,8 +29,14 @@ readonly class UploadFile
 
     }
 
-    /**
-     * @throws \Exception
+    /** Invokes the UploadFile class to upload a file and save it to the repository.
+     *
+     * @param UserAuth $userAuth The authenticated user.
+     * @param string $fileId The ID of the file to upload.
+     * @param UploadedFile $file The file to upload.
+     * @return array The URL of the uploaded file.
+     *
+     * @throws UploadFileException If the file upload fails.
      */
     function __invoke(UserAuth $userAuth, string $fileId, UploadedFile $file): array
     {

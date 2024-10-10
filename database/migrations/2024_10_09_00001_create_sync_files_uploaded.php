@@ -39,6 +39,7 @@ return new class extends Migration {
                 $table->unsignedBigInteger(SyncFileUploadedModel::FK_OWNER_ID);
             }
 
+            $table->timestamps();
         };
 
         // if connection name is null, use default connection

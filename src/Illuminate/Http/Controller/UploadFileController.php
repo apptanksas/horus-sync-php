@@ -2,7 +2,7 @@
 
 namespace AppTank\Horus\Illuminate\Http\Controller;
 
-use AppTank\Horus\Application\Upload\UploadFile;
+use AppTank\Horus\Application\File\UploadFile;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Http\Controller;

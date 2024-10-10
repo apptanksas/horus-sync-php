@@ -14,7 +14,7 @@ class FileUploadedFactory
             $faker->uuid,
             $faker->mimeType(),
             $faker->filePath(),
-            $faker->url,
+            $faker->imageUrl,
             $userId ?? $faker->uuid,
         );
     }
