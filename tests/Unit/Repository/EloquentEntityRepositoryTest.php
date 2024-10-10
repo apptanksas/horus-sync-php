@@ -74,8 +74,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$operations);
 
         // Then
-         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + count($childEntities));
-         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities));
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + count($childEntities));
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities));
 
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
@@ -153,7 +153,8 @@ class EloquentEntityRepositoryTest extends TestCase
             $expectedData = array_merge(
                 ["id" => $operation->id,
                     ParentFakeWritableEntity::ATTR_NAME => $parentsEntities[$index]->name,
-                    ParentFakeWritableEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum
+                    ParentFakeWritableEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum,
+                    ParentFakeWritableEntity::ATTR_IMAGE => $parentsEntities[$index]->image
                 ],
                 $operation->attributes
             );
@@ -193,7 +194,9 @@ class EloquentEntityRepositoryTest extends TestCase
         $expectedData = array_merge(
             ["id" => $lastOperation->id,
                 ParentFakeWritableEntity::ATTR_NAME => $parentEntity->name,
-                ParentFakeWritableEntity::ATTR_ENUM => $parentEntity->value_enum],
+                ParentFakeWritableEntity::ATTR_ENUM => $parentEntity->value_enum,
+                ParentFakeWritableEntity::ATTR_IMAGE => $parentEntity->image
+            ],
             $lastOperation->attributes
         );
 

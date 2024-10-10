@@ -22,7 +22,8 @@ class Config
     function __construct(
         public bool    $validateAccess = false,
         public ?string $connectionName = null,
-        public bool    $usesUUIDs = false
+        public bool    $usesUUIDs = false,
+        public ?string $prefixTables = "sync",
     )
     {
 
