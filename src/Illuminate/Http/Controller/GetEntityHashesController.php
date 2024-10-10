@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
  *
  * @package AppTank\Horus\Illuminate\Http\Controller
  */
-class GetEntityUploadFileExceptionHashesController extends Controller
+class GetEntityHashesController extends Controller
 {
     private readonly GetEntityHashes $useCase;
 

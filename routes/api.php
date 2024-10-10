@@ -90,7 +90,8 @@ Route::post("validate/hashing", [
     'middleware' => $middlewares
 ]);
 
-Route::post("upload/file",[
+// Route to upload a file
+Route::post("upload/file", [
     'uses' => UploadFileController::class,
     'as' => RouteName::POST_UPLOAD_FILE->value,
     'middleware' => $middlewares
