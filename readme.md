@@ -479,9 +479,6 @@ This endpoint receives an array of entities and their hashes, and returns an arr
 
 #### Example response
 
-<details>
-    <summary>Click here to see the example response</summary>
-    
 ```json
 [
   {
@@ -494,7 +491,7 @@ This endpoint receives an array of entities and their hashes, and returns an arr
   }
 ]
 ```
-</details>
+
 
 ## Validate Entity Hashing Algorithm
 
@@ -527,4 +524,31 @@ This endpoint receives an array of attributes and a hash indicating the client-s
   "obtained": "17ffc52d4338881a6091ee80a4ef08db3901a86bf41636fa431a8ff5de3a6cf8",
   "matched": true
 }
+```
+
+# Local testing
+
+Add in your `composer.json` the following configuration:
+
+```json
+//...
+"repositories": [
+        {
+            "type": "path",
+            "url": "...\\HorusSync",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
+}
+//...
+```
+
+In the section require add the following line:
+
+```json
+  "require": {
+        "apptank/horusync": "dev-master"
+    }
 ```
