@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Trait\EnumIterator;
 enum SyncFileStatus: int
 {
     use EnumIterator;
+
     /**
      * The file upload is pending to linked with a reference.
      */
@@ -15,4 +16,9 @@ enum SyncFileStatus: int
      * The file upload is linked with a reference.
      */
     case LINKED = 1;
+
+    /**
+     * The file upload is deleted.
+     */
+    case DELETED = 2;
 }

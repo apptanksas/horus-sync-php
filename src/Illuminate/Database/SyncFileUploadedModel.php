@@ -33,7 +33,8 @@ class SyncFileUploadedModel extends Model
         self::ATTR_PATH,
         self::ATTR_PUBLIC_URL,
         self::ATTR_STATUS,
-        self::FK_OWNER_ID
+        self::FK_OWNER_ID,
+        self::CREATED_AT
     ];
 
 

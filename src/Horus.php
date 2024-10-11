@@ -251,8 +251,8 @@ class Horus
      *
      * @return IFileHandler The file handler instance.
      */
-    public static function getFileHandler(): IFileHandler
+    public function getFileHandler(): IFileHandler
     {
-        return self::getInstance()->fileHandler;
+        return $this->fileHandler;
     }
 }

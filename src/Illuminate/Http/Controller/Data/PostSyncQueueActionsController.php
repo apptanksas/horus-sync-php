@@ -62,7 +62,7 @@ class PostSyncQueueActionsController extends Controller
             $accessValidatorRepository,
             $fileUploadedRepository,
             $eventBus,
-            Horus::getFileHandler(),
+            Horus::getInstance()->getFileHandler(),
             $entityMapper,
             $config
         );
