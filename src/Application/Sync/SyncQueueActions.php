@@ -7,10 +7,10 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
@@ -23,7 +23,6 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
-use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 /**
  * @internal Class SyncQueueActions
@@ -37,10 +36,8 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
  */
 class SyncQueueActions
 {
-
     private FilePathGenerator $filePathGenerator;
 
-    private array $parametersReferenceFile = [];
 
     /**
      * SyncQueueActions constructor.
@@ -189,7 +186,7 @@ class SyncQueueActions
 
             foreach ($operation->data as $key => $value) {
 
-                $parametersReferenceFile = $this->getParametersReferenceFile($operation->entity);
+                $parametersReferenceFile = $this->entityMapper->getParametersReferenceFile($operation->entity);
 
                 if (in_array($key, $parametersReferenceFile)) {
                     $referenceFile = $value;
@@ -206,29 +203,19 @@ class SyncQueueActions
                         $this->fileHandler->delete($fileUploaded->path);
                     }
 
-                    $fileUploaded = new FileUploaded($fileUploaded->id, $fileUploaded->mimeType, $pathFileDestination, $urlFile, $fileUploaded->ownerId);
+                    $fileUploaded = new FileUploaded(
+                        $fileUploaded->id,
+                        $fileUploaded->mimeType,
+                        $pathFileDestination,
+                        $urlFile,
+                        $fileUploaded->ownerId,
+                        SyncFileStatus::LINKED
+                    );
+
                     $this->fileUploadedRepository->save($fileUploaded);
                 }
 
             }
         }
-    }
-
-    private function getParametersReferenceFile(string $entityName): array
-    {
-
-        if (isset($this->parametersReferenceFile[$entityName])) {
-            return $this->parametersReferenceFile[$entityName];
-        }
-        /**
-         * @var $entityClass EntitySynchronizable
-         */
-        $entityClass = $this->entityMapper->getEntityClass($entityName);
-        $parameters = $entityClass::parameters();
-        $parametersReferenceFile = array_map(fn($parameter) => $parameter->name, array_filter($parameters, fn($parameter) => $parameter->type === SyncParameterType::REFERENCE_FILE));
-
-        $this->parametersReferenceFile[$entityName] = $parametersReferenceFile;
-
-        return $parametersReferenceFile;
     }
 }

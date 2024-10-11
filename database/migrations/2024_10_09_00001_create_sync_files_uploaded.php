@@ -3,6 +3,7 @@
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
+use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
@@ -31,6 +32,7 @@ return new class extends Migration {
             $table->string(SyncFileUploadedModel::ATTR_MIME_TYPE, 255);
             $table->string(SyncFileUploadedModel::ATTR_PATH, 255);
             $table->string(SyncFileUploadedModel::ATTR_PUBLIC_URL, 255);
+            $table->enum(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::getValues());
 
             // If uses uses UUID
             if ($container->isUsesUUID()) {

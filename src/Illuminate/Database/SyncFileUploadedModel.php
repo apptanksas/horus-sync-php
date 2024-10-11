@@ -15,7 +15,7 @@ class SyncFileUploadedModel extends Model
     const string ATTR_MIME_TYPE = 'mime_type';
     const string ATTR_PATH = 'path';
     const string ATTR_PUBLIC_URL = 'public_url';
-
+    const string ATTR_STATUS = 'status';
     const string FK_OWNER_ID = "owner_id";
 
 
@@ -32,6 +32,7 @@ class SyncFileUploadedModel extends Model
         self::ATTR_MIME_TYPE,
         self::ATTR_PATH,
         self::ATTR_PUBLIC_URL,
+        self::ATTR_STATUS,
         self::FK_OWNER_ID
     ];
 
@@ -74,5 +75,10 @@ class SyncFileUploadedModel extends Model
     function getOwnerId(): string
     {
         return $this->getAttribute(self::FK_OWNER_ID);
+    }
+
+    function getStatus(): string
+    {
+        return $this->getAttribute(self::ATTR_STATUS);
     }
 }

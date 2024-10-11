@@ -2,11 +2,12 @@
 
 namespace Tests\_Stubs;
 
+use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
 
 class FileUploadedFactory
 {
-    public static function create(?string $id = null, ?string $userId = null): FileUploaded
+    public static function create(?string $id = null, ?string $userId = null, ?SyncFileStatus $status = null): FileUploaded
     {
         $faker = \Faker\Factory::create();
 
@@ -16,6 +17,7 @@ class FileUploadedFactory
             $faker->filePath(),
             $faker->imageUrl,
             $userId ?? $faker->uuid,
+            $status ? $status->value : SyncFileStatus::PENDING
         );
     }
 }

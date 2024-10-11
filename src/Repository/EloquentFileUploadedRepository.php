@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Repository;
 
+use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
@@ -50,7 +51,8 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
             $item->getMimeType(),
             $item->getPath(),
             $item->getPublicUrl(),
-            $item->getOwnerId()
+            $item->getOwnerId(),
+            SyncFileStatus::from($item->getStatus())
         );
     }
 
@@ -70,7 +72,8 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
             SyncFileUploadedModel::ATTR_MIME_TYPE => $file->mimeType,
             SyncFileUploadedModel::ATTR_PATH => $file->path,
             SyncFileUploadedModel::ATTR_PUBLIC_URL => $file->publicUrl,
-            SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId,
+            SyncFileUploadedModel::ATTR_STATUS => $file->status->value,
+            SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId
         ];
     }
 }
