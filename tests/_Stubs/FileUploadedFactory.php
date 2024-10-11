@@ -6,12 +6,12 @@ use AppTank\Horus\Core\Model\FileUploaded;
 
 class FileUploadedFactory
 {
-    public static function create(?string $userId = null): FileUploaded
+    public static function create(?string $id = null, ?string $userId = null): FileUploaded
     {
         $faker = \Faker\Factory::create();
 
         return new FileUploaded(
-            $faker->uuid,
+            $id ?? $faker->uuid,
             $faker->mimeType(),
             $faker->filePath(),
             $faker->imageUrl,

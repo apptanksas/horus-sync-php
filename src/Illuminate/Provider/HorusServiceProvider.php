@@ -100,7 +100,7 @@ class HorusServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(FileUploadedRepository::class, function () {
-            return new EloquentFileUploadedRepository(Horus::getInstance()->getConnectionName());
+            return new EloquentFileUploadedRepository();
         });
 
 

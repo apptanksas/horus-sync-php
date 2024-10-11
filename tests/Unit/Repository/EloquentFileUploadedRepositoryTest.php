@@ -6,6 +6,7 @@ use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
 use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\FileUploadedFactory;
+use Tests\_Stubs\SyncFileUploadedModelFactory;
 use Tests\TestCase;
 
 class EloquentFileUploadedRepositoryTest extends TestCase
@@ -21,7 +22,7 @@ class EloquentFileUploadedRepositoryTest extends TestCase
         $this->repository = new EloquentFileUploadedRepository();
     }
 
-    public function testSaveIsSuccess()
+    public function testSaveCreateNewItemIsSuccess()
     {
         // Given
         $file = FileUploadedFactory::create();
@@ -37,6 +38,26 @@ class EloquentFileUploadedRepositoryTest extends TestCase
             SyncFileUploadedModel::ATTR_PUBLIC_URL => $file->publicUrl,
             SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId,
         ]);
+    }
+
+    public function testSaveUpdateItemIsSuccess()
+    {
+        // Given
+        $fileUploadedModel = SyncFileUploadedModelFactory::create();
+        $file = FileUploadedFactory::create($fileUploadedModel->getId(), $fileUploadedModel->getOwnerId());
+
+        // When
+        $this->repository->save($file);
+
+        // Then
+        $this->assertDatabaseHas(SyncFileUploadedModel::TABLE_NAME, [
+            SyncFileUploadedModel::ATTR_ID => $file->id,
+            SyncFileUploadedModel::ATTR_MIME_TYPE => $file->mimeType,
+            SyncFileUploadedModel::ATTR_PATH => $file->path,
+            SyncFileUploadedModel::ATTR_PUBLIC_URL => $file->publicUrl,
+            SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId,
+        ]);
+        $this->assertDatabaseCount(SyncFileUploadedModel::TABLE_NAME, 1);
     }
 
     public function testSearchIsSuccess()

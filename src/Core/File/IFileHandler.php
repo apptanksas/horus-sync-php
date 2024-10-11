@@ -41,4 +41,13 @@ interface IFileHandler
      * @return bool True if the file was copied successfully; otherwise, false.
      */
     function copy(string $pathTo, string $pathFrom): bool;
+
+
+    /**
+     * Generates a URL for a file.
+     *
+     * @param string $path The path to the file.
+     * @return string The URL for the file.
+     */
+    function generateUrl(string $path): string;
 }

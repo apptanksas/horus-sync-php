@@ -35,7 +35,7 @@ class UploadFileTest extends TestCase
         // Given
         $userAuth = new UserAuth($this->faker->uuid);
         $file = UploadedFile::fake()->image('photo.jpg');
-        $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
+        $fileUploadedExpected = FileUploadedFactory::create(userId: $userAuth->userId);
 
         $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
@@ -54,7 +54,7 @@ class UploadFileTest extends TestCase
         // Given
         $userAuth = new UserAuth($this->faker->uuid);
         $file = UploadedFile::fake()->create('document.pdf');
-        $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
+        $fileUploadedExpected = FileUploadedFactory::create(userId: $userAuth->userId);
 
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
 
@@ -68,7 +68,7 @@ class UploadFileTest extends TestCase
         // Given
         $userAuth = new UserAuth($this->faker->uuid);
         $file = UploadedFile::fake()->image('photo.jpg');
-        $fileUploadedExpected = FileUploadedFactory::create($userAuth->userId);
+        $fileUploadedExpected = FileUploadedFactory::create(userId: $userAuth->userId);
 
         $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);

@@ -5,29 +5,38 @@ namespace AppTank\Horus\Repository;
 use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
-use Illuminate\Support\Facades\DB;
 
 class EloquentFileUploadedRepository implements FileUploadedRepository
 {
 
-    public function __construct(
-        private ?string $connectionName = null,
-    )
-    {
-    }
-
+    /**
+     * Saves a file upload to the repository.
+     *
+     * @param FileUploaded $file The file upload to be saved.
+     * @return void
+     * @throws \Throwable
+     */
     function save(FileUploaded $file): void
     {
-        $table = (is_null($this->connectionName)) ? DB::table(SyncFileUploadedModel::TABLE_NAME) :
-            DB::connection($this->connectionName)->table(SyncFileUploadedModel::TABLE_NAME);
-
         $data = $this->parseData($file);
+        $query = SyncFileUploadedModel::query();
+        $query = $query->where(SyncFileUploadedModel::ATTR_ID, $file->id);
 
-        if (!$table->insert($data)) {
-            throw new \Exception('Failed to save file upload');
+        if ($query->exists()) {
+            $query->first()->updateOrFail($data);
+            return;
         }
+
+        $model = new SyncFileUploadedModel($data);
+        $model->saveOrFail();
     }
 
+    /**
+     * Searches for a file upload by its ID.
+     *
+     * @param string $id The ID of the file upload to search for.
+     * @return FileUploaded|null The file upload with the specified ID, or null if no file is found.
+     */
     function search(string $id): ?FileUploaded
     {
         $item = SyncFileUploadedModel::query()->where(SyncFileUploadedModel::ATTR_ID, $id)->first();
@@ -47,10 +56,7 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
 
     function delete(string $id): void
     {
-        $table = (is_null($this->connectionName)) ? DB::table(SyncFileUploadedModel::TABLE_NAME) :
-            DB::connection($this->connectionName)->table(SyncFileUploadedModel::TABLE_NAME);
-
-        $result = $table->where(SyncFileUploadedModel::ATTR_ID, $id)->delete();
+        $result = SyncFileUploadedModel::query()->where(SyncFileUploadedModel::ATTR_ID, $id)->delete();
 
         if ($result === 0) {
             throw new \Exception('Failed to delete file upload');
