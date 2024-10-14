@@ -14,6 +14,7 @@ use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
+use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
@@ -133,7 +134,8 @@ class HorusServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                CreateEntitySynchronizableCommand::class
+                CreateEntitySynchronizableCommand::class,
+                PruneFilesUploadedCommand::class
             ]);
         }
     }
