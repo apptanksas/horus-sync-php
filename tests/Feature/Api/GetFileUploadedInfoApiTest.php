@@ -11,10 +11,15 @@ use Tests\Feature\Api\ApiTestCase;
 
 class GetFileUploadedInfoApiTest extends ApiTestCase
 {
-
     use RefreshDatabase;
 
     private IFileHandler|Mock $fileHandler;
+
+    private const array JSON_SCHEME = [
+        'url',
+        'mime_type',
+        "status"
+    ];
 
     function setUp(): void
     {
@@ -34,10 +39,11 @@ class GetFileUploadedInfoApiTest extends ApiTestCase
 
         // Then
         $response->assertOk();
-        $response->assertJsonStructure(["url", "mime_type"]);
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
         $response->assertJson([
             "url" => $fileUploaded->getPublicUrl(),
-            "mime_type" => $fileUploaded->getMimeType()
+            "mime_type" => $fileUploaded->getMimeType(),
+            "status" => $fileUploaded->getStatus()
         ]);
     }
 

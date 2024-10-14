@@ -7,9 +7,9 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
 
 
 /**
- * @internal Class SearchFileUrl
+ * @internal Class SearchFileInfo
  *
- * Represents an application service for searching a file URL. This class defines a method for searching a file URL
+ * Represents an application service for searching a file info. This class defines a method for searching a file info
  * by its reference ID.
  *
  * @package AppTank\Horus\Application\File
@@ -17,7 +17,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  * @author John Ospina
  * Year: 2024
  */
-class SearchFileUrl
+class SearchFileInfo
 {
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,

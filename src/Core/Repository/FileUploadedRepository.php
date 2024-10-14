@@ -34,6 +34,14 @@ interface FileUploadedRepository
     function search(string $id): ?FileUploaded;
 
     /**
+     * Search files in batch
+     *
+     * @param string[] $ids
+     * @return FileUploaded[]
+     */
+    function searchInBatch(string $userId, array $ids): array;
+
+    /**
      * Deletes a file upload by its ID.
      *
      * @param string $id The ID of the file upload to delete.

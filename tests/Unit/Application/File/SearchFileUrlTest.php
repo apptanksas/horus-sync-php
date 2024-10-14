@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Application\File;
 
-use AppTank\Horus\Application\File\SearchFileUrl;
+use AppTank\Horus\Application\File\SearchFileInfo;
 use AppTank\Horus\Core\Exception\FileNotFoundException;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use Mockery\Mock;
@@ -13,14 +13,14 @@ class SearchFileUrlTest extends TestCase
 {
     private FileUploadedRepository|Mock $fileUploadedRepository;
 
-    private SearchFileUrl $searchFileUrl;
+    private SearchFileInfo $searchFileUrl;
 
     function setUp(): void
     {
         parent::setUp();
 
         $this->fileUploadedRepository = $this->mock(FileUploadedRepository::class);
-        $this->searchFileUrl = new SearchFileUrl($this->fileUploadedRepository);
+        $this->searchFileUrl = new SearchFileInfo($this->fileUploadedRepository);
     }
 
     function testInvokeIsSuccess()

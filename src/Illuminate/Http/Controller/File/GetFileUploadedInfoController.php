@@ -2,7 +2,7 @@
 
 namespace AppTank\Horus\Illuminate\Http\Controller\File;
 
-use AppTank\Horus\Application\File\SearchFileUrl;
+use AppTank\Horus\Application\File\SearchFileInfo;
 use AppTank\Horus\Core\Exception\FileNotFoundException;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
@@ -20,7 +20,7 @@ use Illuminate\Http\Request;
 class GetFileUploadedInfoController extends Controller
 {
 
-    private readonly SearchFileUrl $useCase;
+    private readonly SearchFileInfo $useCase;
 
     /**
      * Constructor for GetFileUploadedInfoController.
@@ -29,7 +29,7 @@ class GetFileUploadedInfoController extends Controller
      */
     function __construct(FileUploadedRepository $repository)
     {
-        $this->useCase = new SearchFileUrl($repository);
+        $this->useCase = new SearchFileInfo($repository);
     }
 
     /**

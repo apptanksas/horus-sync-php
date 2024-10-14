@@ -62,8 +62,12 @@ enum RouteName: string
      */
     case GET_UPLOADED_FILE = "horus.get.uploaded.file";
 
+    case POST_GET_UPLOADED_FILES = "horus.post.get.uploaded.files";
+
     /**
      * Route for retrieving a wrapper file.
      */
     case GET_WRAPPER_FILE = "horus.get.wrapper.file";
+
+
 }

@@ -53,7 +53,7 @@ readonly class UploadFile
                 throw new UploadFileException("Invalid file type [$mimeType]. Only " . implode(', ', $mimeTypesAllowed) . " files are allowed.");
             }
 
-            if ($this->fileUploadedRepository->search($fileId) != null) {
+            if ($this->fileUploadedRepository->search($userAuth->getEffectiveUserId(), $fileId) != null) {
                 throw new UploadFileException("File with ID [$fileId] already exists.");
             }
 

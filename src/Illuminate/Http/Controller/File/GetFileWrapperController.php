@@ -2,7 +2,7 @@
 
 namespace AppTank\Horus\Illuminate\Http\Controller\File;
 
-use AppTank\Horus\Application\File\SearchFileUrl;
+use AppTank\Horus\Application\File\SearchFileInfo;
 use AppTank\Horus\Core\Exception\FileNotFoundException;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class GetFileWrapperController extends Controller
 {
-    private readonly SearchFileUrl $useCase;
+    private readonly SearchFileInfo $useCase;
 
     /**
      * Constructor for GetFileWrapperController.
@@ -21,7 +21,7 @@ class GetFileWrapperController extends Controller
      */
     function __construct(FileUploadedRepository $repository)
     {
-        $this->useCase = new SearchFileUrl($repository);
+        $this->useCase = new SearchFileInfo($repository);
     }
 
     function __invoke(string $fileId, Request $request): Response

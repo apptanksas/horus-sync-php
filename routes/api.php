@@ -8,6 +8,7 @@ use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueLastActionController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\SearchEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\ValidateEntitiesDataController;
+use AppTank\Horus\Illuminate\Http\Controller\File\GetFilesInfoController;
 use AppTank\Horus\Illuminate\Http\Controller\File\GetFileUploadedInfoController;
 use AppTank\Horus\Illuminate\Http\Controller\File\GetFileWrapperController;
 use AppTank\Horus\Illuminate\Http\Controller\File\UploadFileController;
@@ -109,5 +110,11 @@ Route::get("upload/file/{id}", [
 Route::get("wrapper/file/{id}", [
     'uses' => GetFileWrapperController::class,
     'as' => RouteName::GET_WRAPPER_FILE->value,
+    'middleware' => $middlewares
+]);
+
+Route::post("upload/files", [
+    'uses' => GetFilesInfoController::class,
+    'as' => RouteName::POST_GET_UPLOADED_FILES->value,
     'middleware' => $middlewares
 ]);

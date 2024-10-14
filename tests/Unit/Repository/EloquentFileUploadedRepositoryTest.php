@@ -77,6 +77,23 @@ class EloquentFileUploadedRepositoryTest extends TestCase
         $this->assertEquals($file->ownerId, $result->ownerId);
     }
 
+    public function testSearchInBatchIsSuccess()
+    {
+        $userId = $this->faker->uuid;
+
+        $filesUploaded = $this->generateArray(function () use ($userId) {
+            return SyncFileUploadedModelFactory::create($userId);
+        });
+
+        $ids = array_map(fn(SyncFileUploadedModel $model) => $model->getId(), $filesUploaded);
+
+        // When
+        $result = $this->repository->searchInBatch($userId, $ids);
+
+        // Then
+        $this->assertCount(count($ids), $result);
+    }
+
     public function testSearchIsNull()
     {
         // Given

@@ -40,7 +40,8 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
      */
     function search(string $id): ?FileUploaded
     {
-        $item = SyncFileUploadedModel::query()->where(SyncFileUploadedModel::ATTR_ID, $id)->first();
+        $item = SyncFileUploadedModel::query()
+            ->where(SyncFileUploadedModel::ATTR_ID, $id)->first();
 
         if (is_null($item)) {
             return null;
@@ -54,6 +55,31 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
             $item->getOwnerId(),
             SyncFileStatus::from($item->getStatus())
         );
+    }
+
+    /**
+     * Search files in batch
+     *
+     * @param string[] $ids
+     * @return FileUploaded[]
+     */
+    function searchInBatch(string $userId, array $ids): array
+    {
+        $output = [];
+        $result = SyncFileUploadedModel::query()->whereIn(SyncFileUploadedModel::ATTR_ID, $ids)->get();
+
+        foreach ($result as $item) {
+            $output[] = new FileUploaded(
+                $item->getId(),
+                $item->getMimeType(),
+                $item->getPath(),
+                $item->getPublicUrl(),
+                $item->getOwnerId(),
+                SyncFileStatus::from($item->getStatus())
+            );
+        }
+
+        return $output;
     }
 
     function delete(string $id): void
@@ -76,4 +102,6 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
             SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId
         ];
     }
+
+
 }

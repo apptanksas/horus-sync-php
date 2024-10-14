@@ -21,7 +21,7 @@ class SyncFileUploadedModelFactory
             SyncFileUploadedModel::ATTR_PATH => $faker->filePath(),
             SyncFileUploadedModel::ATTR_PUBLIC_URL => $fileUrl ?? $faker->imageUrl,
             SyncFileUploadedModel::FK_OWNER_ID => $userId ?? $faker->uuid,
-            SyncFileUploadedModel::ATTR_STATUS => $status ? $status->value : SyncFileStatus::PENDING
+            SyncFileUploadedModel::ATTR_STATUS => $status ? $status->value : SyncFileStatus::PENDING->value
         ];
 
         if ($createdAt) {
