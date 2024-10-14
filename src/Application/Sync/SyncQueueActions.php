@@ -201,6 +201,8 @@ class SyncQueueActions
 
                     if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
                         $this->fileHandler->delete($fileUploaded->path);
+                    } else {
+                        throw new \Exception("Error copying file");
                     }
 
                     $fileUploaded = new FileUploaded(
