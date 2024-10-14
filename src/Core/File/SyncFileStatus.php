@@ -4,21 +4,21 @@ namespace AppTank\Horus\Core\File;
 
 use AppTank\Horus\Core\Trait\EnumIterator;
 
-enum SyncFileStatus: int
+enum SyncFileStatus: string
 {
     use EnumIterator;
 
     /**
      * The file upload is pending to linked with a reference.
      */
-    case PENDING = 0;
+    case PENDING = '0';
     /**
      * The file upload is linked with a reference.
      */
-    case LINKED = 1;
+    case LINKED = '1';
 
     /**
      * The file upload is deleted.
      */
-    case DELETED = 2;
+    case DELETED = '2';
 }
