@@ -45,7 +45,8 @@ class SearchFileUrl
 
         return [
             "url" => $fileUploaded->publicUrl,
-            "mime_type" => $fileUploaded->mimeType
+            "mime_type" => $fileUploaded->mimeType,
+            "status" => $fileUploaded->status->value()
         ];
     }
 }
