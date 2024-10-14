@@ -42,6 +42,11 @@ class GetFileUploadedInfoController extends Controller
     function __invoke(string $fileId, Request $request): JsonResponse
     {
         try {
+
+            if ($this->isNotUUID($fileId)) {
+                return $this->responseBadRequest('Invalid file ID, must be a valid UUID');
+            }
+
             return $this->responseSuccess($this->useCase->__invoke($fileId));
         } catch (FileNotFoundException $e) {
             return $this->responseNotFound($e->getMessage());

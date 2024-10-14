@@ -35,6 +35,10 @@ class UploadFileController extends Controller
                 return $this->responseBadRequest('No file ID was provided');
             }
 
+            if ($this->isNotUUID($fileId)) {
+                return $this->responseBadRequest('Invalid file ID, must be a valid UUID');
+            }
+
             if (!$request->hasFile('file')) {
                 return $this->responseBadRequest('No file was uploaded');
             }
@@ -48,4 +52,6 @@ class UploadFileController extends Controller
             );
         });
     }
+
+
 }

@@ -177,4 +177,9 @@ abstract class Controller
 
         return "Error in request data: Some attribute is invalid.";
     }
+
+    protected function isNotUUID(string $fileId): bool
+    {
+        return !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $fileId);
+    }
 }

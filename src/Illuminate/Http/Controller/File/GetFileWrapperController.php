@@ -26,6 +26,11 @@ class GetFileWrapperController extends Controller
 
     function __invoke(string $fileId, Request $request): Response
     {
+
+        if ($this->isNotUUID($fileId)) {
+            return $this->responseBadRequest('Invalid file ID, must be a valid UUID');
+        }
+
         try {
             $result = $this->useCase->__invoke($fileId);
             $imageUrl = $result["url"];
