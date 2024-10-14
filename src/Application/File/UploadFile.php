@@ -54,7 +54,7 @@ readonly class UploadFile
             }
 
             $pathFile = $this->createFilePathPending($userAuth, $fileId, $file);
-            $fileUploaded = $this->fileHandler->upload($userAuth->userId, $pathFile, $file);
+            $fileUploaded = $this->fileHandler->upload($userAuth->userId, $fileId, $pathFile, $file);
             $this->fileUploadedRepository->save($fileUploaded);
 
         } catch (\Exception $e) {
