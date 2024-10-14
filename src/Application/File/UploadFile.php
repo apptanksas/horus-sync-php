@@ -53,6 +53,10 @@ readonly class UploadFile
                 throw new UploadFileException("Invalid file type [$mimeType]. Only " . implode(', ', $mimeTypesAllowed) . " files are allowed.");
             }
 
+            if ($this->fileUploadedRepository->search($fileId) != null) {
+                throw new UploadFileException("File with ID [$fileId] already exists.");
+            }
+
             $pathFile = $this->createFilePathPending($userAuth, $fileId, $file);
             $fileUploaded = $this->fileHandler->upload($userAuth->userId, $fileId, $pathFile, $file);
             $this->fileUploadedRepository->save($fileUploaded);

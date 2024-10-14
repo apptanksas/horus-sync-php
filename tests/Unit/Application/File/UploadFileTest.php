@@ -40,6 +40,7 @@ class UploadFileTest extends TestCase
         $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
 
+        $this->fileUploadedRepository->shouldReceive('search')->once()->andReturnNull();
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected);
 
         // When
@@ -63,6 +64,22 @@ class UploadFileTest extends TestCase
         $this->uploadFile->__invoke($userAuth, $fileUploadedExpected->id, $file);
     }
 
+    function testInvokeThrowExceptionByFileIdAlreadyExists()
+    {
+        // Given
+        $userAuth = new UserAuth($this->faker->uuid);
+        $file = UploadedFile::fake()->image('photo.jpg');
+        $fileUploadedExpected = FileUploadedFactory::create(userId: $userAuth->userId);
+
+        $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
+
+        $this->fileUploadedRepository->shouldReceive('search')->once()->andReturn($fileUploadedExpected);
+
+        // When
+        $this->expectException(UploadFileException::class);
+        $this->uploadFile->__invoke($userAuth, $fileUploadedExpected->id, $file);
+    }
+
     function testInvokeThrowException()
     {
         // Given
@@ -72,6 +89,7 @@ class UploadFileTest extends TestCase
 
         $this->fileHandler->shouldReceive('upload')->once()->andReturn($fileUploadedExpected);
         $this->fileHandler->shouldReceive('getMimeTypesAllowed')->once()->andReturn(MimeType::IMAGES);
+        $this->fileUploadedRepository->shouldReceive('search')->once()->andReturnNull();
         $this->fileUploadedRepository->shouldReceive('save')->once()->with($fileUploadedExpected)->andThrow(new \Exception());
         $this->fileHandler->shouldReceive('delete')->once()->with($fileUploadedExpected->path);
 
