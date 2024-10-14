@@ -29,9 +29,9 @@ return new class extends Migration {
 
         $callbackCreateTable = function (Blueprint $table) use ($container) {
             $table->uuid(SyncFileUploadedModel::ATTR_ID)->primary();
-            $table->string(SyncFileUploadedModel::ATTR_MIME_TYPE, 255);
-            $table->string(SyncFileUploadedModel::ATTR_PATH, 255);
-            $table->string(SyncFileUploadedModel::ATTR_PUBLIC_URL, 255);
+            $table->string(SyncFileUploadedModel::ATTR_MIME_TYPE, 100);
+            $table->string(SyncFileUploadedModel::ATTR_PATH, 1000);
+            $table->string(SyncFileUploadedModel::ATTR_PUBLIC_URL, 1000);
             $table->enum(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::getValues());
 
             // If uses uses UUID

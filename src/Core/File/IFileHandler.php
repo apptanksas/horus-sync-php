@@ -37,12 +37,11 @@ interface IFileHandler
     /**
      * Copies a file from one location to another.
      *
-     * @param string $pathTo The path to copy the file to.
      * @param string $pathFrom The path to copy the file from.
+     * @param string $pathTo The path to copy the file to.
      * @return bool True if the file was copied successfully; otherwise, false.
      */
-    function copy(string $pathTo, string $pathFrom): bool;
-
+    function copy(string $pathFrom, string $pathTo): bool;
 
     /**
      * Generates a URL for a file.
