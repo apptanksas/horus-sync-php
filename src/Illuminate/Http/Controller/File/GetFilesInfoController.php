@@ -8,15 +8,34 @@ use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * @internal Class GetFilesInfoController
+ *
+ * This controller handles HTTP requests for retrieving information about files that have been uploaded. It uses the
+ * `SearchFiles` use case to search for the files by their reference IDs and provides the information as a JSON response.
+ *
+ * @package AppTank\Horus\Illuminate\Http\Controller
+ */
 class GetFilesInfoController extends Controller
 {
     private readonly SearchFiles $useCase;
 
+    /**
+     * Constructor for GetFilesInfoController.
+     *
+     * @param FileUploadedRepository $repository Repository for fetching the file information.
+     */
     function __construct(FileUploadedRepository $repository)
     {
         $this->useCase = new SearchFiles($repository);
     }
 
+    /**
+     * Handle the incoming request to retrieve information about files that have been uploaded.
+     *
+     * @param Request $request The HTTP request object.
+     * @return JsonResponse JSON response containing the file information or an error message.
+     */
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {

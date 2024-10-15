@@ -10,6 +10,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @internal Class GetFileWrapperController
+ *
+ * This controller handles HTTP requests for retrieving a file that has been uploaded. It uses the
+ * `SearchFileInfo` use case to search for the file URL by its reference ID and provides it as a response.
+ *
+ * @package AppTank\Horus\Illuminate\Http\Controller
+ */
 class GetFileWrapperController extends Controller
 {
     private readonly SearchFileInfo $useCase;
@@ -24,6 +32,13 @@ class GetFileWrapperController extends Controller
         $this->useCase = new SearchFileInfo($repository);
     }
 
+    /**
+     * Handle the incoming request to retrieve a file that has been uploaded.
+     *
+     * @param string $fileId The reference ID of the file to search.
+     * @param Request $request The HTTP request object.
+     * @return Response Response containing the file content or an error message.
+     */
     function __invoke(string $fileId, Request $request): Response
     {
 
