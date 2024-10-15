@@ -20,6 +20,13 @@ class UploadFileApiTest extends ApiTestCase
 
     private IFileHandler|Mock $fileHandler;
 
+    private const array JSON_SCHEME = [
+        'id',
+        'url',
+        'mime_type',
+        "status"
+    ];
+
     function setUp(): void
     {
         parent::setUp();
@@ -46,6 +53,6 @@ class UploadFileApiTest extends ApiTestCase
 
         // Then
         $response->assertOk();
-        $response->assertJsonStructure(["url"]);
+        $response->assertJsonStructure(self::JSON_SCHEME);
     }
 }

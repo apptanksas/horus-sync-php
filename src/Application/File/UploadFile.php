@@ -20,7 +20,7 @@ use Illuminate\Http\UploadedFile;
  * @author John Ospina
  * Year: 2024
  */
-readonly class UploadFile
+readonly class UploadFile extends BaseUploadFileUseCase
 {
     public function __construct(
         private IFileHandler           $fileHandler,
@@ -68,7 +68,7 @@ readonly class UploadFile
             throw new UploadFileException('Failed to upload file: ' . $e->getMessage(), $e->getCode(), $e);
         }
 
-        return ["url" => $fileUploaded->publicUrl];
+        return $this->parseFileUploaded($fileUploaded);
     }
 
     /** Creates the path to the file that is pending upload.

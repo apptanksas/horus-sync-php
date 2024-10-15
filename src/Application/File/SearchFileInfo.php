@@ -17,7 +17,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  * @author John Ospina
  * Year: 2024
  */
-readonly class SearchFileInfo
+readonly class SearchFileInfo extends BaseUploadFileUseCase
 {
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,
@@ -43,11 +43,6 @@ readonly class SearchFileInfo
             throw new FileNotFoundException("File with reference id [$fileId] not found");
         }
 
-        return [
-            "id" => $fileUploaded->id,
-            "url" => $fileUploaded->publicUrl,
-            "mime_type" => $fileUploaded->mimeType,
-            "status" => $fileUploaded->status->value()
-        ];
+        return $this->parseFileUploaded($fileUploaded);
     }
 }

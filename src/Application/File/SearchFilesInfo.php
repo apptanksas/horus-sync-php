@@ -13,7 +13,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  *
  * @package AppTank\Horus\Application\File
  */
-readonly class SearchFilesInfo
+readonly class SearchFilesInfo extends BaseUploadFileUseCase
 {
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,
@@ -35,12 +35,7 @@ readonly class SearchFilesInfo
         $files = $this->fileUploadedRepository->searchInBatch($userAuth->getEffectiveUserId(), $ids);
 
         foreach ($files as $file) {
-            $output[] = [
-                "id" => $file->id,
-                "url" => $file->publicUrl,
-                "mime_type" => $file->mimeType,
-                "status" => $file->status->value()
-            ];
+            $output[] = $this->parseFileUploaded($file);
         }
 
         return $output;
