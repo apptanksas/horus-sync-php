@@ -2,8 +2,10 @@
 
 namespace AppTank\Horus\Core\Mapper;
 
+use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Exception\ClientException;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 /**
@@ -22,6 +24,7 @@ class EntityMapper
     private array $entities = [];
     private array $map = [];
     private array $paths = [];
+    private array $parametersReferenceFile = [];
 
     /**
      * Retrieves the class name associated with the given entity name.
@@ -68,6 +71,30 @@ class EntityMapper
         }
 
         $this->paths = array_merge($this->paths, $paths);
+    }
+
+    /**
+     * Returns the parameters that are of type reference file for a given entity.
+     *
+     * @param string $entityName The name of the entity.
+     * @return string[] The parameters that are of type reference file.
+     */
+    function getParametersReferenceFile(string $entityName): array
+    {
+
+        if (isset($this->parametersReferenceFile[$entityName])) {
+            return $this->parametersReferenceFile[$entityName];
+        }
+        /**
+         * @var $entityClass EntitySynchronizable
+         */
+        $entityClass = $this->getEntityClass($entityName);
+        $parameters = $entityClass::parameters();
+        $parametersReferenceFile = array_map(fn($parameter) => $parameter->name, array_filter($parameters, fn($parameter) => $parameter->type === SyncParameterType::REFERENCE_FILE));
+
+        $this->parametersReferenceFile[$entityName] = $parametersReferenceFile;
+
+        return $parametersReferenceFile;
     }
 
     /**

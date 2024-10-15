@@ -4,6 +4,7 @@ namespace AppTank\Horus\Illuminate\Database;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 
 /**
@@ -71,7 +72,7 @@ abstract class WritableEntitySynchronizable extends EntitySynchronizable impleme
      */
     final public static function getTableName(): string
     {
-        return "se_" . static::getEntityName();
+        return Horus::getInstance()->getConfig()->prefixTables . "_" . static::getEntityName();
     }
 
     // ------------------------------------------------------------------------

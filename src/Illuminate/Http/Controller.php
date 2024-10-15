@@ -84,6 +84,17 @@ abstract class Controller
     }
 
     /**
+     * Generates an error response with a 404 (Not Found) status code.
+     *
+     * @param string $message Error message to include in the response.
+     * @return JsonResponse Returns a JSON response with an error message and a 404 status code.
+     */
+    function responseNotFound(string $message): JsonResponse
+    {
+        return $this->response(["message" => $message], 404);
+    }
+
+    /**
      * Generates an error response with a 401 (Unauthorized) status code.
      *
      * @return JsonResponse Returns a JSON response with a "Unauthorized" message and a 401 status code.
@@ -165,5 +176,10 @@ abstract class Controller
         }
 
         return "Error in request data: Some attribute is invalid.";
+    }
+
+    protected function isNotUUID(string $fileId): bool
+    {
+        return !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $fileId);
     }
 }

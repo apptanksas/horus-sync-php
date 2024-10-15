@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
@@ -13,10 +14,12 @@ use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
+use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
+use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use Carbon\Laravel\ServiceProvider;
@@ -92,9 +95,16 @@ class HorusServiceProvider extends ServiceProvider
         $this->app->singleton(EntityAccessValidatorRepository::class, function () {
             return new EloquentEntityAccessValidatorRepository(
                 $this->app->make(EntityMapper::class),
-                Horus::getInstance()->getConfig()
+                Horus::getInstance()->getConfig(),
+                $this->app->make(EntityRepository::class)
             );
         });
+
+        $this->app->singleton(FileUploadedRepository::class, function () {
+            return new EloquentFileUploadedRepository();
+        });
+
+
     }
 
     /**
@@ -124,7 +134,8 @@ class HorusServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                CreateEntitySynchronizableCommand::class
+                CreateEntitySynchronizableCommand::class,
+                PruneFilesUploadedCommand::class
             ]);
         }
     }

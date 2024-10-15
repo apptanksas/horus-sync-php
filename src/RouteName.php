@@ -51,4 +51,26 @@ enum RouteName: string
      * Route for validating hashing of data.
      */
     case POST_VALIDATE_HASHING = "horus.post.validate.hashing";
+
+    /**
+     * Route for uploading a file.
+     */
+    case POST_UPLOAD_FILE = "horus.post.upload.file";
+
+    /**
+     * Route for retrieving an uploaded file.
+     */
+    case GET_UPLOADED_FILE = "horus.get.uploaded.file";
+
+    /**
+     * Route for retrieving uploaded files.
+     */
+    case POST_GET_UPLOADED_FILES = "horus.post.get.uploaded.files";
+
+    /**
+     * Route for retrieving a wrapper file.
+     */
+    case GET_WRAPPER_FILE = "horus.get.wrapper.file";
+
+
 }

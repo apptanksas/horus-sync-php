@@ -5,15 +5,20 @@ namespace Tests\Unit\Application\Sync;
 use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
+use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
+use Tests\_Stubs\FileUploadedFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\QueueActionFactory;
@@ -29,7 +34,11 @@ class SyncQueueActionsTest extends TestCase
 
     private EntityAccessValidatorRepository|Mock $accessValidatorRepository;
 
+    private FileUploadedRepository|Mock $fileUploadedRepository;
+
     private IEventBus|Mock $eventBus;
+
+    private IFileHandler|Mock $fileHandler;
 
     private SyncQueueActions $syncQueueActions;
 
@@ -38,18 +47,27 @@ class SyncQueueActionsTest extends TestCase
 
         parent::setUp();
 
+        $mapper = Horus::getInstance()->getEntityMapper();
+        $config = new Config(true);
+
         $this->transactionHandler = new EloquentTransactionHandler();
         $this->queueActionRepository = $this->mock(QueueActionRepository::class);
         $this->entityRepository = $this->mock(EntityRepository::class);
         $this->eventBus = $this->mock(IEventBus::class);
         $this->accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
+        $this->fileUploadedRepository = $this->mock(FileUploadedRepository::class);
+        $this->fileHandler = $this->mock(IFileHandler::class);
 
         $this->syncQueueActions = new SyncQueueActions(
             $this->transactionHandler,
             $this->queueActionRepository,
             $this->entityRepository,
             $this->accessValidatorRepository,
-            $this->eventBus
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            $mapper,
+            $config
         );
     }
 
@@ -57,12 +75,23 @@ class SyncQueueActionsTest extends TestCase
     {
         // Given
         $userId = $this->faker->uuid;
-        $insertActions = $this->generateArray(fn() => QueueActionFactory::create(
-            EntityOperationFactory::createEntityInsert(
-                $this->faker->uuid,
-                ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
-            )
-        ));
+        $filesUploaded = array();
+
+        $insertActions = $this->generateArray(function () use (&$filesUploaded) {
+            $parentData = ParentFakeEntityFactory::newData();
+
+            $action = QueueActionFactory::create(
+                EntityOperationFactory::createEntityInsert(
+                    $this->faker->uuid,
+                    ParentFakeWritableEntity::getEntityName(), $parentData, now()->toDateTimeImmutable()
+                )
+            );
+
+            $fileId = $parentData[ParentFakeWritableEntity::ATTR_IMAGE];
+            $filesUploaded[$fileId] = FileUploadedFactory::create($fileId);
+
+            return $action;
+        });
         $updateActions = $this->generateArray(fn() => QueueActionFactory::create(
             EntityOperationFactory::createEntityUpdate(
                 $this->faker->uuid,
@@ -106,6 +135,17 @@ class SyncQueueActionsTest extends TestCase
                     $action instanceof QueueAction, true) &&
                 $args[0]->actionedAt < $args[count($args) - 1]->actionedAt;
         });
+
+        $this->fileHandler->shouldReceive("copy")->andReturn(true);
+        $this->fileHandler->shouldReceive("delete")->andReturn(true);
+        $this->entityRepository->shouldReceive("getEntityPathHierarchy")->andReturn([ParentFakeEntityFactory::create()]);
+        $this->fileHandler->shouldReceive("generateUrl")->andReturn($this->faker->imageUrl);
+        $this->fileUploadedRepository->shouldReceive("save")->times(count($filesUploaded));
+
+        foreach ($filesUploaded as $fileId => $fileUploaded) {
+            $this->fileUploadedRepository->shouldReceive("search")->with($fileId)->andReturn($fileUploaded);
+        }
+
         $this->eventBus->shouldReceive('publish')->times(count($actions));
 
         // When

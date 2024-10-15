@@ -25,7 +25,7 @@ class QueueActionFactory
 
         return new QueueAction(
             $action,
-            $faker->userName,
+            $entityOperation?->entity ?? $faker->userName,
             $entityOperation ?? self::createEntityOperation($entity, $action, $userId),
             Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
             now()->toDateTimeImmutable(),

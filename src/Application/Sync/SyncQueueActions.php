@@ -5,14 +5,21 @@ namespace AppTank\Horus\Application\Sync;
 use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
+use AppTank\Horus\Core\File\FilePathGenerator;
+use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\SyncFileStatus;
+use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
@@ -27,8 +34,11 @@ use AppTank\Horus\Core\Transaction\ITransactionHandler;
  * @author John Ospina
  * Year: 2024
  */
-readonly class SyncQueueActions
+class SyncQueueActions
 {
+    private FilePathGenerator $filePathGenerator;
+
+
     /**
      * SyncQueueActions constructor.
      *
@@ -36,17 +46,24 @@ readonly class SyncQueueActions
      * @param QueueActionRepository $queueActionRepository Repository for queue actions.
      * @param EntityRepository $entityRepository Repository for managing entities.
      * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating access to entities.
+     * @param FileUploadedRepository $fileUploadedRepository Repository for managing file uploads.
      * @param IEventBus $eventBus Event bus for dispatching events.
+     * @param IFileHandler $fileHandler File handler for managing file uploads.
+     * @param EntityMapper $entityMapper Mapper for entity classes.
      */
     function __construct(
-        private ITransactionHandler             $transactionHandler,
-        private QueueActionRepository           $queueActionRepository,
-        private EntityRepository                $entityRepository,
-        private EntityAccessValidatorRepository $accessValidatorRepository,
-        private IEventBus                       $eventBus,
+        private readonly ITransactionHandler             $transactionHandler,
+        private readonly QueueActionRepository           $queueActionRepository,
+        private readonly EntityRepository                $entityRepository,
+        private readonly EntityAccessValidatorRepository $accessValidatorRepository,
+        private readonly FileUploadedRepository          $fileUploadedRepository,
+        private readonly IEventBus                       $eventBus,
+        private readonly IFileHandler                    $fileHandler,
+        private readonly EntityMapper                    $entityMapper,
+        private readonly Config                          $config
     )
     {
-
+        $this->filePathGenerator = new FilePathGenerator($this->entityRepository, $this->config);
     }
 
     /**
@@ -71,10 +88,14 @@ readonly class SyncQueueActions
 
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
-            $this->entityRepository->insert(...array_map(fn(QueueAction $action) => $action->operation, $insertActions));
+            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
+
+            $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
             $this->entityRepository->delete(...array_map(fn(QueueAction $action) => $action->operation, $deleteActions));
             $this->queueActionRepository->save(...$actions);
+
+            $this->validateFilesUploaded($userAuth, $insertEntities);
 
             $this->publishEvents($actions);
         });
@@ -152,4 +173,51 @@ readonly class SyncQueueActions
         return [$insertActions, $updateActions, $deleteActions];
     }
 
+
+    /**
+     * Validates the files uploaded in the insert operations. Moves the files to the correct path and updates the file reference.
+     *
+     * @param EntityInsert[] $operations
+     * @return void
+     */
+    private function validateFilesUploaded(UserAuth $userAuth, array $operations): void
+    {
+        foreach ($operations as $operation) {
+
+            foreach ($operation->data as $key => $value) {
+
+                $parametersReferenceFile = $this->entityMapper->getParametersReferenceFile($operation->entity);
+
+                if (in_array($key, $parametersReferenceFile)) {
+                    $referenceFile = $value;
+                    $fileUploaded = $this->fileUploadedRepository->search($referenceFile);
+
+                    if (is_null($fileUploaded)) {
+                        throw new \Exception("File not found");
+                    }
+
+                    $pathFileDestination = $this->filePathGenerator->create($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
+                    $urlFile = $this->fileHandler->generateUrl($pathFileDestination);
+
+                    if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
+                        $this->fileHandler->delete($fileUploaded->path);
+                    } else {
+                        throw new \Exception("Error copying file");
+                    }
+
+                    $fileUploaded = new FileUploaded(
+                        $fileUploaded->id,
+                        $fileUploaded->mimeType,
+                        $pathFileDestination,
+                        $urlFile,
+                        $fileUploaded->ownerId,
+                        SyncFileStatus::LINKED
+                    );
+
+                    $this->fileUploadedRepository->save($fileUploaded);
+                }
+
+            }
+        }
+    }
 }
