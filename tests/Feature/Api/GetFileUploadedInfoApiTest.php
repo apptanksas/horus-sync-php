@@ -16,6 +16,7 @@ class GetFileUploadedInfoApiTest extends ApiTestCase
     private IFileHandler|Mock $fileHandler;
 
     private const array JSON_SCHEME = [
+        'id',
         'url',
         'mime_type',
         "status"

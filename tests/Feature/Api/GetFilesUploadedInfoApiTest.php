@@ -20,6 +20,7 @@ class GetFilesUploadedInfoApiTest extends ApiTestCase
 
     private const array JSON_SCHEME = [
         '*' => [
+            'id',
             'url',
             'mime_type',
             "status"

@@ -13,7 +13,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  *
  * @package AppTank\Horus\Application\File
  */
-readonly class SearchFiles
+readonly class SearchFilesInfo
 {
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,
@@ -36,6 +36,7 @@ readonly class SearchFiles
 
         foreach ($files as $file) {
             $output[] = [
+                "id" => $file->id,
                 "url" => $file->publicUrl,
                 "mime_type" => $file->mimeType,
                 "status" => $file->status->value()

@@ -17,7 +17,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  * @author John Ospina
  * Year: 2024
  */
-class SearchFileInfo
+readonly class SearchFileInfo
 {
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,
@@ -44,6 +44,7 @@ class SearchFileInfo
         }
 
         return [
+            "id" => $fileUploaded->id,
             "url" => $fileUploaded->publicUrl,
             "mime_type" => $fileUploaded->mimeType,
             "status" => $fileUploaded->status->value()
