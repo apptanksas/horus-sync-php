@@ -43,7 +43,7 @@ jobs:
           # Find and delete RC releases and tags matching this version (vX.Y.Z-rcN)
           for TAG in $(git tag --list "${VERSION}-rc*"); do
             # Find and delete the GitHub release associated with this tag
-            RELEASE_ID=$(gh release view "$TAG" --json id --jq ".id" || echo "")
+            RELEASE_ID=$(gh release view "$TAG" --json id --jq ".id" 2>/dev/null || echo "")
             if [[ -n "$RELEASE_ID" ]]; then
               echo "Deleting GitHub release for tag: $TAG (Release ID: $RELEASE_ID)"
               gh release delete "$RELEASE_ID" --yes

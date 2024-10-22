@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.1
+- Fix deleting release in tag_release workflow.
+
 ## v0.2.0
 - Added support for upload files.
 - Added method to setup prefix tables.
