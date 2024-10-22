@@ -4,6 +4,7 @@ namespace AppTank\Horus\Illuminate\Database;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Horus;
 
 /**
  * Class LookupSynchronizable
@@ -40,6 +41,6 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
      */
     final public static function getTableName(): string
     {
-        return "sel_" . static::getEntityName();
+        return Horus::getInstance()->getConfig()->prefixTables . "_" . static::getEntityName();
     }
 }

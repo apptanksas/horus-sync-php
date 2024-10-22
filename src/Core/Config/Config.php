@@ -12,8 +12,11 @@ namespace AppTank\Horus\Core\Config;
  * @author John Ospina
  * Year: 2024
  */
-class Config
+readonly class Config
 {
+
+    public string $basePathFiles;
+
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
      * @param string|null $connectionName The name of the database connection, or null if not specified.
@@ -22,9 +25,29 @@ class Config
     function __construct(
         public bool    $validateAccess = false,
         public ?string $connectionName = null,
-        public bool    $usesUUIDs = false
+        public bool    $usesUUIDs = false,
+        public ?string $prefixTables = "sync",
+        string         $basePathFiles = "horus/upload"
     )
     {
-
+        // Validate if ends with a slash
+        if (str_ends_with($basePathFiles, '/')) {
+            $this->basePathFiles = substr($basePathFiles, 0, -1);
+        } else {
+            $this->basePathFiles = $basePathFiles;
+        }
     }
+
+
+    /**
+     * Gets the path for the files that are pending to be uploaded.
+     *
+     * @return string The path for the pending files.
+     */
+    function getPathFilesPending(): string
+    {
+        return $this->basePathFiles . "/pending";
+    }
+
+
 }

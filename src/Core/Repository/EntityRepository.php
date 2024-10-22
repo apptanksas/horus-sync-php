@@ -2,10 +2,12 @@
 
 namespace AppTank\Horus\Core\Repository;
 
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 /**
  * Interface EntityRepository
@@ -102,4 +104,14 @@ interface EntityRepository
      * @return bool True if the entity exists; otherwise, false.
      */
     function entityExists(string|int $userId, string $entityName, string $entityId): bool;
+
+
+    /**
+     * Builds a hierarchy of paths based on the referenced entity, considering its relationship with parent entities.
+     *
+     * @param EntityReference $entityRefChild Reference to the child entity to build the hierarchy.
+     *
+     * @return EntitySynchronizable[] Returns an array with the entity hierarchy.
+     */
+    function getEntityPathHierarchy(EntityReference $entityRefChild): array;
 }

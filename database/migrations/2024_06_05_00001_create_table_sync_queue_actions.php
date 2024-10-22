@@ -1,10 +1,7 @@
 <?php
 
-use AppTank\Horus\Core\Entity\SyncParameter;
-use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
-use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -9,6 +9,7 @@ use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
+use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
@@ -29,10 +30,12 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
      *
      * @param EntityMapper $entityMapper Entity mapper used to obtain entity classes and hierarchies.
      * @param Config $config Application configuration.
+     * @param EntityRepository $entityRepository Repository for entity operations.
      */
     public function __construct(
         private EntityMapper $entityMapper,
-        private Config       $config
+        private Config       $config,
+        private EntityRepository $entityRepository
     )
     {
     }
@@ -90,7 +93,7 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
             return false;
         }
 
-        $entityHierarchy = $this->buildPathHierarchy($entityReference);
+        $entityHierarchy = $this->entityRepository->getEntityPathHierarchy($entityReference);
 
         foreach ($userAuth->entityGrants as $entityGrant) {
             if ($this->entityGrantedIsInEntityHierarchy($entityGrant, $entityHierarchy) &&
@@ -128,40 +131,6 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
         }
 
         return false;
-    }
-
-    /**
-     * Builds a hierarchy of paths based on the referenced entity, considering its relationship with parent entities.
-     *
-     * @param EntityReference $entityRefChild Reference to the child entity to build the hierarchy.
-     * @return array Returns an array with the entity hierarchy.
-     */
-    private function buildPathHierarchy(EntityReference $entityRefChild): array
-    {
-        $entityHierarchy = [];
-
-        /**
-         * @var WritableEntitySynchronizable $entityClass
-         */
-        $entityClass = $this->getEntityClass($entityRefChild->entityName);
-        $entity = $entityClass::query()->where(WritableEntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first();
-
-        if ($entity instanceof EntityDependsOn) {
-            /**
-             * @var WritableEntitySynchronizable $entityParent
-             */
-            $entityParent = $entity->dependsOn();
-
-            $entityHierarchy = array_merge($entityHierarchy,
-                $this->buildPathHierarchy(
-                    new EntityReference($entityParent::class::getEntityName(), $entityParent->getId())
-                )
-            );
-        }
-
-        $entityHierarchy[] = $entity;
-
-        return $entityHierarchy;
     }
 
     /**
