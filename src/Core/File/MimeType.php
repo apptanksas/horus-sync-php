@@ -2,6 +2,16 @@
 
 namespace AppTank\Horus\Core\File;
 
+/**
+ * Class MimeType
+ *
+ * Class that contains the mime types for different file types.
+ *
+ * @package AppTank\Horus\Core\File
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 class MimeType
 {
     public const array IMAGES = [

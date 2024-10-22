@@ -11,6 +11,16 @@ use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Command\Command as CommandAlias;
 
+/**
+ * @internal Class PruneFilesUploadedCommand
+ *
+ * Command responsible for deleting files uploaded that are no longer needed.
+ *
+ * @package AppTank\Horus\Illuminate\Console
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 class PruneFilesUploadedCommand extends Command
 {
     /**

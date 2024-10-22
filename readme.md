@@ -1,4 +1,3 @@
-
 <p align="center">
 
 <img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo">
@@ -12,35 +11,44 @@
 
 # Horus Sync
 
-This library provides an easy way to manage data synchronization between a remote database on a server and a local database on a mobile device. It defines a set of synchronizable entities by specifying their parameters and relationships with other entities.
+This library provides an easy way to manage data synchronization between a remote database on a server and a local
+database on a mobile device. It defines a set of synchronizable entities by specifying their parameters and
+relationships with other entities.
 
 ### Features
-* **Data Synchronization:** Enables synchronization of the defined entities' data between the local database and the remote database.
+
+* **Data Synchronization:** Enables synchronization of the defined entities' data between the local database and the
+  remote database.
 * **Schema Migration:** Allows retrieval of the schema for synchronizable entities and their relationships.
 * **Integrity Validation:** Ensures the integrity of synchronized data.
 * **Authentication and Permissions:** Defines an authenticated user and the permissions associated with the entities.
 * **Upload Files:** Allows uploading files to the server.
 * **Middlewares:** Supports defining custom middlewares for synchronization routes.
 * **UUID Support:** Allows specifying whether UUIDs or Int will be used as the primary key for entities.
-* **Foreign Key Support:** Supports defining foreign keys in synchronizable entities with cascading delete functionality.
-* **UserActingAs Support:** Indicates if a user has permission to act as another user and access the entities where permissions have been granted.
-* **Support for Synchronizable Entity Types:** Supports defining entities as writable or readable, depending on whether they can be edited or not.
+* **Foreign Key Support:** Supports defining foreign keys in synchronizable entities with cascading delete
+  functionality.
+* **UserActingAs Support:** Indicates if a user has permission to act as another user and access the entities where
+  permissions have been granted.
+* **Support for Synchronizable Entity Types:** Supports defining entities as writable or readable, depending on whether
+  they can be edited or not.
 
 ## 📦 Installation
 
 This library must be used with Laravel version 11 or higher.
 
 Use the following command to install the package using Composer:
+
 ```bash
 composer require apptank/horusync
 ```
 
 ## 🔨 Usage
 
-All synchronizable models with editable records must inherit from `WritableEntitySynchronizable`, defining the properties they contain. If you want a read-only entity, you should inherit from `ReadableEntitySynchronizable`.
+All synchronizable models with editable records must inherit from `WritableEntitySynchronizable`, defining the
+properties they contain. If you want a read-only entity, you should inherit from `ReadableEntitySynchronizable`.
 
-You can use an artisan command to generate a synchronizable model for you. You just need to specify the path where the model should be stored. The following example will create a model in `App/Models/Sync/MyModelSync`:
-
+You can use an artisan command to generate a synchronizable model for you. You just need to specify the path where the
+model should be stored. The following example will create a model in `App/Models/Sync/MyModelSync`:
 
 ```bash
 php artisan horus:entity MyModelSync
@@ -90,10 +98,12 @@ php artisan horus:entity MyModelSync --readable
 
 ### 1. Initialization
 
-It is necessary to initialize the Horus container in the `AppServiceProvider` of Laravel by passing an array with the hierarchical map of entities.
+It is necessary to initialize the Horus container in the `AppServiceProvider` of Laravel by passing an array with the
+hierarchical map of entities.
 
-You can optionally 
-* Define the database connection name 
+You can optionally
+
+* Define the database connection name
 * Whether UUIDs or Int will be used as the primary key.
 * Define a prefix for the tables of entities in the database.
 * Enable or disable the validation of access to entities. Improve performance by disabling this option.
@@ -136,13 +146,15 @@ php artisan migrate
 
 ## ⬆️ Enable upload files
 
-To enable the upload files feature, you need setup a file handler in horus initialization, implementing the `IFileHandler` interface.
+To enable the upload files feature, you need setup a file handler in horus initialization, implementing
+the `IFileHandler` interface.
 
 ```php
 Horus::setFileHandler($this->app->make(IFileHandler::class));
 ```
 
-In your writable entity synchronizable model, you can define the file attribute using the `SyncParameter::createReferenceFile` method.
+In your writable entity synchronizable model, you can define the file attribute using
+the `SyncParameter::createReferenceFile` method.
 
 ```php
 class UserImageModel extends WritableEntitySynchronizable
@@ -215,9 +227,20 @@ class LocalFileHandler implements IFileHandler
 }
 ```
 
+### Prune files
+
+If you want to delete files that are no longer referenced by any entity, you can use the following command:
+
+```bash
+php artisan horus:prune --expirationDays=7
+```
+
+* **expirationDays:** The number of days after which files will be deleted.
+
 ## ↔️ Middlewares
 
-If you want to implement custom middlewares for the synchronization routes, you can do so in your Service Provider as follows:
+If you want to implement custom middlewares for the synchronization routes, you can do so in your Service Provider as
+follows:
 
 ```php
 
@@ -227,7 +250,9 @@ Horus::setMiddleware([MyMiddleware::class,'throttle:60,1']);
 
 ## 🔒 Authentication and Permissions
 
-The following code shows how to configure user authentication and the permissions associated with entities. Using the UserAuth class, you define an authenticated user along with the entities they have access to and the corresponding permissions.
+The following code shows how to configure user authentication and the permissions associated with entities. Using the
+UserAuth class, you define an authenticated user along with the entities they have access to and the corresponding
+permissions.
 
 ```php
 Horus::getInstance()->setUserAuthenticated(

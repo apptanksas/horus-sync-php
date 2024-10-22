@@ -7,6 +7,16 @@ use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Repository\EntityRepository;
 
+/**
+ * @internal Class FilePathGenerator
+ *
+ * Represents a class for generating file paths based on user authentication and entity reference.
+ *
+ * @package AppTank\Horus\Core\File
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 readonly class FilePathGenerator
 {
     /**

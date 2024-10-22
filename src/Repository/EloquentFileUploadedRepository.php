@@ -7,6 +7,13 @@ use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
 
+/**
+ * @internal Class EloquentFileUploadedRepository
+ *
+ * This class implements the `FileUploadedRepository` interface using Eloquent models to interact with the database.
+ *
+ * @package AppTank\Horus\Repository
+ */
 class EloquentFileUploadedRepository implements FileUploadedRepository
 {
 
@@ -82,6 +89,12 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
         return $output;
     }
 
+    /**
+     * Deletes a file upload by its ID.
+     *
+     * @param string $id The ID of the file upload to delete.
+     * @return void
+     */
     function delete(string $id): void
     {
         $result = SyncFileUploadedModel::query()->where(SyncFileUploadedModel::ATTR_ID, $id)->delete();
@@ -91,6 +104,12 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
         }
     }
 
+    /**
+     * Parses the file upload data into an array for saving to the database.
+     *
+     * @param FileUploaded $file The file upload to parse.
+     * @return array The parsed data.
+     */
     private function parseData(FileUploaded $file): array
     {
         return [

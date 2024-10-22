@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
 
 
 /**
- * Create migration schema for all entities synchronizable
+ * Create table to store uploaded files and handle them
  */
 return new class extends Migration {
     /**

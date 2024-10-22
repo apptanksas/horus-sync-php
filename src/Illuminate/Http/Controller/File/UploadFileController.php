@@ -10,10 +10,26 @@ use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * @internal Class UploadFileController
+ *
+ * Represents a controller for uploading files. This class defines a method for uploading a file and saving it to the repository.
+ *
+ * @package AppTank\Horus\Illuminate\Http\Controller\File
+ *
+ * @author John Ospina
+ * Year: 2024
+ */
 class UploadFileController extends Controller
 {
     private readonly UploadFile $useCase;
 
+    /**
+     * Constructor for the UploadFileController class.
+     *
+     * @param IFileHandler $fileHandler The file handler.
+     * @param FileUploadedRepository $fileUploadedRepository The repository for uploaded files.
+     */
     function __construct(
         IFileHandler           $fileHandler,
         FileUploadedRepository $fileUploadedRepository
@@ -25,6 +41,12 @@ class UploadFileController extends Controller
             Horus::getInstance()->getConfig());
     }
 
+    /**
+     * Handles the file upload request.
+     *
+     * @param Request $request The HTTP request.
+     * @return JsonResponse The JSON response.
+     */
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {

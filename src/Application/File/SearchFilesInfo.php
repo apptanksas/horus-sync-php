@@ -15,6 +15,11 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
  */
 readonly class SearchFilesInfo extends BaseUploadFileUseCase
 {
+    /**
+     * Constructor for the SearchFiles class.
+     *
+     * @param FileUploadedRepository $fileUploadedRepository The repository for file uploaded entities.
+     */
     public function __construct(
         private FileUploadedRepository $fileUploadedRepository,
     )
