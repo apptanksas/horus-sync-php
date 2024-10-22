@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.2.0
+- Added support for upload files.
+- Added method to setup prefix tables.
 
 ## v0.1.8
 ## v0.1.7

@@ -10,7 +10,9 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Horus;
+use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
+use AppTank\Horus\Repository\EloquentEntityRepository;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
@@ -27,8 +29,9 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         parent::setUp();
         $mapper = Horus::getInstance()->getEntityMapper();
         $config = new Config(true);
+        $entityRepository = new EloquentEntityRepository($mapper, new DateTimeUtil());
 
-        $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config);
+        $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
     }
 
     function test_when_user_owner_then_can_access_own_entity()

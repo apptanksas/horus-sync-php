@@ -1,17 +1,22 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Http\Controller;
+namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Bus\IEventBus;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
+use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use Illuminate\Http\JsonResponse;
@@ -33,18 +38,21 @@ class PostSyncQueueActionsController extends Controller
     /**
      * Constructor for PostSyncQueueActionsController.
      *
-     * @param ITransactionHandler             $transactionHandler Transaction handler for managing transactions.
-     * @param QueueActionRepository           $queueActionRepository Repository for handling queue actions.
-     * @param EntityRepository                $entityRepository Repository for entity-related operations.
+     * @param ITransactionHandler $transactionHandler Transaction handler for managing transactions.
+     * @param QueueActionRepository $queueActionRepository Repository for handling queue actions.
+     * @param EntityRepository $entityRepository Repository for entity-related operations.
      * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating entity access.
-     * @param IEventBus                       $eventBus Event bus for dispatching events.
+     * @param IEventBus $eventBus Event bus for dispatching events.
      */
     function __construct(
         ITransactionHandler             $transactionHandler,
         QueueActionRepository           $queueActionRepository,
         EntityRepository                $entityRepository,
         EntityAccessValidatorRepository $accessValidatorRepository,
-        IEventBus                       $eventBus
+        FileUploadedRepository          $fileUploadedRepository,
+        IEventBus                       $eventBus,
+        EntityMapper                    $entityMapper,
+        Config                          $config
     )
     {
         $this->useCase = new SyncQueueActions(
@@ -52,7 +60,11 @@ class PostSyncQueueActionsController extends Controller
             $queueActionRepository,
             $entityRepository,
             $accessValidatorRepository,
-            $eventBus
+            $fileUploadedRepository,
+            $eventBus,
+            Horus::getInstance()->getFileHandler(),
+            $entityMapper,
+            $config
         );
     }
 

@@ -17,6 +17,8 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
 
     const string ATTR_ENUM = "value_enum";
 
+    const string ATTR_IMAGE = "image";
+
     const int VERSION_NAME = 1;
 
     const int VERSION_DEFAULT = 2;
@@ -33,7 +35,8 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
             SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_DEFAULT, true),
             SyncParameter::createEnum(self::ATTR_ENUM, self::ENUM_VALUES, self::VERSION_DEFAULT),
             SyncParameter::createRelationOneOfMany([ChildFakeWritableEntity::class], self::VERSION_CHILDREN),
-            SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN)
+            SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN),
+            SyncParameter::createReferenceFile(self::ATTR_IMAGE, self::VERSION_DEFAULT, true)
         ];
     }
 
@@ -62,7 +65,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
         return $this->hasMany(ChildFakeWritableEntity::class, ChildFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
     }
 
-    public function adjacent():HasOne
+    public function adjacent(): HasOne
     {
         return $this->hasOne(AdjacentFakeWritableEntity::class, AdjacentFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
     }
