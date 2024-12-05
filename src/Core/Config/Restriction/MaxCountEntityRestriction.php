@@ -16,7 +16,7 @@ readonly class MaxCountEntityRestriction implements EntityRestriction
 {
     public function __construct(
         public string $entityName,
-        public int    $value
+        public int $maxCount
     )
     {
 

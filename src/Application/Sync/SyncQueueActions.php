@@ -282,7 +282,7 @@ class SyncQueueActions
         $userOwnerId = $this->userAuth->getEffectiveUserId();
         $currentCount = $this->entityRepository->getCount($userOwnerId, $entity);
 
-        if (($currentCount + $countToInsert) > $restriction->value) {
+        if (($currentCount + $countToInsert) > $restriction->maxCount) {
             throw new RestrictionException("Max count entity [$entity] restriction exceeded");
         }
     }
