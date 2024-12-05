@@ -4,6 +4,7 @@ namespace AppTank\Horus;
 
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
@@ -124,6 +125,17 @@ class Horus
     {
         $this->userAuth = $userAuth;
         return $this;
+    }
+
+    /**
+     * Sets the restrictions for the container.
+     *
+     * @param EntityRestriction[] $restrictions Array of restrictions.
+     * @return void
+     */
+    public function setEntityRestrictions(array $restrictions): void
+    {
+        $this->config->setEntityRestrictions($restrictions);
     }
 
     /**

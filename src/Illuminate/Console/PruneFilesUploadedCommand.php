@@ -79,7 +79,7 @@ class PruneFilesUploadedCommand extends Command
     public function handle()
     {
         try {
-            $expirationDays = $this->argument('expirationDays');
+            $expirationDays = intval($this->argument('expirationDays'));
             $this->deleteFilesPendingExpired($expirationDays);
             $this->deleteFilesReferencedInDataDeleted($expirationDays);
         } catch (\Exception $e) {
