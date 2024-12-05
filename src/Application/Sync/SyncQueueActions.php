@@ -6,8 +6,11 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
+use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
@@ -37,6 +40,8 @@ use AppTank\Horus\Core\Transaction\ITransactionHandler;
 class SyncQueueActions
 {
     private FilePathGenerator $filePathGenerator;
+
+    private UserAuth $userAuth;
 
 
     /**
@@ -81,6 +86,8 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
+        $this->userAuth = $userAuth;
+
         usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
         $this->transactionHandler->executeTransaction(function () use ($actions, $userAuth) {
@@ -89,6 +96,8 @@ class SyncQueueActions
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
             $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
+
+            $this->validateInsertEntityRestrictions($insertEntities);
 
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
@@ -218,6 +227,63 @@ class SyncQueueActions
                 }
 
             }
+        }
+    }
+
+    /**
+     * Validates the insert entity restrictions.
+     *
+     * @param EntityInsert[] $insertOperations
+     * @return void
+     * @throws ClientException
+     */
+    private function validateInsertEntityRestrictions(array $insertOperations): void
+    {
+        $insertGrouped = array_reduce($insertOperations, function ($carry, EntityInsert $operation) {
+            $carry[$operation->entity] = $carry[$operation->entity] ?? 0;
+            $carry[$operation->entity] += 1;
+            return $carry;
+        }, []);
+
+
+        foreach ($insertGrouped as $entity => $countToInsert) {
+
+            // Check if entity has restrictions
+            if (!$this->config->hasRestrictions($entity)) {
+                continue;
+            }
+
+            $restrictions = $this->config->getRestrictionsByEntity($entity);
+
+            foreach ($restrictions as $restriction) {
+                // Validate max count entity restriction
+                if ($restriction instanceof MaxCountEntityRestriction) {
+                    $this->validateMaxCountEntityRestriction($restriction, $entity, $countToInsert);
+                    continue;
+                }
+
+                throw new OperationNotPermittedException("Restriction not supported");
+            }
+        }
+    }
+
+
+    /**
+     * Validates the max count entity restriction.
+     *
+     * @param MaxCountEntityRestriction $restriction
+     * @param string $entity
+     * @param int $countToInsert
+     * @return void
+     * @throws ClientException
+     */
+    private function validateMaxCountEntityRestriction(MaxCountEntityRestriction $restriction, string $entity, int $countToInsert): void
+    {
+        $userOwnerId = $this->userAuth->getEffectiveUserId();
+        $currentCount = $this->entityRepository->getCount($userOwnerId, $entity);
+
+        if (($currentCount + $countToInsert) > $restriction->value) {
+            throw new RestrictionException("Max count entity [$entity] restriction exceeded");
         }
     }
 }

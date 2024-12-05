@@ -135,7 +135,7 @@ class Horus
      */
     public function setEntityRestrictions(array $restrictions): void
     {
-        $this->config->setEntityRestrictions($restrictions);
+        self::getInstance()->config->setEntityRestrictions($restrictions);
     }
 
     /**

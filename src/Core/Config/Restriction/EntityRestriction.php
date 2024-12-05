@@ -14,5 +14,10 @@ namespace AppTank\Horus\Core\Config\Restriction;
  */
 interface EntityRestriction
 {
-
+    /**
+     * Retrieves the name of the entity associated with the restriction.
+     *
+     * @return string The name of the entity.
+     */
+    function getEntityName(): string;
 }

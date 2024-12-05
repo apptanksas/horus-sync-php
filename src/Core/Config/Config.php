@@ -21,6 +21,7 @@ class Config
 
     /** @var EntityRestriction[] */
     private array $entityRestrictions = [];
+    private array $restrictionsByEntity = [];
 
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
@@ -45,6 +46,7 @@ class Config
         }
 
         $this->entityRestrictions = $entityRestrictions;
+        $this->populateRestrictionsByEntity();
     }
 
     /**
@@ -55,6 +57,7 @@ class Config
     function setEntityRestrictions(array $entityRestrictions): void
     {
         $this->entityRestrictions = $entityRestrictions;
+        $this->populateRestrictionsByEntity();
     }
 
     /**
@@ -77,5 +80,36 @@ class Config
         return $this->entityRestrictions;
     }
 
+    /**
+     * Checks if there are restrictions for a specific entity.
+     *
+     * @param string $entityName The name of the entity.
+     *
+     * @return bool True if there are restrictions; otherwise, false.
+     */
+    function hasRestrictions(string $entityName): bool
+    {
+        return isset($this->restrictionsByEntity[$entityName]);
+    }
 
+
+    /**
+     * Gets the restrictions for a specific entity.
+     * @param string $entityName
+     * @return EntityRestriction[]
+     */
+    function getRestrictionsByEntity(string $entityName): array
+    {
+        return $this->restrictionsByEntity[$entityName];
+    }
+
+    private function populateRestrictionsByEntity(): void
+    {
+        foreach ($this->entityRestrictions as $restriction) {
+            if (!isset($this->restrictionsByEntity[$restriction->getEntityName()])) {
+                $this->restrictionsByEntity[$restriction->getEntityName()] = [];
+            }
+            $this->restrictionsByEntity[$restriction->getEntityName()][] = $restriction;
+        }
+    }
 }
