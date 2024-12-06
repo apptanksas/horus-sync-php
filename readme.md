@@ -107,6 +107,8 @@ You can optionally
 * Whether UUIDs or Int will be used as the primary key.
 * Define a prefix for the tables of entities in the database.
 * Enable or disable the validation of access to entities. Improve performance by disabling this option.
+* Prefix for the tables of entities in the database.
+* Define the entity restrictions.
 
 ```php
 class AppServiceProvider extends ServiceProvider
@@ -126,7 +128,10 @@ class AppServiceProvider extends ServiceProvider
             validateAccess: true,
             connectionName: "sync_database",
             usesUUIDs: true,
-            prefixTables: 'hs'
+            prefixTables: 'hs',
+            entityRestrictions: [
+                new MaxCountEntityRestriction("entity_name", maxCount: 10)
+            ],
         );
        
          // Initialize Horus
@@ -261,7 +266,7 @@ Horus::getInstance()->setUserAuthenticated(
    [ // Array of Entities Granted
    new EntityGranted(
    "971785f7-0f01-46cd-a3ce-af9ce6273d3d", // User Owner Id
-   "animal", // Entity Name
+   "entity_name", // Entity Name
     "9135e859-b053-4cfb-b701-d5f240b0aab1", // Entity Id
     // Set the permissions for the entity
    , new AccessLevel(Permission::READ, Permission::CREATE)),
@@ -270,4 +275,21 @@ Horus::getInstance()->setUserAuthenticated(
    ]
  )
 );
+```
+
+### ⛔ Entity Restrictions
+
+If you want to apply a restriction to an entity, you can use the next restriction classes:
+
+* **MaxCountEntityRestriction**: Restricts the number of records that can be synchronized for an entity to specific user.
+
+
+#### Setup after initialization
+
+By default, the setup is set the Config class in the Horus initialization, but if you want to change the restrictions after you can use the next code:
+
+```php 
+Horus::getInstance()->setEntityRestrictions([
+    new MaxCountEntityRestriction("entity_name", maxCount: 10)
+]);
 ```

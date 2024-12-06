@@ -51,8 +51,7 @@ class PostSyncQueueActionsController extends Controller
         EntityAccessValidatorRepository $accessValidatorRepository,
         FileUploadedRepository          $fileUploadedRepository,
         IEventBus                       $eventBus,
-        EntityMapper                    $entityMapper,
-        Config                          $config
+        EntityMapper                    $entityMapper
     )
     {
         $this->useCase = new SyncQueueActions(
@@ -64,7 +63,7 @@ class PostSyncQueueActionsController extends Controller
             $eventBus,
             Horus::getInstance()->getFileHandler(),
             $entityMapper,
-            $config
+            Horus::getInstance()->getConfig()
         );
     }
 

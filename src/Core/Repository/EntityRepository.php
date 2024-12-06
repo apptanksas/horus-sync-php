@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\Repository;
 
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
@@ -114,4 +115,14 @@ interface EntityRepository
      * @return EntitySynchronizable[] Returns an array with the entity hierarchy.
      */
     function getEntityPathHierarchy(EntityReference $entityRefChild): array;
+
+    /**
+     * Retrieves the count of entities associated with a specific user ID.
+     *
+     * @param string|int $userId The ID of the user whose entities are being counted.
+     *
+     * @return int The count of entities associated with the specified user ID.
+     * @throws ClientException
+     */
+    function getCount(string|int $userId, string $entityName): int;
 }

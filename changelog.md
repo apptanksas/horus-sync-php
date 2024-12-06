@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.0
+- Added feature to add entity restrictions where it can define a max count of entities.
+- Fixed parse expiration days param in prune upload files command.
+
 ## v0.2.1
 - Fix deleting release in tag_release workflow.
 
