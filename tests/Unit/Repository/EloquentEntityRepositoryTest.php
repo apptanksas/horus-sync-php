@@ -636,4 +636,17 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertEquals($parentEntity->getId(), $result[0]->getId());
         $this->assertEquals($childEntity->getId(), $result[1]->getId());
     }
+
+    function testGetCountIsSuccess()
+    {
+        // Given
+        $userOwnerId = $this->faker->uuid;
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userOwnerId));
+
+        // When
+        $result = $this->entityRepository->getCount($userOwnerId, ParentFakeWritableEntity::getEntityName());
+
+        // Then
+        $this->assertEquals(count($parentsEntities), $result);
+    }
 }

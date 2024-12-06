@@ -5,6 +5,7 @@ namespace AppTank\Horus\Repository;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
@@ -425,6 +426,24 @@ readonly class EloquentEntityRepository implements EntityRepository
         return $entityHierarchy;
     }
 
+
+    /**
+     * Retrieves the count of entities associated with a specific user ID.
+     *
+     * @param string|int $userId The ID of the user whose entities are being counted.
+     *
+     * @return int The count of entities associated with the specified user ID.
+     * @throws ClientException
+     */
+    function getCount(int|string $userId, string $entityName): int
+    {
+        /**
+         * @var $entityClass EntitySynchronizable
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityName);
+        return $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)->count();
+    }
+
     /**
      * Groups entity IDs by entity name from a list of operations.
      *
@@ -641,6 +660,5 @@ readonly class EloquentEntityRepository implements EntityRepository
 
         throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
     }
-
 
 }

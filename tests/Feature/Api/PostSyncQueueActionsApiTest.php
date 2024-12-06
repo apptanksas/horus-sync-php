@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
@@ -550,6 +551,48 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId
         ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
+    }
+
+    function testPostSyncQueueIsBadRequestByEntityExceeded()
+    {
+        $userId = $this->faker->uuid;
+
+        $entities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
+
+        Horus::getInstance()
+            ->setUserAuthenticated(new UserAuth($userId))
+            ->setConfig(new Config(true))
+            ->setEntityRestrictions([
+                new MaxCountEntityRestriction(ParentFakeWritableEntity::getEntityName(), count($entities))
+            ]);
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+
+        $data = [
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "value_enum" => $valueEnum
+                ],
+                "actioned_at" => 1725037000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertBadRequest();
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($entities));
     }
 
 }

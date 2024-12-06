@@ -6,6 +6,9 @@ use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
+use AppTank\Horus\Core\Exception\OperationNotPermittedException;
+use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Model\EntityOperation;
@@ -150,5 +153,44 @@ class SyncQueueActionsTest extends TestCase
 
         // When
         $this->syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
+    }
+
+
+    function testInvokeIsFailureByMaxCountEntityExceeded()
+    {
+        $this->expectException(RestrictionException::class);
+
+        $mapper = Horus::getInstance()->getEntityMapper();
+        $config = new Config(true, entityRestrictions: [
+            new MaxCountEntityRestriction(ParentFakeWritableEntity::getEntityName(), 1)
+        ]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            $mapper,
+            $config
+        );
+
+        $userId = $this->faker->uuid;
+        $insertActions = $this->generateArray(function () {
+            $parentData = ParentFakeEntityFactory::newData();
+            return QueueActionFactory::create(
+                EntityOperationFactory::createEntityInsert(
+                    $this->faker->uuid,
+                    ParentFakeWritableEntity::getEntityName(), $parentData, now()->toDateTimeImmutable()
+                )
+            );
+        });
+
+        $this->entityRepository->shouldReceive('getCount')->andReturn(1);
+
+        // When
+        $syncQueueActions->__invoke(new UserAuth($userId), ...$insertActions);
     }
 }

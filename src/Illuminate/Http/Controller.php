@@ -35,7 +35,6 @@ abstract class Controller
             $this->validateUserActingAs();
             return $callback();
         } catch (ClientException $e) {
-            report($e);
             return $this->responseBadRequest($e->getMessage());
         } catch (\PDOException $e) {
             return $this->responseBadRequest($this->parseError($e->getMessage()));
