@@ -2,7 +2,7 @@ name: Release stable version
 
 on:
   pull_request:
-    types: [closed]
+    types: [ closed ]
     branches:
       - master
 
@@ -32,21 +32,21 @@ jobs:
       - name: Delete all RC releases and tags for this version
         if: env.release == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           VERSION=${{ env.version }}
           echo "Deleting all RC releases and tags for version: $VERSION"
           
           # Fetch all tags to ensure we have the latest
-          git fetch --tags
+          git fetch --prune --tags
           
           # Find and delete RC releases and tags matching this version (vX.Y.Z-rcN)
           for TAG in $(git tag --list "${VERSION}-rc*"); do
             # Find and delete the GitHub release associated with this tag
-            RELEASE_ID=$(gh release view "$TAG" --json id --jq ".id" 2>/dev/null || echo "")
-            if [[ -n "$RELEASE_ID" ]]; then
-              echo "Deleting GitHub release for tag: $TAG (Release ID: $RELEASE_ID)"
-              gh release delete "$RELEASE_ID" --yes
+            echo "Checking for GitHub release associated with tag: $TAG"
+            if gh release view "$TAG" > /dev/null 2>&1; then
+              echo "Deleting GitHub release for tag: $TAG"
+              gh release delete "$TAG" --yes
             else
               echo "No GitHub release found for tag: $TAG"
             fi
