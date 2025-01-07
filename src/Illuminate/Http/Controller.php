@@ -37,7 +37,7 @@ abstract class Controller
         } catch (ClientException $e) {
             return $this->responseBadRequest($e->getMessage());
         } catch (\PDOException $e) {
-            return $this->responseBadRequest($this->parseError($e->getMessage()));
+            return $this->responseBadRequest($this->parseError($e, $e->getMessage()));
         } catch (\ErrorException $e) {
             report($e);
             return $this->responseBadRequest("Error in request data");
@@ -164,7 +164,7 @@ abstract class Controller
         throw new UserNotAuthorizedException("User is not authorized to act as this user[$userActingAs->userId]");
     }
 
-    private function parseError(string $message): string
+    private function parseError(\Throwable $e, string $message): string
     {
         $matches = [];
         if (preg_match("/Data truncated for column '(.+)'/i", $message, $matches)) {
@@ -173,7 +173,7 @@ abstract class Controller
         if (preg_match("/CHECK constraint failed: (.+) \(Connection/i", $message, $matches)) {
             return sprintf(self::ERROR_MESSAGE_ATTRIBUTE_INVALID, $matches[1]);
         }
-
+        report($e);
         return "Error in request data: Some attribute is invalid.";
     }
 
