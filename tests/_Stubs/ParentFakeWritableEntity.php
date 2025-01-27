@@ -13,15 +13,15 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     const string ATTR_NAME = "name";
     const string ATTR_COLOR = "color";
 
+    const string ATTR_TIMESTAMP = "timestamp";
+
     const string ATTR_VALUE_NULLABLE = "value_nullable";
 
     const string ATTR_ENUM = "value_enum";
 
     const string ATTR_IMAGE = "image";
 
-    const int VERSION_NAME = 1;
-
-    const int VERSION_DEFAULT = 2;
+    const int VERSION_DEFAULT = 1;
 
     const int VERSION_CHILDREN = 2;
 
@@ -30,8 +30,9 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     public static function parameters(): array
     {
         return [
-            SyncParameter::createString(self::ATTR_NAME, self::VERSION_NAME),
-            SyncParameter::createTimestamp(self::ATTR_COLOR, self::VERSION_DEFAULT),
+            SyncParameter::createString(self::ATTR_NAME, self::VERSION_DEFAULT),
+            SyncParameter::createString(self::ATTR_COLOR, self::VERSION_DEFAULT),
+            SyncParameter::createTimestamp(self::ATTR_TIMESTAMP, self::VERSION_DEFAULT),
             SyncParameter::createString(self::ATTR_VALUE_NULLABLE, self::VERSION_DEFAULT, true),
             SyncParameter::createEnum(self::ATTR_ENUM, self::ENUM_VALUES, self::VERSION_DEFAULT),
             SyncParameter::createRelationOneOfMany([ChildFakeWritableEntity::class], self::VERSION_CHILDREN),

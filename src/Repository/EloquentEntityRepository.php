@@ -5,6 +5,7 @@ namespace AppTank\Horus\Repository;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Hasher;
@@ -34,13 +35,15 @@ use Illuminate\Support\Facades\DB;
  * using Eloquent ORM. It handles the insertion, updating, deletion, and searching of entities
  * by interacting with the underlying database using Eloquent models.
  */
-readonly class EloquentEntityRepository implements EntityRepository
+class EloquentEntityRepository implements EntityRepository
 {
 
+    private array $cacheEntityParameters = array();
+
     public function __construct(
-        private EntityMapper  $entityMapper,
-        private IDateTimeUtil $dateTimeUtil,
-        private ?string       $connectionName = null,
+        readonly private EntityMapper  $entityMapper,
+        readonly private IDateTimeUtil $dateTimeUtil,
+        readonly private ?string       $connectionName = null,
     )
     {
 
@@ -71,7 +74,7 @@ readonly class EloquentEntityRepository implements EntityRepository
                 WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID => $operation->ownerId,
                 WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT => $this->dateTimeUtil->getCurrent(),
                 WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->dateTimeUtil->getCurrent(),
-            ], $operation->toArray());
+            ], $this->parseData($operation->entity, $operation->toArray()));
         }
 
         foreach ($groupOperationByEntity as $entity => $operations) {
@@ -659,6 +662,64 @@ readonly class EloquentEntityRepository implements EntityRepository
         }
 
         throw new OperationNotPermittedException("Operation not permitted for entity $entityClass");
+    }
+
+    /**
+     * Parses the data for an entity based on its parameters.
+     *
+     * This method converts the data for an entity to the appropriate format based on the entity's parameters.
+     *
+     * @param string $entity The name of the entity to parse the data for.
+     * @param array $data The data to parse.
+     * @return array The parsed data for the entity.
+     */
+    private function parseData(string $entity, array $data): array
+    {
+        $output = [];
+        $entityParameters = $this->getEntityParameters($entity);
+
+        foreach ($data as $key => $value) {
+
+            $parameter = $entityParameters[$key] ?? null;
+
+            match ($parameter) {
+                SyncParameterType::TIMESTAMP => $output[$key] = $this->dateTimeUtil->getFormatDate($value),
+                default => $output[$key] = $value
+            };
+        }
+
+        return $output;
+    }
+
+
+    /**
+     * Retrieves the parameters of an entity class.
+     *
+     * @param string $entity
+     * @return array
+     * @throws ClientException
+     */
+    private function getEntityParameters(string $entity): array
+    {
+        if (isset($this->cacheEntityParameters[$entity])) {
+            return $this->cacheEntityParameters[$entity];
+        }
+
+        /**
+         * @var WritableEntitySynchronizable $entityClass
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entity);
+        $parameters = $entityClass::parameters();
+
+        $output = [];
+
+        foreach ($parameters as $parameter) {
+            $output[$parameter->name] = $parameter->type;
+        }
+
+        $this->cacheEntityParameters[$entity] = $output;
+
+        return $output;
     }
 
 }
