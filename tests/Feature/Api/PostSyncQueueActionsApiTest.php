@@ -94,6 +94,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
+        $timestamp = $this->faker->dateTimeBetween->getTimestamp();
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [
@@ -104,6 +105,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestamp,
                     "value_enum" => strval(rand(1, 100))
                 ],
                 "actioned_at" => $actionedAt
@@ -130,6 +132,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
         $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+        $timestamp = 1674579600;
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [
@@ -140,6 +143,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestamp,
                     "value_enum" => $enumValue
                 ],
                 "actioned_at" => $actionedAt
@@ -156,7 +160,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId,
             'name' => $name,
-            'color' => $color
+            'color' => $color,
+            'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
         ]);
     }
 
@@ -174,6 +179,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
+        $timestampExpected = $this->faker->dateTimeBetween->getTimestamp();
         $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $data = [
@@ -193,6 +199,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "attributes" => [
                         "name" => $nameExpected,
                         "color" => $colorExpected,
+                        "timestamp" => $timestampExpected,
                         "value_enum" => $valueEnumExpected
                     ]
                 ],
@@ -206,6 +213,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum
                 ],
                 "actioned_at" => $actionedAt - 2000
@@ -223,6 +231,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
+            'timestamp' => $timestampExpected,
             'value_enum' => $valueEnumExpected
         ]);
         $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [
@@ -269,6 +278,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
+        $timestampExpected = $this->faker->dateTimeBetween->getTimestamp();
         $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         Horus::getInstance()->setUserAuthenticated(
@@ -309,6 +319,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum
                 ],
                 "actioned_at" => $actionedAt - 2000
@@ -496,6 +507,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         $nameExpected = $this->faker->userName;
         $colorExpected = $this->faker->colorName;
+        $timestampExpected = $this->faker->dateTimeBetween->getTimestamp();
         $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $data = [
@@ -515,6 +527,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "attributes" => [
                         "name" => $nameExpected,
                         "color" => $colorExpected,
+                        "timestamp" => $timestampExpected,
                         "value_enum" => $valueEnumExpected
                     ]
                 ],
@@ -528,6 +541,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum
                 ],
                 "actioned_at" => 1725037000
@@ -570,6 +584,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
         $color = $this->faker->colorName;
+        $timestamp = $this->faker->dateTimeBetween->getTimestamp();
         $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
         $data = [
@@ -581,6 +596,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "id" => $entityId,
                     "name" => $name,
                     "color" => $color,
+                    "timestamp" => $timestamp,
                     "value_enum" => $valueEnum
                 ],
                 "actioned_at" => 1725037000

@@ -81,12 +81,14 @@ class EloquentEntityRepositoryTest extends TestCase
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
             $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP] = $this->getDateTimeUtil()->getFormatDate($expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP]);
             $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
 
         foreach ($childEntities as $entity) {
             $expectedData = $entity->toArray();
             $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $expectedData[ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE] = $this->getDateTimeUtil()->getFormatDate($expectedData[ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE]);
             $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), $expectedData);
         }
     }
@@ -122,12 +124,14 @@ class EloquentEntityRepositoryTest extends TestCase
         foreach ($parentsEntities as $entity) {
             $expectedData = $entity->toArray();
             $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP] = $this->getDateTimeUtil()->getFormatDate($expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP]);
             $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
 
         foreach ($childEntities as $entity) {
             $expectedData = $entity->toArray();
             $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($expectedData);
+            $expectedData[ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE] = $this->getDateTimeUtil()->getFormatDate($expectedData[ChildFakeWritableEntity::ATTR_TIMESTAMP_VALUE]);
             $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), $expectedData);
         }
     }
@@ -141,7 +145,10 @@ class EloquentEntityRepositoryTest extends TestCase
          */
         $updateOperations = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId) {
             $entityName = ParentFakeWritableEntity::getEntityName();
-            $attributes = [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName];
+            $attributes = [
+                ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName,
+                ParentFakeWritableEntity::ATTR_TIMESTAMP => $this->faker->dateTimeBetween()->getTimestamp(),
+            ];
             return EntityOperationFactory::createEntityUpdate($ownerId, $entityName, $entity->getId(), $attributes, now()->toDateTimeImmutable());
         }, $parentsEntities);
 
@@ -179,7 +186,7 @@ class EloquentEntityRepositoryTest extends TestCase
             $ownerId,
             ParentFakeWritableEntity::getEntityName(),
             $parentEntity->getId(),
-            [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName],
+            [ParentFakeWritableEntity::ATTR_COLOR => $this->faker->colorName, ParentFakeWritableEntity::ATTR_TIMESTAMP => $this->faker->dateTimeBetween()->getTimestamp()],
             \DateTimeImmutable::createFromMutable($this->faker->dateTimeBetween())
         ), 10);
 
