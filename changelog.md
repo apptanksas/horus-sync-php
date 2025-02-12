@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.4
+- Data type fixed in entity definition
+
 ## v0.3.3
 - Fix insert parameter type as timestamp.
 
