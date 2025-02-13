@@ -63,7 +63,7 @@ return new class extends Migration {
         /**
          * @var WritableEntitySynchronizable $entityClass
          */
-        foreach ($container->getEntities() as $entityClass) {
+        foreach (array_reverse($container->getEntities()) as $entityClass) {
             $tableName = $entityClass::getTableName();
 
             if (is_null($container->getConnectionName())) {

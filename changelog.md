@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.5
+- Order fixed when dropping entity tables
+
 ## v0.3.4
 - Data type fixed in entity definition
 
