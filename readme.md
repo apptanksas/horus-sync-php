@@ -293,3 +293,29 @@ Horus::getInstance()->setEntityRestrictions([
     new MaxCountEntityRestriction("entity_name", maxCount: 10)
 ]);
 ```
+
+
+### ✉️ Events
+
+If you want to listen to events that occur during synchronization, you can use the following code:
+
+#### Insert Event
+```php
+Event::listen("horus.sync.insert", function (string $entityName, array $data) {
+    // Your code here
+});
+```
+
+#### Update Event
+```php
+Event::listen("horus.sync.update", function (string $entityName, array $data) {
+    // Your code here
+});
+```
+
+#### Delete Event
+```php
+Event::listen("horus.sync.delete", function (string $entityName, array $data) {
+    // Your code here
+});
+```

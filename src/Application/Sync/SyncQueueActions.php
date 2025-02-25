@@ -119,18 +119,18 @@ class SyncQueueActions
     private function publishEvents(array $actions): void
     {
         foreach ($actions as $action) {
+
+            $eventData = [
+                $action->entity,
+                $action->operation->toArray()
+            ];
+
             if ($action->action == SyncAction::INSERT) {
-                $this->eventBus->publish("sync.insert",
-                    array_merge(["entity" => $action->entity],
-                        $action->operation->toArray()));
+                $this->eventBus->publish("sync.insert", $eventData);
             } elseif ($action->action == SyncAction::UPDATE) {
-                $this->eventBus->publish("sync.update",
-                    array_merge(["entity" => $action->entity],
-                        $action->operation->toArray()));
+                $this->eventBus->publish("sync.update", $eventData);
             } elseif ($action->action == SyncAction::DELETE) {
-                $this->eventBus->publish("sync.delete",
-                    array_merge(["entity" => $action->entity],
-                        $action->operation->toArray()));
+                $this->eventBus->publish("sync.delete", $eventData);
             }
         }
     }
