@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.6
+- Fixed dispatch sync events.
+
 ## v0.3.5
 - Order fixed when dropping entity tables
 
