@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.7
+- Fixed update entity when it has its receives a timestamp.
+
 ## v0.3.6
 - Fixed dispatch sync events.
 

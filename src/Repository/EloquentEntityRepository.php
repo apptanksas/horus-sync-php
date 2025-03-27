@@ -192,6 +192,7 @@ class EloquentEntityRepository implements EntityRepository
             foreach ($data as $item) {
 
                 $table = $this->getTableBuilder($tableName);
+                $item = $this->parseData($entity, $item);
 
                 $id = $item[$columnId];
                 unset($item[$columnId]);
