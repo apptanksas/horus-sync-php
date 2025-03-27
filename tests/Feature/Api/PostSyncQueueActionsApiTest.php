@@ -231,7 +231,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
-            'timestamp' => $timestampExpected,
+            'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestampExpected),
             'value_enum' => $valueEnumExpected
         ]);
         $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [

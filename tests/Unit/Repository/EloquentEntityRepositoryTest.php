@@ -173,6 +173,8 @@ class EloquentEntityRepositoryTest extends TestCase
 
             $hashExpected = Hasher::hash($expectedData);
             $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
+            $expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP] = $this->getDateTimeUtil()->getFormatDate($expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP]);
+
             $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
         }
     }
@@ -214,6 +216,9 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $hashExpected = Hasher::hash($expectedData);
         $expectedData[WritableEntitySynchronizable::ATTR_SYNC_HASH] = $hashExpected;
+        // As the column timestamp is a timestamp, we need to convert it to a date
+        $expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP] = $this->getDateTimeUtil()->getFormatDate($expectedData[ParentFakeWritableEntity::ATTR_TIMESTAMP]);
+
         $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), $expectedData);
     }
 
