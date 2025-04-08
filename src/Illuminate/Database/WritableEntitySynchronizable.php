@@ -182,6 +182,6 @@ abstract class WritableEntitySynchronizable extends EntitySynchronizable impleme
     public static function isOwner(string $entityId, string|int $userId): bool
     {
         $class = get_called_class();
-        return $class::where(self::ATTR_SYNC_OWNER_ID, $userId)->where(self::ATTR_ID, $entityId)->exists();
+        return $class::withTrashed()->where(self::ATTR_SYNC_OWNER_ID, $userId)->where(self::ATTR_ID, $entityId)->exists();
     }
 }
