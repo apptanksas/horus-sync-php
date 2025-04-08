@@ -425,7 +425,9 @@ class EloquentEntityRepository implements EntityRepository
             );
         }
 
-        $entityHierarchy[] = $entity;
+        if ($entity != null) {
+            $entityHierarchy[] = $entity;
+        }
 
         return $entityHierarchy;
     }
@@ -629,7 +631,7 @@ class EloquentEntityRepository implements EntityRepository
         foreach ($entityData->getData() as $key => $value) {
             // Validate if is a related entity
             if (str_starts_with($key, "_")) {
-                $entitiesRelated = array_map(fn($item) => $this->parseRelatedIds($item), $value);
+                $entitiesRelated = (is_array($value)) ? array_map(fn($item) => $this->parseRelatedIds($item), $value) : array($this->parseRelatedIds($value));
                 $groups = $groupByEntity($entitiesRelated);
                 foreach ($groups as $entity => $ids) {
                     $idsOutput[$entity] = array_merge($idsOutput[$entity] ?? [], $ids);

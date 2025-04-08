@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.3.8
+- Fixed entity parsing when executing a delete operation.
 ## v0.3.7
 - Fixed update entity when it has its receives a timestamp.
 
