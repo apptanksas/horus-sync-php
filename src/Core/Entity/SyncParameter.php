@@ -24,6 +24,8 @@ class SyncParameter
      * @param bool $isNullable Indicates if the parameter is nullable (default is false).
      * @param array|string[] $related An array of related class names (default is an empty array).
      * @param array $options Additional options for the parameter (default is an empty array).
+     * @param string|null $linkedEntity The name of the linked entity (default is null).
+     * @param bool $deleteOnCascade Indicates if the parameter should be deleted on cascade (default is true).
      */
     public function __construct(
         public string            $name,
@@ -32,7 +34,8 @@ class SyncParameter
         public bool              $isNullable = false,
         public array             $related = [],
         public array             $options = [],
-        public ?string           $linkedEntity = null
+        public ?string           $linkedEntity = null,
+        public bool              $deleteOnCascade = true
     )
     {
         $this->validateRelated();

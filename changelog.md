@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.0
+- Added support to setup if a foreing entity is delete on cascade.
+
 ## v0.3.9
 - Fixed when its updating entity without changes.
 
