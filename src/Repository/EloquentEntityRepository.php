@@ -197,9 +197,7 @@ class EloquentEntityRepository implements EntityRepository
                 $id = $item[$columnId];
                 unset($item[$columnId]);
 
-                if ($this->isOperationIsFailure($table->where($columnId, $id)->update($item))) {
-                    throw new \Exception(sprintf("[$tableName] Failed to update entity with id %s", $id));
-                }
+                $table->where($columnId, $id)->update($item);
             }
         }
 
@@ -498,17 +496,6 @@ class EloquentEntityRepository implements EntityRepository
     private function convertSdtClassToArray($object): array
     {
         return json_decode(json_encode($object), true);
-    }
-
-    /**
-     * Checks if an operation failed based on the number of rows affected.
-     *
-     * @param int $rowsAffected The number of rows affected by the operation.
-     * @return bool True if the operation failed (affected rows == 0), otherwise false.
-     */
-    private function isOperationIsFailure(int $rowsAffected): bool
-    {
-        return $rowsAffected == 0;
     }
 
     /**

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.9
+- Fixed when its updating entity without changes.
+
 ## v0.3.8
 - Fixed entity parsing when executing a delete operation.
 ## v0.3.7
