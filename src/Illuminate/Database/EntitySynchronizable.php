@@ -135,6 +135,7 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
 
             if ($parameter->linkedEntity !== null) {
                 $attribute["linked_entity"] = $parameter->linkedEntity;
+                $attribute["delete_on_cascade"] = $parameter->deleteOnCascade;
             }
 
             if ($parameter->type == SyncParameterType::ENUM) {
