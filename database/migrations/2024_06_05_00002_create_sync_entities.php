@@ -9,6 +9,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 
@@ -24,6 +25,7 @@ return new class extends Migration {
         $this->down();
 
         $container = Horus::getInstance();
+        $connectionName = $container->getConnectionName();
 
         /**
          * @var IEntitySynchronizable $entityClass
@@ -31,18 +33,19 @@ return new class extends Migration {
         foreach ($container->getEntities() as $entityClass) {
             $tableName = $entityClass::getTableName();
 
-            $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName) {
+            $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName, $connectionName) {
                 $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (Schema::hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
                     $this->createColumn($table, $parameter);
+                    $this->applyCustomConstraints($connectionName, $tableName, $parameter);
                 }
             };
 
             // if connection name is null, use default connection
-            if (is_null($container->getConnectionName())) {
+            if (is_null($connectionName)) {
                 Schema::create($tableName, $callbackCreateTable);
                 continue;
             }
@@ -114,7 +117,7 @@ return new class extends Migration {
             SyncParameterType::INT => $table->integer($parameter->name),
             SyncParameterType::FLOAT => $table->float($parameter->name),
             SyncParameterType::BOOLEAN => $table->boolean($parameter->name),
-            SyncParameterType::STRING => $table->string($parameter->name, 255),
+            SyncParameterType::STRING, SyncParameterType::CUSTOM => $table->string($parameter->name, 255),
             SyncParameterType::JSON => $table->json($parameter->name),
             SyncParameterType::TEXT => $table->text($parameter->name),
             SyncParameterType::TIMESTAMP => $table->timestamp($parameter->name),
@@ -122,12 +125,29 @@ return new class extends Migration {
             SyncParameterType::UUID => $table->uuid($parameter->name),
             SyncParameterType::REFERENCE_FILE => $table->string($parameter->name),
             SyncParameterType::RELATION_ONE_OF_MANY, SyncParameterType::RELATION_ONE_OF_ONE => null,
+            default => throw new \InvalidArgumentException("Parameter type not referenced: {$parameter->type}"),
         };
 
         if (!is_null($builder)) {
             $builder->nullable($parameter->isNullable);
         }
 
+    }
+
+    private function applyCustomConstraints(?string $connectionName, string $tableName, SyncParameter $parameter): void
+    {
+        $driver = (is_null($connectionName)) ? Schema::getConnection()->getDriverName() : Schema::connection($connectionName)->getConnection()->getDriverName();
+
+        if ($driver !== 'pgsql' || $parameter->type !== SyncParameterType::CUSTOM) {
+            return;
+        }
+
+        // ONLY FOR POSTGRESQL
+        // Add a custom constraint to the table
+        DB::connection($connectionName)->statement("ALTER TABLE $tableName
+            ADD CONSTRAINT {$parameter->name}_type_custom CHECK (
+                {$parameter->name} ~* '{$parameter->regex}'
+            )");
     }
 
 };

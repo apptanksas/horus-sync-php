@@ -21,11 +21,15 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
 
     const string ATTR_IMAGE = "image";
 
+    const string ATTR_CUSTOM = "custom";
+
     const int VERSION_DEFAULT = 1;
 
     const int VERSION_CHILDREN = 2;
 
     const array ENUM_VALUES = ["value1", "value2", "value3"];
+
+    const string REGEX_CUSTOM = "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
 
     public static function parameters(): array
     {
@@ -37,7 +41,8 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
             SyncParameter::createEnum(self::ATTR_ENUM, self::ENUM_VALUES, self::VERSION_DEFAULT),
             SyncParameter::createRelationOneOfMany([ChildFakeWritableEntity::class], self::VERSION_CHILDREN),
             SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN),
-            SyncParameter::createReferenceFile(self::ATTR_IMAGE, self::VERSION_DEFAULT, true)
+            SyncParameter::createReferenceFile(self::ATTR_IMAGE, self::VERSION_DEFAULT, true),
+            SyncParameter::createCustom(self::ATTR_CUSTOM, self::REGEX_CUSTOM, self::VERSION_DEFAULT, true),
         ];
     }
 

@@ -1,4 +1,6 @@
 # Changelog
+## v0.5.0
+- Added new parameter type to defines a custom type with own regex.
 
 ## v0.4.0
 - Added support to setup if a foreing entity is delete on cascade.
