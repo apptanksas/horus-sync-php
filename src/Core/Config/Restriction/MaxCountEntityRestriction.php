@@ -3,7 +3,7 @@
 namespace AppTank\Horus\Core\Config\Restriction;
 
 /**
- * Interface EntityRestriction
+ * Class MaxCountEntityRestriction
  *
  * Represents a restriction that can be applied to an entity indicating a limit on the number of entities that can be created.
  *
@@ -16,7 +16,7 @@ readonly class MaxCountEntityRestriction implements EntityRestriction
 {
     public function __construct(
         public string $entityName,
-        public int $maxCount
+        public int    $maxCount
     )
     {
 
