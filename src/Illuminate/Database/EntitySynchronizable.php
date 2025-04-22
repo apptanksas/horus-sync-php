@@ -133,6 +133,10 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
             $attribute["type"] = StringUtil::snakeCase($parameter->type->value);
             $attribute["nullable"] = $parameter->isNullable;
 
+            if ($parameter->type == SyncParameterType::CUSTOM) {
+                $attribute["regex"] = $parameter->regex;
+            }
+
             if ($parameter->linkedEntity !== null) {
                 $attribute["linked_entity"] = $parameter->linkedEntity;
                 $attribute["delete_on_cascade"] = $parameter->deleteOnCascade;
