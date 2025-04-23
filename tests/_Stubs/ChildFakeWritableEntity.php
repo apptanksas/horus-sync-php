@@ -49,7 +49,7 @@ class ChildFakeWritableEntity extends WritableEntitySynchronizable implements En
             SyncParameter::createString(self::ATTR_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createBoolean(self::ATTR_BOOLEAN_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES),
-            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES, ParentFakeWritableEntity::getEntityName())
+            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, self::VERSION_ATTRIBUTES, ParentFakeWritableEntity::getEntityName(), true)
         ];
     }
 
