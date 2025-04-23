@@ -1,4 +1,8 @@
 # Changelog
+
+## v0.5.2
+- Fixed applying constraint in parameter custom. 
+
 ## v0.5.1
 - Fixed option in create entity synchronizable using artisan command.
 
