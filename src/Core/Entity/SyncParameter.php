@@ -36,7 +36,7 @@ class SyncParameter
         public array             $related = [],
         public array             $options = [],
         public ?string           $linkedEntity = null,
-        public bool              $deleteOnCascade = true,
+        public bool              $deleteOnCascade = false,
         public ?string           $regex = null,
     )
     {
@@ -260,9 +260,9 @@ class SyncParameter
      * @param string $linkedEntity
      * @return self
      */
-    public static function createUUIDForeignKey(string $name, int $version, string $linkedEntity): self
+    public static function createUUIDForeignKey(string $name, int $version, string $linkedEntity, bool $deleteOnCascade = false): self
     {
-        return new SyncParameter($name, SyncParameterType::UUID, $version, linkedEntity: $linkedEntity);
+        return new SyncParameter($name, SyncParameterType::UUID, $version, linkedEntity: $linkedEntity, deleteOnCascade: $deleteOnCascade);
     }
 
     /**
@@ -273,9 +273,9 @@ class SyncParameter
      * @param string $linkedEntity
      * @return self
      */
-    public static function createStringForeignKey(string $name, int $version, string $linkedEntity): self
+    public static function createStringForeignKey(string $name, int $version, string $linkedEntity, bool $deleteOnCascade = false): self
     {
-        return new SyncParameter($name, SyncParameterType::STRING, $version, linkedEntity: $linkedEntity);
+        return new SyncParameter($name, SyncParameterType::STRING, $version, linkedEntity: $linkedEntity, deleteOnCascade: $deleteOnCascade);
     }
 
     /**
@@ -286,9 +286,9 @@ class SyncParameter
      * @param string $linkedEntity
      * @return self
      */
-    public static function createIntForeignKey(string $name, int $version, string $linkedEntity): self
+    public static function createIntForeignKey(string $name, int $version, string $linkedEntity, bool $deleteOnCascade = false): self
     {
-        return new SyncParameter($name, SyncParameterType::INT, $version, linkedEntity: $linkedEntity);
+        return new SyncParameter($name, SyncParameterType::INT, $version, linkedEntity: $linkedEntity, deleteOnCascade: $deleteOnCascade);
     }
 
     // ------------------------------------------------------------------------

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.5
+- Turn off by default delete on cascade in parameter types.
+
 ## v0.5.4
 - Fixed applying constraint in parameter custom.
 

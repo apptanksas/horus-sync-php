@@ -17,7 +17,7 @@ class AdjacentFakeWritableEntity extends WritableEntitySynchronizable implements
     {
         return [
             SyncParameter::createString("name", 1),
-            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, 1, ParentFakeWritableEntity::getEntityName())
+            SyncParameter::createUUIDForeignKey(self::FK_PARENT_ID, 1, ParentFakeWritableEntity::getEntityName(), true)
         ];
     }
 

@@ -111,12 +111,19 @@ return new class extends Migration {
             $entityClass = Horus::getInstance()->getEntityMapper()->getEntityClass($parameter->linkedEntity);
             $tableRelatedName = $entityClass::getTableName();
 
-            match ($parameter->type) {
-                SyncParameterType::STRING => $table->foreign($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
-                SyncParameterType::INT => $table->foreignId($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
-                SyncParameterType::UUID => $table->foreignUuid($parameter->name)->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName)->cascadeOnDelete(),
+            $columnReference = match ($parameter->type) {
+                SyncParameterType::STRING => $table->foreign($parameter->name),
+                SyncParameterType::INT => $table->foreignId($parameter->name),
+                SyncParameterType::UUID => $table->foreignUuid($parameter->name),
                 default => null,
             };
+
+            $columnReference = $columnReference->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName);
+
+            if ($parameter->deleteOnCascade) {
+                $columnReference->cascadeOnDelete();
+            }
+
             return;
         }
 
