@@ -284,7 +284,6 @@ If you want to apply a restriction to an entity, you can use the next restrictio
 * **MaxCountEntityRestriction**: Restricts the number of records that can be synchronized for an entity to specific user.
 * **FilterEntityRestriction**: This restriction allows you to filter the records from an entity can be obtained given a set of
   parameters. This is useful when you want to limit the data that can be downloaded to client based on certain criteria. 
-* 
 #### Setup after initialization
 
 By default, the setup is set the Config class in the Horus initialization, but if you want to change the restrictions after you can use the next code:
