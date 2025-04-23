@@ -28,6 +28,7 @@ enum SyncParameterType: string
     case ENUM = "enum";
     case TIMESTAMP = "timestamp";
     case UUID = "uuid";
+    case CUSTOM = "custom";
 
     case REFERENCE_FILE = "ref_file";
 

@@ -17,7 +17,7 @@ use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ReadableFakeEntity;
-use Tests\_Stubs\LookupFakeEntityFactory;
+use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
@@ -244,7 +244,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
     {
         $ownerId = $this->faker->uuid;
         Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
-        $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $this->generateArray(fn() => ReadableFakeEntityFactory::create());
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [

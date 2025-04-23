@@ -26,6 +26,7 @@ class SyncParameter
      * @param array $options Additional options for the parameter (default is an empty array).
      * @param string|null $linkedEntity The name of the linked entity (default is null).
      * @param bool $deleteOnCascade Indicates if the parameter should be deleted on cascade (default is true).
+     * @param string|null $regex A regex pattern for validation. (Only for custom type)
      */
     public function __construct(
         public string            $name,
@@ -35,7 +36,8 @@ class SyncParameter
         public array             $related = [],
         public array             $options = [],
         public ?string           $linkedEntity = null,
-        public bool              $deleteOnCascade = true
+        public bool              $deleteOnCascade = true,
+        public ?string           $regex = null,
     )
     {
         $this->validateRelated();
@@ -192,6 +194,25 @@ class SyncParameter
     public static function createJSON(string $name, int $version, bool $isNullable = false): self
     {
         return new SyncParameter($name, SyncParameterType::JSON, $version, $isNullable);
+    }
+
+    /**
+     * Creates a custom parameter with a regex pattern.
+     *
+     * @param string $name The name of the parameter.
+     * @param string $regex The regex pattern for validation.
+     * @param int $version The version of the parameter.
+     * @param bool $isNullable Indicates if the parameter is nullable.
+     * @return self A new instance of SyncParameter.
+     */
+    public static function createCustom(string $name, string $regex, int $version, bool $isNullable = false): self
+    {
+        // Validate if the pattern regex is valid
+        if (@preg_match("/$regex/i", '') === false) {
+            throw new ClientException("Invalid regex pattern [$regex] for parameter [$name]");
+        }
+
+        return new SyncParameter($name, SyncParameterType::CUSTOM, $version, $isNullable, regex: $regex);
     }
 
     /**
