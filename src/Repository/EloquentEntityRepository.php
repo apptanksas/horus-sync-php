@@ -3,7 +3,6 @@
 namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Config\Config;
-use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
@@ -23,7 +22,6 @@ use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
-use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -545,10 +543,6 @@ class EloquentEntityRepository implements EntityRepository
     private function buildEntityData(IEntitySynchronizable $parentEntity): EntityData
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
-
-        if ($parentEntity instanceof ReadableEntitySynchronizable) {
-            return $entityData;
-        }
 
         $relationsOneOfMany = $parentEntity->getRelationsOneOfMany();
 
