@@ -25,9 +25,10 @@ class FilePathGeneratorTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $mapper = Horus::getInstance()->getEntityMapper();
+        $horus = Horus::getInstance();
+        $mapper = $horus->getEntityMapper();
 
-        $repository = new EloquentEntityRepository($mapper, new DateTimeUtil());
+        $repository = new EloquentEntityRepository($mapper, new DateTimeUtil(), $horus->getConfig());
 
         $this->config = new Config();
         $this->filePathGenerator = new FilePathGenerator($repository, $this->config);

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ReadableFakeEntity;
-use Tests\_Stubs\LookupFakeEntityFactory;
+use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
@@ -154,7 +154,7 @@ class GetDataEntityApiTest extends TestCase
     {
         $ownerId = $this->faker->uuid;
         Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
-        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
 
         // When
         $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ReadableFakeEntity::getEntityName()));

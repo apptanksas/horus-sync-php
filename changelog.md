@@ -1,5 +1,7 @@
 # Changelog
+
 ## v0.5.0
+- A new entity restriction is available [FilterEntityRestriction] to filter the data that can be downloaded to client based on certain criteria.
 - Added new parameter type to defines a custom type with own regex.
 
 ## v0.4.0

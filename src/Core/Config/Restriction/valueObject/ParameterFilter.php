@@ -6,7 +6,7 @@ readonly class ParameterFilter
 {
     public function __construct(
         public string $parameterName,
-        public string $parameterValue,
+        public mixed  $parameterValue,
     )
     {
 

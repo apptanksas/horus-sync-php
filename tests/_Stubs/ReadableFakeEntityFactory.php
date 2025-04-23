@@ -2,7 +2,7 @@
 
 namespace Tests\_Stubs;
 
-class LookupFakeEntityFactory
+class ReadableFakeEntityFactory
 {
     public static function create(): ReadableFakeEntity
     {
@@ -21,7 +21,8 @@ class LookupFakeEntityFactory
 
         return [
             "id" => $faker->randomNumber(),
-            "name" => $faker->name
+            "name" => $faker->name,
+            "type" => $faker->randomElement(["type1", "type2", "type3"]),
         ];
     }
 

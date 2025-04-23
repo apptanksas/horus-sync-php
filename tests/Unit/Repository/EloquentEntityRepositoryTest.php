@@ -3,6 +3,8 @@
 namespace Tests\Unit\Repository;
 
 
+use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
@@ -21,7 +23,7 @@ use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ReadableFakeEntity;
-use Tests\_Stubs\LookupFakeEntityFactory;
+use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
@@ -42,9 +44,12 @@ class EloquentEntityRepositoryTest extends TestCase
 
         parent::setUp();
 
+        $horus = Horus::getInstance();
+
         $this->entityRepository = new EloquentEntityRepository(
-            Horus::getInstance()->getEntityMapper(),
-            new DateTimeUtil()
+            $horus->getEntityMapper(),
+            new DateTimeUtil(),
+            $horus->getConfig()
         );
     }
 
@@ -535,7 +540,7 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $operation = EntityOperationFactory::createEntityInsert(
             $this->faker->uuid,
-            ReadableFakeEntity::getEntityName(), LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ReadableFakeEntity::getEntityName(), ReadableFakeEntityFactory::newData(), now()->toDateTimeImmutable()
         );
 
         // When
@@ -547,12 +552,12 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->expectException(OperationNotPermittedException::class);
 
         // Given
-        $lookup = LookupFakeEntityFactory::create();
+        $lookup = ReadableFakeEntityFactory::create();
         $operation = EntityOperationFactory::createEntityUpdate(
             $lookup->getId(),
             ReadableFakeEntity::getEntityName(),
             $this->faker->uuid,
-            LookupFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ReadableFakeEntityFactory::newData(), now()->toDateTimeImmutable()
         );
 
         // When
@@ -564,7 +569,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->expectException(OperationNotPermittedException::class);
 
         // Given
-        $lookup = LookupFakeEntityFactory::create();
+        $lookup = ReadableFakeEntityFactory::create();
         $operation = EntityOperationFactory::createEntityDelete(
             $lookup->getId(),
             ReadableFakeEntity::getEntityName(),
@@ -580,7 +585,7 @@ class EloquentEntityRepositoryTest extends TestCase
     {
         // Given
         $ownerId = $this->faker->uuid;
-        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
 
         // When
         $lookupEntity = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
@@ -594,9 +599,9 @@ class EloquentEntityRepositoryTest extends TestCase
     {
         // Given
         $ownerId = $this->faker->uuid;
-        $entities = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
         $ids = array_map(fn(ReadableFakeEntity $entity) => $entity->getId(), $entities);
-        $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $this->generateArray(fn() => ReadableFakeEntityFactory::create());
 
         // When
         $lookupEntity = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName(), $ids);
@@ -660,5 +665,35 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertEquals(count($parentsEntities), $result);
+    }
+
+    function testSearchEntitiesWithFilterRestriction()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions(
+            [
+                new FilterEntityRestriction(ReadableFakeEntity::getEntityName(), [
+                    new ParameterFilter(ReadableFakeEntity::ATTR_TYPE, "type1")
+                ])
+            ]
+        );
+
+        $entityRepository = new EloquentEntityRepository(
+            $horus->getEntityMapper(),
+            new DateTimeUtil(),
+            $horus->getConfig()
+        );
+
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateCountArray(fn() => ReadableFakeEntityFactory::create(), 20);
+        $countExpected = count(array_filter($entities, fn(ReadableFakeEntity $entity) => $entity->type === "type1"));
+
+        // When
+        $entitiesResult = $entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount($countExpected, $entitiesResult);
+        $this->assertEquals(count($entities) - $countExpected, count($entities) - count($entitiesResult));
     }
 }
