@@ -13,7 +13,7 @@ use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeEntityFactory;
-use Tests\_Stubs\LookupFakeEntityFactory;
+use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\Feature\Api\ApiTestCase;
@@ -179,7 +179,7 @@ class GetDataEntitiesApiTest extends ApiTestCase
             AdjacentFakeEntityFactory::create($parentEntity->getId(), $userId);
         }
 
-        $lookups = $this->generateArray(fn() => LookupFakeEntityFactory::create());
+        $lookups = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_ENTITIES->value));

@@ -85,10 +85,14 @@ class HorusServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(EntityRepository::class, function () {
+
+            $horusInstance = Horus::getInstance();
+
             return new EloquentEntityRepository(
                 $this->app->make(EntityMapper::class),
                 $this->app->make(IDateTimeUtil::class),
-                Horus::getInstance()->getConnectionName()
+                $horusInstance->getConfig(),
+                $horusInstance->getConnectionName()
             );
         });
 

@@ -43,4 +43,6 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
     {
         return Horus::getInstance()->getConfig()->prefixTables . "_" . static::getEntityName();
     }
+
+
 }

@@ -29,7 +29,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         parent::setUp();
         $mapper = Horus::getInstance()->getEntityMapper();
         $config = new Config(true);
-        $entityRepository = new EloquentEntityRepository($mapper, new DateTimeUtil());
+        $entityRepository = new EloquentEntityRepository($mapper, new DateTimeUtil(), $config);
 
         $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
     }

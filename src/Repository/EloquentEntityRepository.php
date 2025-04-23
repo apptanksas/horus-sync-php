@@ -2,6 +2,9 @@
 
 namespace AppTank\Horus\Repository;
 
+use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
@@ -40,9 +43,16 @@ class EloquentEntityRepository implements EntityRepository
 
     private array $cacheEntityParameters = array();
 
+    /**
+     * @param EntityMapper $entityMapper
+     * @param IDateTimeUtil $dateTimeUtil
+     * @param Config $config
+     * @param string|null $connectionName
+     */
     public function __construct(
         readonly private EntityMapper  $entityMapper,
         readonly private IDateTimeUtil $dateTimeUtil,
+        readonly private Config        $config,
         readonly private ?string       $connectionName = null,
     )
     {
@@ -330,6 +340,22 @@ class EloquentEntityRepository implements EntityRepository
 
         if (count($ids) > 0) {
             $queryBuilder = $queryBuilder->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids);
+        }
+
+
+        //-------------------------------------
+        // APPLY RESTRICTIONS
+        //-------------------------------------
+
+        if ($this->config->hasRestrictions($entityName)) {
+            $restrictions = $this->config->getRestrictionsByEntity($entityName);
+            foreach ($restrictions as $restriction) {
+                if ($restriction instanceof FilterEntityRestriction) {
+                    foreach ($restriction->parametersFilter as $filter) {
+                        $queryBuilder = $queryBuilder->where($filter->parameterName, $filter->parameterValue);
+                    }
+                }
+            }
         }
 
         if (!is_null($afterTimestamp) && $instanceClass instanceof WritableEntitySynchronizable) {
