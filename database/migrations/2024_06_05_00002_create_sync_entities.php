@@ -40,7 +40,6 @@ return new class extends Migration {
                         continue;
                     }
                     $this->createColumn($table, $parameter);
-                    $this->applyCustomConstraints($connectionName, $tableName, $parameter);
                 }
             };
 
