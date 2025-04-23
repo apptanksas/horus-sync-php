@@ -1,4 +1,6 @@
 # Changelog
+## v0.5.1
+- Fixed option in create entity synchronizable using artisan command.
 
 ## v0.5.0
 - A new entity restriction is available [FilterEntityRestriction] to filter the data that can be downloaded to client based on certain criteria.
