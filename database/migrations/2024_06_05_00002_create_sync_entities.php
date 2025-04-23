@@ -44,6 +44,16 @@ return new class extends Migration {
                 }
             };
 
+            $createTableConstraintsTable = function () use ($entityClass, $tableName, $connectionName) {
+                $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
+                foreach ($parameters as $parameter) {
+                    if (Schema::hasColumn($tableName, $parameter->name)) {
+                        continue;
+                    }
+                    $this->applyCustomConstraints($connectionName, $tableName, $parameter);
+                }
+            };
+
             // if connection name is null, use default connection
             if (is_null($connectionName)) {
                 Schema::create($tableName, $callbackCreateTable);
@@ -51,6 +61,7 @@ return new class extends Migration {
             }
 
             Schema::connection($container->getConnectionName())->create($tableName, $callbackCreateTable);
+            $createTableConstraintsTable->__invoke();
         }
     }
 
