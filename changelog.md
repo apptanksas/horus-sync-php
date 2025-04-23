@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.3
+- Added support to use UUID in readable entity.
+
 ## v0.5.2
 - Fixed applying constraint in parameter custom. 
 

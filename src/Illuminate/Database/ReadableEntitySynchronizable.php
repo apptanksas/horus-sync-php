@@ -20,6 +20,8 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
 {
     public $timestamps = false;
     public $incrementing = true;
+    // The default primary key type is integer.
+    protected static bool $usesUuid = false;
 
     /**
      * Get the base synchronization parameters for lookup entities.
@@ -29,7 +31,7 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
     public static function baseParameters(): array
     {
         return [
-            SyncParameter::createPrimaryKeyInteger(self::ATTR_ID, 1),
+            (static::$usesUuid) ? SyncParameter::createPrimaryKeyUUID(self::ATTR_ID, 1) : SyncParameter::createPrimaryKeyInteger(self::ATTR_ID, 1),
             SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, 1)
         ];
     }
@@ -44,5 +46,28 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
         return Horus::getInstance()->getConfig()->prefixTables . "_" . static::getEntityName();
     }
 
+    // ------------------------------------------------------------------------
+    // RELATIONS
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get one-to-many relation methods.
+     *
+     * @return string[] List of one-to-many relation methods.
+     */
+    public function getRelationsOneOfMany(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get one-to-one relation methods.
+     *
+     * @return string[] List of one-to-one relation methods.
+     */
+    public function getRelationsOneOfOne(): array
+    {
+        return [];
+    }
 
 }
