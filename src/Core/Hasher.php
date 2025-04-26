@@ -41,6 +41,13 @@ class Hasher
             }
         }
 
+        $data = array_map(function ($value) {
+            if (is_bool($value)) {
+                return $value ? 'true' : 'false';
+            }
+            return $value;
+        }, $data);
+
         // Sort the array by key
         ksort($data);
 
