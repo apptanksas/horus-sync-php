@@ -1,9 +1,5 @@
 # Changelog
 
-## v0.5.6
-- Fixed migration when an parameter is nullable with entity linked.
-- Fixed hashing data with null and boolean values.
-
 ## v0.5.5
 - Turn off by default delete on cascade in parameter types.
 

@@ -118,7 +118,6 @@ return new class extends Migration {
                 default => null,
             };
 
-            $columnReference = $columnReference->nullable($parameter->isNullable);
             $columnReference = $columnReference->references(EntitySynchronizable::ATTR_ID)->on($tableRelatedName);
 
             if ($parameter->deleteOnCascade) {
