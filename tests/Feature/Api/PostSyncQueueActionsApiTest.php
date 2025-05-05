@@ -349,7 +349,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
             SyncQueueActionModel::FK_USER_ID => $userId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::INSERT->value(),
-            SyncQueueActionModel::ATTR_ENTITY => $entityName
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
         ]);
 
 
@@ -357,7 +358,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
             SyncQueueActionModel::FK_USER_ID => $userId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value(),
-            SyncQueueActionModel::ATTR_ENTITY => $entityName
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
         ]);
 
 
@@ -365,7 +367,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
             SyncQueueActionModel::FK_USER_ID => $userId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::DELETE->value(),
-            SyncQueueActionModel::ATTR_ENTITY => $entityName
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
         ]);
     }
 

@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
+use AppTank\Horus\Core\Mapper\QueueActionMapper;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
@@ -62,6 +63,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         return [
             SyncQueueActionModel::ATTR_ACTION => $queueAction->action->value,
             SyncQueueActionModel::ATTR_ENTITY => $queueAction->entity,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $queueAction->operation->id,
             SyncQueueActionModel::ATTR_DATA => json_encode($queueAction->operation->toArray()),
             SyncQueueActionModel::ATTR_ACTIONED_AT => $queueAction->actionedAt,
             SyncQueueActionModel::ATTR_SYNCED_AT => $queueAction->syncedAt,
@@ -78,24 +80,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      */
     private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
     {
-        $action = SyncAction::newInstance($model->getAction());
-        $actionedAt = $model->getActionedAt();
-
-        match ($action) {
-            SyncAction::INSERT => $operation = EntityOperationFactory::createEntityInsert($model->getOwnerId(), $model->getEntity(), $model->getData(), $actionedAt),
-            SyncAction::UPDATE => $operation = EntityOperationFactory::createEntityUpdate($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $model->getData()["attributes"], $actionedAt),
-            SyncAction::DELETE => $operation = EntityOperationFactory::createEntityDelete($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $actionedAt),
-        };
-
-        return new QueueAction(
-            SyncAction::newInstance($model->getAction()),
-            $model->getEntity(),
-            $operation,
-            $model->getActionedAt(),
-            $model->getSyncedAt(),
-            $model->getUserId(),
-            $model->getOwnerId()
-        );
+        return QueueActionMapper::createFromEloquent($model);
     }
 
     /**

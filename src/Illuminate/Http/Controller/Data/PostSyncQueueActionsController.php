@@ -102,6 +102,7 @@ class PostSyncQueueActionsController extends Controller
             $queueActions[] = new QueueAction(
                 SyncAction::newInstance($itemAction['action']),
                 $itemAction['entity'],
+                $itemAction['data']["id"],
                 $this->createEntityOperation($ownerId, $itemAction),
                 \DateTimeImmutable::createFromMutable($dateUtil->parseDateTime($itemAction['actioned_at'])),
                 now()->toDateTimeImmutable(),
