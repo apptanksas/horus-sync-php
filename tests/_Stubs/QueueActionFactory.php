@@ -22,11 +22,13 @@ class QueueActionFactory
         $action = SyncAction::random();
 
         $entity = $faker->userName;
+        $operation = $entityOperation ?? self::createEntityOperation($entity, $action, $userId);
 
         return new QueueAction(
             $action,
             $entityOperation?->entity ?? $faker->userName,
-            $entityOperation ?? self::createEntityOperation($entity, $action, $userId),
+            $operation->id,
+            $operation,
             Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
             now()->toDateTimeImmutable(),
             $userId ?? $faker->uuid,

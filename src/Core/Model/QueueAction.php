@@ -31,6 +31,7 @@ readonly class QueueAction
     function __construct(
         public SyncAction         $action,
         public string             $entity,
+        public string             $entityId,
         public EntityOperation    $operation,
         public \DateTimeImmutable $actionedAt,
         public \DateTimeImmutable $syncedAt,

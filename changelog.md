@@ -2,6 +2,7 @@
 
 ## v0.6.0
 - Added new column in queue action to store the entity id.
+- Added HorusQueueAction to query the queue action.
 
 ## v0.5.6
 - Fixed migration when an parameter is nullable with entity linked.
