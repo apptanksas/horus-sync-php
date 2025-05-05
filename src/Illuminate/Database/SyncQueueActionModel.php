@@ -22,6 +22,7 @@ final class SyncQueueActionModel extends Model
     const string TABLE_NAME = "sync_queue_actions";
     const string ATTR_ACTION = "action"; // Action made on the entity.
     const string ATTR_ENTITY = "entity"; // Entity name
+    const string ATTR_ENTITY_ID = "entity_id"; // Entity Identifier.
     const string ATTR_DATA = "data"; // JSON Data of the entity.
     const string ATTR_ACTIONED_AT = "actioned_at"; // UTC Datetime when the action was made.
     const string ATTR_SYNCED_AT = "synced_at"; // UTC Datetime when the action was synced.
@@ -36,6 +37,7 @@ final class SyncQueueActionModel extends Model
         self::FK_OWNER_ID,
         self::ATTR_ACTION,
         self::ATTR_ENTITY,
+        self::ATTR_ENTITY_ID,
         self::ATTR_DATA,
         self::ATTR_ACTIONED_AT,
         self::ATTR_SYNCED_AT
@@ -92,6 +94,16 @@ final class SyncQueueActionModel extends Model
     public function getEntity(): string
     {
         return $this->getAttribute(self::ATTR_ENTITY);
+    }
+
+    /**
+     * Get the entity ID attribute.
+     *
+     * @return string Entity Identifier.
+     */
+    public function getEntityId(): string
+    {
+        return $this->getAttribute(self::ATTR_ENTITY_ID);
     }
 
     /**

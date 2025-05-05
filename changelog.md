@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.0
+- Added new column in queue action to store the entity id.
+
 ## v0.5.6
 - Fixed migration when an parameter is nullable with entity linked.
 - Fixed hashing data with null and boolean values.

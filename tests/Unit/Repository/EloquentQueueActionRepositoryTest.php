@@ -40,6 +40,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
                 SyncQueueActionModel::ATTR_ACTION => $action->action->value,
                 SyncQueueActionModel::ATTR_ENTITY => $action->entity,
                 SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
                 SyncQueueActionModel::ATTR_ACTIONED_AT => $action->actionedAt->format('Y-m-d H:i:s'),
                 SyncQueueActionModel::ATTR_SYNCED_AT => $action->syncedAt->format('Y-m-d H:i:s'),
             ]);

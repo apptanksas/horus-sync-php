@@ -25,6 +25,8 @@ return new class extends Migration {
             $table->id();
             $table->enum(SyncQueueActionModel::ATTR_ACTION, SyncAction::getValues());
             $table->string(SyncQueueActionModel::ATTR_ENTITY, 255);
+            $table->uuid(SyncQueueActionModel::ATTR_ENTITY_ID);
+
             $table->json(SyncQueueActionModel::ATTR_DATA);
             $table->timestamp(SyncQueueActionModel::ATTR_ACTIONED_AT);
             $table->timestamp(SyncQueueActionModel::ATTR_SYNCED_AT);
