@@ -57,4 +57,11 @@ interface IEntitySynchronizable
      * @return array An array representing the schema.
      */
     public static function schema(): array;
+
+    /**
+     * Get the indexes of the columns in the entity.
+     *
+     * @return array An array of column indexes.
+     */
+    public static function getColumnIndexes():array;
 }

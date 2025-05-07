@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.0
+- Added support to index columns in entity definition.
+- Fixed issue to insert data with timestamp null.
+
 ## v0.6.0
 - Added new column in queue action to store the entity id.
 - Added HorusQueueAction to query the queue action.

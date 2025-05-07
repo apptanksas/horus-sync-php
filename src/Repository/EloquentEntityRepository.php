@@ -690,6 +690,11 @@ class EloquentEntityRepository implements EntityRepository
 
         foreach ($data as $key => $value) {
 
+            if (is_null($value)) {
+                $output[$key] = null;
+                continue;
+            }
+
             $parameter = $entityParameters[$key] ?? null;
 
             match ($parameter) {

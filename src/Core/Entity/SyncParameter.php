@@ -27,6 +27,7 @@ class SyncParameter
      * @param string|null $linkedEntity The name of the linked entity (default is null).
      * @param bool $deleteOnCascade Indicates if the parameter should be deleted on cascade (default is true).
      * @param string|null $regex A regex pattern for validation. (Only for custom type)
+     * @param bool $withIndex Indicates if the parameter should be indexed (default is false).
      */
     public function __construct(
         public string            $name,
@@ -38,6 +39,7 @@ class SyncParameter
         public ?string           $linkedEntity = null,
         public bool              $deleteOnCascade = false,
         public ?string           $regex = null,
+        public bool              $withIndex = false,
     )
     {
         $this->validateRelated();

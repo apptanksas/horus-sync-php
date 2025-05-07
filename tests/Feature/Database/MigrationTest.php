@@ -75,6 +75,15 @@ class MigrationTest extends TestCase
         $this->assertNotEmpty(array_filter($lookupColumns, fn($column) => $column["name"] == "name"));
         $this->assertTrue($columnIdAttributes["type"] == "integer");
         $this->assertTrue($columnIdAttributes["auto_increment"] == true);
+
+        // Validate parent indexing
+        $parentIndexes = Schema::getIndexes(ParentFakeWritableEntity::getTableName());
+        $childIndexes = Schema::getIndexes(ChildFakeWritableEntity::getTableName());
+
+        $this->assertTrue(in_array(ParentFakeWritableEntity::ATTR_COLOR, $parentIndexes[1]["columns"]));
+        $this->assertTrue(in_array(ParentFakeWritableEntity::ATTR_TIMESTAMP, $parentIndexes[1]["columns"]));
+
+        $this->assertTrue(in_array(ChildFakeWritableEntity::ATTR_FLOAT_VALUE, $childIndexes[1]["columns"]));
     }
 
     function testRollbackMigrationParentFake()
@@ -101,8 +110,8 @@ class MigrationTest extends TestCase
     public function testCheckForeignKeys()
     {
         DB::statement('PRAGMA foreign_keys = ON');
-        $foreignKeysChild = DB::select("PRAGMA foreign_key_list('".ChildFakeWritableEntity::getTableName()."')");
-        $foreignKeysAdjacent = DB::select("PRAGMA foreign_key_list('".AdjacentFakeWritableEntity::getTableName()."')");
+        $foreignKeysChild = DB::select("PRAGMA foreign_key_list('" . ChildFakeWritableEntity::getTableName() . "')");
+        $foreignKeysAdjacent = DB::select("PRAGMA foreign_key_list('" . AdjacentFakeWritableEntity::getTableName() . "')");
 
         $this->assertNotEmpty($foreignKeysChild);
         $this->assertNotEmpty($foreignKeysAdjacent);
