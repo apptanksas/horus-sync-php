@@ -31,15 +31,21 @@ return new class extends Migration {
          * @var IEntitySynchronizable $entityClass
          */
         foreach ($container->getEntities() as $entityClass) {
-            $tableName = $entityClass::getTableName();
 
-            $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName, $connectionName) {
+            $tableName = $entityClass::getTableName();
+            $columnIndexes = $entityClass::getColumnIndexes();
+
+            $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName, $columnIndexes, $connectionName) {
                 $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (Schema::hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
                     $this->createColumn($table, $parameter);
+                }
+                // Add indexes
+                if (!empty($columnIndexes)) {
+                    $table->index($columnIndexes);
                 }
             };
 
@@ -150,6 +156,9 @@ return new class extends Migration {
             $builder->nullable($parameter->isNullable);
         }
 
+        if($parameter->withIndex) {
+            $builder->index();
+        }
     }
 
     private function applyCustomConstraints(?string $connectionName, string $tableName, SyncParameter $parameter): void

@@ -4,6 +4,7 @@ namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
@@ -45,7 +46,12 @@ class ChildFakeWritableEntity extends WritableEntitySynchronizable implements En
             SyncParameter::createPrimaryKeyInteger(self::ATTR_PRIMARY_INT_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createPrimaryKeyString(self::ATTR_PRIMARY_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createInt(self::ATTR_INT_VALUE, self::VERSION_ATTRIBUTES, true),
-            SyncParameter::createFloat(self::ATTR_FLOAT_VALUE, self::VERSION_ATTRIBUTES),
+            new SyncParameter(
+                self::ATTR_FLOAT_VALUE,
+                SyncParameterType::FLOAT,
+                self::VERSION_ATTRIBUTES,
+                withIndex: true,
+            ),
             SyncParameter::createString(self::ATTR_STRING_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createBoolean(self::ATTR_BOOLEAN_VALUE, self::VERSION_ATTRIBUTES),
             SyncParameter::createTimestamp(self::ATTR_TIMESTAMP_VALUE, self::VERSION_ATTRIBUTES),

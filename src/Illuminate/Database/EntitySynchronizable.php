@@ -166,6 +166,16 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
     }
 
     /**
+     * Get the column indexes for the entity.
+     *
+     * @return string[]
+     */
+    public static function getColumnIndexes(): array
+    {
+        return [];
+    }
+
+    /**
      * Get the ID attribute of the model.
      *
      * @return string
@@ -174,4 +184,6 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
     {
         return $this->getAttribute(self::ATTR_ID);
     }
+
+
 }

@@ -46,6 +46,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
         ];
     }
 
+
     public static function getEntityName(): string
     {
         return "parent_fake_entity";
@@ -66,6 +67,11 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
         return ["adjacent"];
     }
 
+    public static function getColumnIndexes(): array
+    {
+        return ["timestamp","color"];
+    }
+
     public function children(): HasMany
     {
         return $this->hasMany(ChildFakeWritableEntity::class, ChildFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
@@ -75,4 +81,5 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     {
         return $this->hasOne(AdjacentFakeWritableEntity::class, AdjacentFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
     }
+
 }
