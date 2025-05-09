@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.0
+- Added method to push actions in horus queue action client.
+
 ## v0.7.0
 - Added support to index columns in entity definition.
 - Fixed issue to insert data with timestamp null.

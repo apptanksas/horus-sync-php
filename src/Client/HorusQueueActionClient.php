@@ -16,8 +16,26 @@ use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Validator\EntityRestrictionValidator;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 
-class HorusQueueActionClient
+/**
+ * Class HorusQueueActionClient
+ *
+ * Responsible for handling queue actions and synchronizing entity operations
+ * within a transactional context. It validates entity restrictions,
+ * organizes operations by type, and persists both entities and their
+ * associated queue actions.
+ *
+ * @package App\Clients
+ */
+class HorusQueueActionClient implements IHorusQueueActionClient
 {
+    /**
+     * HorusQueueActionClient constructor.
+     *
+     * @param ITransactionHandler $transactionHandler Handler for wrapping operations in a transaction.
+     * @param QueueActionRepository $queueActionRepository Repository for queue action persistence.
+     * @param EntityRepository $entityRepository Repository for entity CRUD operations.
+     * @param Config $config Application configuration.
+     */
     private EntityRestrictionValidator $entityRestrictionValidator;
 
     function __construct(
@@ -33,45 +51,79 @@ class HorusQueueActionClient
         );
     }
 
+    /**
+     * Pushes a batch of QueueAction objects, applying them to entities
+     * in chronological order and persisting both entities and actions.
+     * All operations are executed within a single transaction.
+     *
+     * @param QueueAction ...$actions Actions to be processed.
+     *
+     * @return void
+     */
     public function pushActions(QueueAction ...$actions): void
     {
+        // Sort actions by timestamp to ensure chronological processing
         usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
         $this->transactionHandler->executeTransaction(function () use ($actions) {
+            // Re-sort inside transaction for safety
             usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
+            // Separate actions by operation type
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions(...$actions);
 
+            // Extract entities for insert actions
             $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
 
-            foreach ($this->groupEntityByUserOwnerId(...$insertEntities) as $userOwnerId => $insertEntitiesToValidate) {
-                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertEntitiesToValidate);
+            // Validate restrictions per user owner
+            foreach ($this->groupEntityByUserOwnerId(...$insertEntities) as $userOwnerId => $insertOperations) {
+                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations);
             }
 
+            // Apply CRUD operations to entities
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
             $this->entityRepository->delete(...array_map(fn(QueueAction $action) => $action->operation, $deleteActions));
+
+            // Persist queue actions
             $this->queueActionRepository->save(...$actions);
         });
     }
 
-
+    /**
+     * Retrieves the most recent queue action for a given entity and action type.
+     *
+     * @param SyncAction $action The sync action enum value to filter by.
+     * @param string $entityName Name of the entity.
+     * @param string $entityId Identifier of the entity instance.
+     *
+     * @return QueueAction|null Latest QueueAction if found; otherwise null.
+     */
     public function getLastActionByEntity(SyncAction $action, string $entityName, string $entityId): ?QueueAction
     {
-        $result = SyncQueueActionModel::query()
+        $record = SyncQueueActionModel::query()
             ->where(SyncQueueActionModel::ATTR_ENTITY, $entityName)
             ->where(SyncQueueActionModel::ATTR_ENTITY_ID, $entityId)
             ->where(SyncQueueActionModel::ATTR_ACTION, $action->value())
-            ->orderByDesc("id")->limit(1)->get()->first();
+            ->orderByDesc('id')
+            ->limit(1)
+            ->first();
 
-        if (is_null($result)) {
+        if ($record === null) {
             return null;
         }
 
-
-        return QueueActionMapper::createFromEloquent($result);
+        return QueueActionMapper::createFromEloquent($record);
     }
 
+    /**
+     * Organizes a list of QueueAction objects into insert, update, and delete categories.
+     *
+     * @param QueueAction ...$actions List of actions to organize.
+     *
+     * @return array{0: QueueAction[], 1: QueueAction[], 2: QueueAction[]} Array containing
+     *         insert, update, and delete action lists respectively.
+     */
     private function organizeActions(QueueAction ...$actions): array
     {
         $insertActions = [];
@@ -79,31 +131,38 @@ class HorusQueueActionClient
         $deleteActions = [];
 
         foreach ($actions as $action) {
-            if ($action->operation instanceof EntityInsert) {
-                $insertActions[] = $action;
-            } elseif ($action->operation instanceof EntityUpdate) {
-                $updateActions[] = $action;
-            } elseif ($action->operation instanceof EntityDelete) {
-                $deleteActions[] = $action;
+            switch (true) {
+                case $action->operation instanceof EntityInsert:
+                    $insertActions[] = $action;
+                    break;
+                case $action->operation instanceof EntityUpdate:
+                    $updateActions[] = $action;
+                    break;
+                case $action->operation instanceof EntityDelete:
+                    $deleteActions[] = $action;
+                    break;
             }
         }
+
         return [$insertActions, $updateActions, $deleteActions];
     }
 
-    private function groupEntityByUserOwnerId(EntityOperation ...$insertEntities): array
+    /**
+     * Groups entities by their owner user ID for restriction validation.
+     *
+     * @param EntityOperation ...$entities Entities to group.
+     *
+     * @return array<string, EntityOperation[]> Entities keyed by owner ID.
+     */
+    private function groupEntityByUserOwnerId(EntityOperation ...$entities): array
     {
-        $output = [];
+        $grouped = [];
 
-        foreach ($insertEntities as $entity) {
-            $userOwnerId = $entity->ownerId;
-            if (!isset($output[$userOwnerId])) {
-                $output[$userOwnerId] = [];
-            }
-            $output[$userOwnerId][] = $entity;
+        foreach ($entities as $entity) {
+            $ownerId = $entity->ownerId;
+            $grouped[$ownerId][] = $entity;
         }
 
-        return $output;
+        return $grouped;
     }
-
-
 }

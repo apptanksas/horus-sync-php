@@ -2,6 +2,8 @@
 
 namespace AppTank\Horus\Illuminate\Provider;
 
+use AppTank\Horus\Client\HorusQueueActionClient;
+use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -106,6 +108,15 @@ class HorusServiceProvider extends ServiceProvider
 
         $this->app->singleton(FileUploadedRepository::class, function () {
             return new EloquentFileUploadedRepository();
+        });
+
+        $this->app->singleton(IHorusQueueActionClient::class, function () {
+            return new HorusQueueActionClient(
+                $this->app->make(ITransactionHandler::class),
+                $this->app->make(QueueActionRepository::class),
+                $this->app->make(EntityRepository::class),
+                Horus::getInstance()->getConfig()
+            );
         });
 
 

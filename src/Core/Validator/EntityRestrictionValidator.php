@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\Model\EntityInsert;
+use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Repository\EntityRepository;
 
 readonly class EntityRestrictionValidator
@@ -23,7 +24,7 @@ readonly class EntityRestrictionValidator
     /**
      * Validates the insert entity restrictions.
      *
-     * @param EntityInsert[] $insertOperations
+     * @param EntityOperation[] $insertOperations
      * @return void
      * @throws ClientException
      */
