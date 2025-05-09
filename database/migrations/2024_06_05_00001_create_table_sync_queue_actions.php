@@ -28,17 +28,26 @@ return new class extends Migration {
             $table->uuid(SyncQueueActionModel::ATTR_ENTITY_ID);
 
             $table->json(SyncQueueActionModel::ATTR_DATA);
-            $table->timestamp(SyncQueueActionModel::ATTR_ACTIONED_AT);
-            $table->timestamp(SyncQueueActionModel::ATTR_SYNCED_AT);
+
+            $table->timestamp(SyncQueueActionModel::ATTR_ACTIONED_AT)->index();
+            $table->timestamp(SyncQueueActionModel::ATTR_SYNCED_AT)->index();
+            $table->boolean(SyncQueueActionModel::ATTR_BY_SYSTEM)->default(false);
 
             // If uses uses UUID
             if ($container->isUsesUUID()) {
-                $table->uuid(SyncQueueActionModel::FK_USER_ID);
-                $table->uuid(SyncQueueActionModel::FK_OWNER_ID);
+                $table->uuid(SyncQueueActionModel::FK_USER_ID)->index();
+                $table->uuid(SyncQueueActionModel::FK_OWNER_ID)->index();
             } else {
                 $table->unsignedBigInteger(SyncQueueActionModel::FK_USER_ID);
-                $table->unsignedBigInteger(SyncQueueActionModel::FK_OWNER_ID);
+                $table->unsignedBigInteger(SyncQueueActionModel::FK_OWNER_ID)->index();
             }
+
+            $table->index([
+                SyncQueueActionModel::FK_OWNER_ID,
+                SyncQueueActionModel::ATTR_ACTIONED_AT,
+                SyncQueueActionModel::ATTR_SYNCED_AT,
+                SyncQueueActionModel::ATTR_ACTION
+            ]);
         };
 
         // if connection name is null, use default connection

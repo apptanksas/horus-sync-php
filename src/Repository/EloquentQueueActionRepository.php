@@ -2,13 +2,10 @@
 
 namespace AppTank\Horus\Repository;
 
-use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Mapper\QueueActionMapper;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
-use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
-use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use Illuminate\Support\Facades\DB;
 
@@ -68,7 +65,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncQueueActionModel::ATTR_ACTIONED_AT => $queueAction->actionedAt,
             SyncQueueActionModel::ATTR_SYNCED_AT => $queueAction->syncedAt,
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
-            SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId
+            SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
+            SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
         ];
     }
 

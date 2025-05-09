@@ -26,8 +26,10 @@ final class SyncQueueActionModel extends Model
     const string ATTR_DATA = "data"; // JSON Data of the entity.
     const string ATTR_ACTIONED_AT = "actioned_at"; // UTC Datetime when the action was made.
     const string ATTR_SYNCED_AT = "synced_at"; // UTC Datetime when the action was synced.
+    const string ATTR_BY_SYSTEM = "by_system"; // Flag to indicate if the action was made by the system.
     const string FK_USER_ID = "user_id"; // User Identifier responsible for the action made.
     const string FK_OWNER_ID = "owner_id"; // User Identifier owner of the entity.
+
 
     protected $table = self::TABLE_NAME;
     public $timestamps = false;
