@@ -15,7 +15,7 @@ class QueueActionFactory
 {
 
 
-    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null): QueueAction
+    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false): QueueAction
     {
 
         $faker = \Faker\Factory::create();
@@ -33,6 +33,7 @@ class QueueActionFactory
             now()->toDateTimeImmutable(),
             $userId ?? $faker->uuid,
             $userId ?? $faker->uuid,
+            $bySystem
         );
     }
 

@@ -27,6 +27,7 @@ readonly class QueueAction
      * @param \DateTimeImmutable $syncedAt The timestamp when the action was synchronized.
      * @param int|string $userId The ID of the user who initiated the action.
      * @param int|string $ownerId The owner ID of the entity.
+     * @param bool $bySystem Indicates if the action was performed by the system.
      */
     function __construct(
         public SyncAction         $action,
@@ -37,8 +38,11 @@ readonly class QueueAction
         public \DateTimeImmutable $syncedAt,
         public int|string         $userId,
         public int|string         $ownerId,
+        public bool               $bySystem = false,
     )
     {
 
     }
+
+
 }
