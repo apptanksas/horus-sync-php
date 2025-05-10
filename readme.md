@@ -5,6 +5,7 @@
 <img src="https://github.com/apptanksas/horus-sync-php/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status">
 <img src="https://img.shields.io/packagist/v/apptank/horusync" alt="Latest Stable Version">
 <img src="https://img.shields.io/github/license/apptanksas/horus-sync-php" alt="License">
+<a href="https://deepwiki.com/apptanksas/horus-sync-php"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 **Please note:** This library currently is in testing stage until publish the version 1.0.0.
@@ -283,7 +284,7 @@ If you want to apply a restriction to an entity, you can use the next restrictio
 
 * **MaxCountEntityRestriction**: Restricts the number of records that can be synchronized for an entity to specific user.
 * **FilterEntityRestriction**: This restriction allows you to filter the records from an entity can be obtained given a set of
-  parameters. This is useful when you want to limit the data that can be downloaded to client based on certain criteria. 
+  parameters. This is useful when you want to limit the data that can be downloaded to client based on certain criteria.
 #### Setup after initialization
 
 By default, the setup is set the Config class in the Horus initialization, but if you want to change the restrictions after you can use the next code:
