@@ -5,6 +5,7 @@ use AppTank\Horus\Illuminate\Http\Controller\Data\GetDataEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetMigrationSchemaController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueLastActionController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\GetSharedEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\SearchEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\ValidateEntitiesDataController;
@@ -116,5 +117,11 @@ Route::get("wrapper/file/{id}", [
 Route::post("upload/files", [
     'uses' => GetFilesInfoController::class,
     'as' => RouteName::POST_GET_UPLOADED_FILES->value,
+    'middleware' => $middlewares
+]);
+
+Route::get("shared", [
+    'uses' => GetSharedEntitiesController::class,
+    'as' => RouteName::GET_DATA_SHARED->value,
     'middleware' => $middlewares
 ]);

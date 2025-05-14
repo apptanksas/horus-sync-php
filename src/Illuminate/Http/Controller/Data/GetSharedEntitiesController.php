@@ -3,9 +3,9 @@
 namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Get\GetDataSharedEntities;
-use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,14 +23,13 @@ class GetSharedEntitiesController extends Controller
 
     function __construct(
         EntityRepository $entityRepository,
-        CacheRepository  $cacheRepository,
-        Config           $config
+        CacheRepository  $cacheRepository
     )
     {
         $this->useCase = new GetDataSharedEntities(
             $entityRepository,
             $cacheRepository,
-            $config
+            Horus::getInstance()->getConfig()
         );
     }
 

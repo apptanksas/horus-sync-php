@@ -72,5 +72,9 @@ enum RouteName: string
      */
     case GET_WRAPPER_FILE = "horus.get.wrapper.file";
 
+    /**
+     * Route for get data shared.
+     */
+    case GET_DATA_SHARED = "horus.get.data.shared";
 
 }

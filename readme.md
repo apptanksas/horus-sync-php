@@ -298,6 +298,15 @@ Horus::getInstance()->setEntityRestrictions([
 ]);
 ```
 
+### 🍒 Shared entities
+
+If you want to share records from specific entities, you can use the method `setSharedEntities` in the Horus instance like this:
+
+```php
+Horus::getInstance()->setSharedEntities([
+    new EntityReference("entity_name", "entity_id")
+]);
+```
 
 ### ✉️ Events
 
