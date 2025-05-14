@@ -23,6 +23,8 @@ class Config
     private array $entityRestrictions = [];
     private array $restrictionsByEntity = [];
 
+    private array $sharedEntities = [];
+
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
      * @param string|null $connectionName The name of the database connection, or null if not specified.
@@ -35,7 +37,8 @@ class Config
         public readonly bool    $usesUUIDs = false,
         public readonly ?string $prefixTables = "sync",
         string                  $basePathFiles = "horus/upload",
-        array                   $entityRestrictions = []
+        array                   $entityRestrictions = [],
+        array                   $sharedEntities = []
     )
     {
         // Validate if ends with a slash
@@ -58,6 +61,16 @@ class Config
     {
         $this->entityRestrictions = $entityRestrictions;
         $this->populateRestrictionsByEntity();
+    }
+
+    /**
+     * Sets the shared entities.
+     *
+     * @param array $sharedEntities The shared entities.
+     */
+    function setSharedEntities(array $sharedEntities): void
+    {
+        $this->sharedEntities = $sharedEntities;
     }
 
     /**

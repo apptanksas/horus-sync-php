@@ -125,4 +125,15 @@ interface EntityRepository
      * @throws ClientException
      */
     function getCount(string|int $userId, string $entityName): int;
+
+    /**
+     * Searches for entities based on their references.
+     *
+     * Note: Dont matter if the entities was deleted. Dont apply restrictions and nothing.
+     *
+     * @param EntityReference ...$entityReferences The entity references to search for.
+     *
+     * @return EntityData[] An array of entity data matching the specified references.
+     */
+    function searchRawEntitiesByReference(EntityReference ...$entityReferences): array;
 }
