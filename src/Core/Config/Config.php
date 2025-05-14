@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\Config;
 
 use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
+use AppTank\Horus\Core\Entity\EntityReference;
 
 /**
  * Class Config
@@ -21,9 +22,16 @@ class Config
 
     /** @var EntityRestriction[] */
     private array $entityRestrictions = [];
-    private array $restrictionsByEntity = [];
 
+    /**
+     * @var EntityReference[]
+     */
     private array $sharedEntities = [];
+
+    /**
+     * @var EntityRestriction[][]
+     */
+    private array $restrictionsByEntity = [];
 
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
@@ -49,6 +57,7 @@ class Config
         }
 
         $this->entityRestrictions = $entityRestrictions;
+        $this->sharedEntities = $sharedEntities;
         $this->populateRestrictionsByEntity();
     }
 
@@ -66,7 +75,7 @@ class Config
     /**
      * Sets the shared entities.
      *
-     * @param array $sharedEntities The shared entities.
+     * @param EntityReference[] $sharedEntities The shared entities.
      */
     function setSharedEntities(array $sharedEntities): void
     {
@@ -114,6 +123,16 @@ class Config
     function getRestrictionsByEntity(string $entityName): array
     {
         return $this->restrictionsByEntity[$entityName];
+    }
+
+    /**
+     * Gets the shared entities.
+     *
+     * @return EntityReference[]
+     */
+    function getSharedEntities(): array
+    {
+        return $this->sharedEntities;
     }
 
     private function populateRestrictionsByEntity(): void

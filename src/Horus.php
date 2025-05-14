@@ -5,6 +5,7 @@ namespace AppTank\Horus;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
@@ -136,6 +137,17 @@ class Horus
     public function setEntityRestrictions(array $restrictions): void
     {
         self::getInstance()->config->setEntityRestrictions($restrictions);
+    }
+
+    /**
+     * Sets the shared entities for the container.
+     *
+     * @param EntityReference[] $sharedEntities Array of shared entities.
+     * @return void
+     */
+    public function setSharedEntities(array $sharedEntities): void
+    {
+        self::getInstance()->config->setSharedEntities($sharedEntities);
     }
 
     /**

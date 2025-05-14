@@ -6,6 +6,7 @@ use AppTank\Horus\Client\HorusQueueActionClient;
 use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
@@ -19,6 +20,7 @@ use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
 use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Repository\DefaultCacheRepository;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use AppTank\Horus\Repository\EloquentFileUploadedRepository;
@@ -117,6 +119,10 @@ class HorusServiceProvider extends ServiceProvider
                 $this->app->make(EntityRepository::class),
                 Horus::getInstance()->getConfig()
             );
+        });
+
+        $this->app->singleton(CacheRepository::class, function () {
+            return new DefaultCacheRepository();
         });
 
 
