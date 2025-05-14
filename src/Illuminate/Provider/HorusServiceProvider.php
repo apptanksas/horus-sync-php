@@ -138,9 +138,9 @@ class HorusServiceProvider extends ServiceProvider
     protected function registerRoutes(): void
     {
         Route::group([
-            'prefix' => "sync",
+            'prefix' => "horus/v1",
         ], function () {
-            $this->loadRoutesFrom(__DIR__ . '/../../../routes/api.php');
+            $this->loadRoutesFrom(__DIR__ . '/../../../routes/api_v1.php');
         });
     }
 
