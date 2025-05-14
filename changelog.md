@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.0 
+- Added support to  shared entities. 
+- update prefix api routes to horus/v1.
+
 ## v0.8.0
 - Added method to push actions in horus queue action client.
 

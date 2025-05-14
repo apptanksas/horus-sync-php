@@ -696,4 +696,31 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertCount($countExpected, $entitiesResult);
         $this->assertEquals(count($entities) - $countExpected, count($entities) - count($entitiesResult));
     }
+
+    function testSearchRawEntitiesByReferenceIsSuccess()
+    {
+        // Given
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create());
+        // Others records
+        $this->generateArray(fn() => ParentFakeEntityFactory::create());
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId()));
+        }
+
+        $entityReferences = array_map(fn(ParentFakeWritableEntity $entity) => new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()), $parentsEntities);
+
+        // When
+        $result = $this->entityRepository->searchRawEntitiesByReference(...$entityReferences);
+
+        // Then
+        $this->assertCount(count($parentsEntities), $result);
+
+        //-------------- Validates the entities dont contains related entities
+        foreach ($result as $entityData) {
+            foreach ($entityData->getData() as $key => $value) {
+                $this->assertFalse(str_starts_with($key, "_"));
+            }
+        }
+    }
 }

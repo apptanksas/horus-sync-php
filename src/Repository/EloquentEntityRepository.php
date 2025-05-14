@@ -322,7 +322,7 @@ class EloquentEntityRepository implements EntityRepository
                             ?int       $afterTimestamp = null): array
     {
         /**
-         * @var $entityClass WritableEntitySynchronizable
+         * @var $entityClass EntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
         $instanceClass = new $entityClass();
@@ -337,7 +337,7 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         if (count($ids) > 0) {
-            $queryBuilder = $queryBuilder->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids);
+            $queryBuilder = $queryBuilder->whereIn(EntitySynchronizable::ATTR_ID, $ids);
         }
 
 
@@ -737,4 +737,40 @@ class EloquentEntityRepository implements EntityRepository
         return $output;
     }
 
+    /**
+     * Searches for entities based on their references.
+     *
+     * Note: Dont matter if the entities was deleted. Dont apply restrictions and nothing.
+     *
+     * @param EntityReference ...$entityReferences The entity references to search for.
+     *
+     * @return EntityData[] An array of entity data matching the specified references.
+     */
+
+    function searchRawEntitiesByReference(EntityReference ...$entityReferences): array
+    {
+        $groupedEntitiesByName = [];
+        $output = [];
+
+        // Group entity references by entity name
+        foreach ($entityReferences as $entityReference) {
+            $groupedEntitiesByName[$entityReference->entityName][] = $entityReference->entityId;
+        }
+
+        foreach ($groupedEntitiesByName as $entityName => $ids) {
+
+            /**
+             * @var $entityClass EntitySynchronizable
+             */
+            $entityClass = $this->entityMapper->getEntityClass($entityName);
+
+            $result = $entityClass::withTrashed()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get();
+
+            foreach ($result as $entityResult) {
+                $output[] = new EntityData($entityResult->getEntityName(), $this->prepareData($entityResult->toArray()));
+            }
+        }
+
+        return $output;
+    }
 }

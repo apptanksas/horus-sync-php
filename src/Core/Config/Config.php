@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Core\Config;
 
 use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
+use AppTank\Horus\Core\Entity\EntityReference;
 
 /**
  * Class Config
@@ -21,6 +22,15 @@ class Config
 
     /** @var EntityRestriction[] */
     private array $entityRestrictions = [];
+
+    /**
+     * @var EntityReference[]
+     */
+    private array $sharedEntities = [];
+
+    /**
+     * @var EntityRestriction[][]
+     */
     private array $restrictionsByEntity = [];
 
     /**
@@ -35,7 +45,8 @@ class Config
         public readonly bool    $usesUUIDs = false,
         public readonly ?string $prefixTables = "sync",
         string                  $basePathFiles = "horus/upload",
-        array                   $entityRestrictions = []
+        array                   $entityRestrictions = [],
+        array                   $sharedEntities = []
     )
     {
         // Validate if ends with a slash
@@ -46,6 +57,7 @@ class Config
         }
 
         $this->entityRestrictions = $entityRestrictions;
+        $this->sharedEntities = $sharedEntities;
         $this->populateRestrictionsByEntity();
     }
 
@@ -58,6 +70,16 @@ class Config
     {
         $this->entityRestrictions = $entityRestrictions;
         $this->populateRestrictionsByEntity();
+    }
+
+    /**
+     * Sets the shared entities.
+     *
+     * @param EntityReference[] $sharedEntities The shared entities.
+     */
+    function setSharedEntities(array $sharedEntities): void
+    {
+        $this->sharedEntities = $sharedEntities;
     }
 
     /**
@@ -101,6 +123,16 @@ class Config
     function getRestrictionsByEntity(string $entityName): array
     {
         return $this->restrictionsByEntity[$entityName];
+    }
+
+    /**
+     * Gets the shared entities.
+     *
+     * @return EntityReference[]
+     */
+    function getSharedEntities(): array
+    {
+        return $this->sharedEntities;
     }
 
     private function populateRestrictionsByEntity(): void
