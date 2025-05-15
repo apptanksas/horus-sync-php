@@ -151,6 +151,17 @@ class Horus
     }
 
     /**
+     * Sets the callback function to be called when setting up shared entities.
+     *
+     * @param callable $onSetupSharedEntities The callback function.
+     */
+    function setupOnSharedEntities(callable $onSetupSharedEntities): void
+    {
+        self::getInstance()->config->setupOnSharedEntities($onSetupSharedEntities);
+    }
+
+
+    /**
      * Sets the middlewares for the container.
      *
      * @param array $middlewares Array of middlewares.

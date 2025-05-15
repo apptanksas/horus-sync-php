@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.1
+- Added method setupOnSharedEntities to setup the shared entities when Horus needs it.
+
 ## v0.9.0 
 - Added support to  shared entities. 
 - update prefix api routes to horus/v1.

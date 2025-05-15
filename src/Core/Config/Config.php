@@ -29,6 +29,11 @@ class Config
     private array $sharedEntities = [];
 
     /**
+     * @var callable
+     */
+    private $onSetupSharedEntities;
+
+    /**
      * @var EntityRestriction[][]
      */
     private array $restrictionsByEntity = [];
@@ -82,6 +87,17 @@ class Config
         $this->sharedEntities = $sharedEntities;
     }
 
+
+    /**
+     * Sets the callback function to be called when setting up shared entities.
+     *
+     * @param callable $onSetupSharedEntities The callback function.
+     */
+    function setupOnSharedEntities(callable $onSetupSharedEntities): void
+    {
+        $this->onSetupSharedEntities = $onSetupSharedEntities;
+    }
+
     /**
      * Gets the path for the files that are pending to be uploaded.
      *
@@ -132,6 +148,9 @@ class Config
      */
     function getSharedEntities(): array
     {
+        if (empty($this->sharedEntities) && $this->onSetupSharedEntities) {
+            $this->sharedEntities = ($this->onSetupSharedEntities)();
+        }
         return $this->sharedEntities;
     }
 
