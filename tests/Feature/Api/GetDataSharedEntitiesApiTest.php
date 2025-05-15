@@ -37,7 +37,7 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         $sharedEntities = [];
 
         // Create some readable entities that will be shared
-        $this->generateArray(function() use (&$sharedEntities) {
+        $this->generateArray(function () use (&$sharedEntities) {
             $entity = ReadableFakeEntityFactory::create();
             $sharedEntities[] = new EntityReference(ReadableFakeEntity::getEntityName(), $entity->getId());
             return $entity;
@@ -46,7 +46,7 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($userId))
             ->setConfig(new Config(true));
-        Horus::getInstance()->setSharedEntities($sharedEntities);
+        Horus::getInstance()->setupOnSharedEntities(fn() => $sharedEntities);
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_SHARED->value));
@@ -73,12 +73,12 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
     {
         // Given
         $userId = $this->faker->uuid;
-        
+
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($userId))
             ->setConfig(new Config(true));
-        
-        Horus::getInstance()->setSharedEntities([]);
+
+        Horus::getInstance()->setupOnSharedEntities(fn() => []);
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_SHARED->value));
@@ -98,14 +98,14 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         $sharedEntities = [];
 
         // Create readable entities
-        $readableEntities = $this->generateArray(function() use (&$sharedEntities) {
+        $readableEntities = $this->generateArray(function () use (&$sharedEntities) {
             $entity = ReadableFakeEntityFactory::create();
             $sharedEntities[] = new EntityReference(ReadableFakeEntity::getEntityName(), $entity->getId());
             return $entity;
         }, 3);
 
         // Create parent entities
-        $parentEntities = $this->generateArray(function() use (&$sharedEntities) {
+        $parentEntities = $this->generateArray(function () use (&$sharedEntities) {
             $entity = ParentFakeEntityFactory::create($this->faker->uuid);
             $sharedEntities[] = new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId());
             return $entity;
@@ -114,8 +114,8 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($userId))
             ->setConfig(new Config(true));
-        
-        Horus::getInstance()->setSharedEntities($sharedEntities);
+
+        Horus::getInstance()->setupOnSharedEntities(fn() => $sharedEntities);
 
         // When
         $response = $this->get(route(RouteName::GET_DATA_SHARED->value));
@@ -135,7 +135,7 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         $sharedEntities = [];
 
         // Create entities and add them to shared entities
-        $readableEntities = $this->generateArray(function() use (&$sharedEntities) {
+        $readableEntities = $this->generateArray(function () use (&$sharedEntities) {
             $entity = ReadableFakeEntityFactory::create();
             $sharedEntities[] = new EntityReference(ReadableFakeEntity::getEntityName(), $entity->getId());
             return $entity;
@@ -144,26 +144,26 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($userId))
             ->setConfig(new Config(true));
-        
+
         Horus::getInstance()->setSharedEntities($sharedEntities);
 
         // When - first request to populate cache
         $response1 = $this->get(route(RouteName::GET_DATA_SHARED->value));
-        
+
         // Then - verify first response
         $response1->assertOk();
         $response1->assertJsonCount(count($sharedEntities));
-        
+
         // When - create more entities but don't add them to shared config
         ReadableFakeEntityFactory::create();
-        
+
         // Make second request (should be from cache)
         $response2 = $this->get(route(RouteName::GET_DATA_SHARED->value));
-        
+
         // Then - second response should match first response (from cache)
         $response2->assertOk();
         $response2->assertJsonCount(count($sharedEntities));
-        
+
         // Verify content is exactly the same (which means it came from cache)
         $this->assertEquals(
             $response1->getContent(),
@@ -179,19 +179,19 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         // Given
         $user1Id = $this->faker->uuid;
         $user2Id = $this->faker->uuid;
-        
+
         $user1SharedEntities = [];
         $user2SharedEntities = [];
 
         // Create shared entities for user 1
-        $user1Entities = $this->generateArray(function() use (&$user1SharedEntities) {
+        $user1Entities = $this->generateArray(function () use (&$user1SharedEntities) {
             $entity = ReadableFakeEntityFactory::create();
             $user1SharedEntities[] = new EntityReference(ReadableFakeEntity::getEntityName(), $entity->getId());
             return $entity;
         }, 2);
 
         // Create shared entities for user 2
-        $user2Entities = $this->generateArray(function() use (&$user2SharedEntities) {
+        $user2Entities = $this->generateArray(function () use (&$user2SharedEntities) {
             $entity = ReadableFakeEntityFactory::create();
             $user2SharedEntities[] = new EntityReference(ReadableFakeEntity::getEntityName(), $entity->getId());
             return $entity;
@@ -201,26 +201,38 @@ class GetDataSharedEntitiesApiTest extends ApiTestCase
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($user1Id))
             ->setConfig(new Config(true));
-        
-        Horus::getInstance()->setSharedEntities($user1SharedEntities);
-        
+
+        Horus::getInstance()->setupOnSharedEntities(fn() => $user1SharedEntities);
+
         $response1 = $this->get(route(RouteName::GET_DATA_SHARED->value));
-        
+
         // Then - verify user 1 response
         $response1->assertOk();
         $response1->assertJsonCount(count($user1SharedEntities));
-        
+
         // When - test for user 2
         Horus::getInstance()
             ->setUserAuthenticated(new UserAuth($user2Id))
             ->setConfig(new Config(true));
-        
-        Horus::getInstance()->setSharedEntities($user2SharedEntities);
-        
+
+        Horus::getInstance()->setupOnSharedEntities(fn() => $user2SharedEntities);
+
         $response2 = $this->get(route(RouteName::GET_DATA_SHARED->value));
-        
+
         // Then - verify user 2 response
         $response2->assertOk();
         $response2->assertJsonCount(count($user2SharedEntities));
+    }
+
+    function testValidateThatSetupOnSharedEntitiesOnlyCallInSharedEntitiesEndpoint()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setupOnSharedEntities(fn() => throw new \Exception("This should not be called"));
+
+        $this->get(route(RouteName::GET_DATA_ENTITIES->value))->assertOk();
+        $this->get(route(RouteName::GET_MIGRATIONS->value))->assertOk();
+        $this->get(route(RouteName::GET_ENTITY_DATA->value, [ParentFakeWritableEntity::getEntityName()]))->assertOk();
+        $this->get(route(RouteName::GET_DATA_SHARED->value))->assertServerError();
     }
 } 
