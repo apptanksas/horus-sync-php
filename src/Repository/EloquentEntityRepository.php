@@ -54,7 +54,9 @@ class EloquentEntityRepository implements EntityRepository
         readonly private ?string       $connectionName = null,
     )
     {
-
+        if (empty($this->entityMapper->getEntities())) {
+            throw new \InvalidArgumentException('The entity mapper must have at least one entity.');
+        }
     }
 
     /**

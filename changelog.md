@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.2
+- Added validation entities mapper in eloquent entity repository.
+
 ## v0.9.1
 - Added method setupOnSharedEntities to setup the shared entities when Horus needs it.
 
