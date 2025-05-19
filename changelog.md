@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.3
+- Change bind entity repository dependency.
+
 ## v0.9.2
 - Added validation entities mapper in eloquent entity repository.
 
