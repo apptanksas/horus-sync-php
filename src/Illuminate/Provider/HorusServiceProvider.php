@@ -69,7 +69,7 @@ class HorusServiceProvider extends ServiceProvider
             return new EventBus();
         });
 
-        $this->app->singleton(EntityMapper::class, function () {
+        $this->app->bind(EntityMapper::class, function () {
             return Horus::getInstance()->getEntityMapper();
         });
 
@@ -112,7 +112,7 @@ class HorusServiceProvider extends ServiceProvider
             return new EloquentFileUploadedRepository();
         });
 
-        $this->app->singleton(IHorusQueueActionClient::class, function () {
+        $this->app->bind(IHorusQueueActionClient::class, function () {
             return new HorusQueueActionClient(
                 $this->app->make(ITransactionHandler::class),
                 $this->app->make(QueueActionRepository::class),
