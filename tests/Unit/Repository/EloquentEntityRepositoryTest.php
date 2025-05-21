@@ -723,4 +723,39 @@ class EloquentEntityRepositoryTest extends TestCase
             }
         }
     }
+
+    function testInsertEntitiesWhenChildIsEarly()
+    {
+        // Given
+        Schema::disableForeignKeyConstraints();
+
+        $parentOrigin = ParentFakeEntityFactory::create();
+        $childPrime = EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData($parentOrigin->getId()), now()->subDays(1)->toDateTimeImmutable());
+
+        /**
+         * @var EntityOperation[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData($this->faker->name), now()->subHours(5)->toDateTimeImmutable()
+        ));
+        /**
+         * @var EntityOperation[] $childEntities
+         */
+        $childEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
+            $this->faker->uuid,
+            ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData($parentsEntities[0]->id), now()->toDateTimeImmutable()
+        ));
+        $operations = array_merge($parentsEntities, $childEntities, [$childPrime]);
+        shuffle($operations);
+
+        // When
+        $this->entityRepository->insert(...$operations);
+
+        // Then
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + 1);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities) + 1);
+    }
 }

@@ -75,7 +75,8 @@ class EloquentEntityRepository implements EntityRepository
      */
     function insert(EntityInsert ...$operations): void
     {
-
+        $operations = $this->sortByActionedAt($operations);
+        $entities = $this->entityMapper->getEntities();
         $groupOperationByEntity = [];
 
         foreach ($operations as $operation) {
@@ -85,6 +86,18 @@ class EloquentEntityRepository implements EntityRepository
                 WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT => $this->dateTimeUtil->getCurrent(),
                 WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->dateTimeUtil->getCurrent(),
             ], $this->parseData($operation->entity, $operation->toArray()));
+        }
+
+        // Reorder operations to respect the entity order defined in the map
+        // This ensures that dependent entities are created after their dependencies
+        if (!empty($groupOperationByEntity)) {
+            $orderedOperations = [];
+            foreach (array_keys($entities) as $entityName) {
+                if (isset($groupOperationByEntity[$entityName])) {
+                    $orderedOperations[$entityName] = $groupOperationByEntity[$entityName];
+                }
+            }
+            $groupOperationByEntity = $orderedOperations;
         }
 
         foreach ($groupOperationByEntity as $entity => $operations) {
