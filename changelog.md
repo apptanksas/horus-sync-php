@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.4
+- Fixed issue hashing with float values.
+
 ## v0.9.3
 - Change bind entity repository dependency.
 
