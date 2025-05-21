@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.5
+- Fixed sorting insert operation in entity repository.
+
 ## v0.9.4
 - Fixed issue hashing with float values.
 
