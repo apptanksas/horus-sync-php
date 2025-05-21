@@ -45,13 +45,18 @@ class Hasher
             if (is_bool($value)) {
                 return $value ? 'true' : 'false';
             }
+            if (is_float($value)) {
+                return self::floatToString($value);
+            }
             return $value;
         }, $data);
 
         // Sort the array by key
         ksort($data);
 
-        return hash(self::ALGORITHM, join("", $data));
+        $payload = join("", $data);
+
+        return hash(self::ALGORITHM, $payload);
     }
 
     /**
@@ -62,5 +67,22 @@ class Hasher
     public static function getHashLength(): int
     {
         return strlen(hash(self::ALGORITHM, "abc123"));
+    }
+
+    /**
+     * Converts a float value to a string representation.
+     *
+     * @param float $value
+     * @return string
+     */
+    private static function floatToString(float $value): string
+    {
+        $str = strval($value);
+
+        if (floor($value) == $value) {
+            $str .= '.0';
+        }
+
+        return $str;
     }
 }

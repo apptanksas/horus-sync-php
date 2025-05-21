@@ -63,4 +63,45 @@ class HasherTest extends TestCase
         // Then
         $this->assertEquals("3ed2ff2ed137d040c1400bc60b175c7ad0af2a5d3bdd2ac9ab2e995de723df00", $hash);
     }
+
+    function testHashWithDecimalValues()
+    {
+        $data = [
+            "id" => "5e066af9-e341-45b3-ada5-3ad3e8bc64a7",
+            "date" => 1747742400,
+            "animal_type" => 1,
+            "price_total" => 3270000.0,
+            "price_currency" => "COP",
+            "price_unit" => 3000.0,
+            "notes" => null,
+            "transfer_status" => 1,
+            "farm_id" => "1f3c15ba-9984-4114-bb8f-d3d5ae9ffc03"];
+
+        // When
+        $hash = Hasher::hash($data);
+
+
+        // Then
+        $this->assertEquals("e7bbdd37338e8f0f6f4a64459d2183ac0edb2ce39d6e97aeb623e57aa81470ff", $hash);
+    }
+
+    function testHashWithDecimalValuesCase2()
+    {
+        $data = [
+            "date" => 1747742400,
+            "animal_type" => 1,
+            "price_total" => 32700.05,
+            "price_currency" => "COP",
+            "price_unit" => 230.233,
+            "float" => 230.23,
+            "float2" => 932.20,
+        ];
+        // When
+        $hash = Hasher::hash($data);
+
+        // Then
+        $this->assertEquals("40f1bde7a43cb2d76b4b9ad683b2398f72917e19643ec54a18b0248814c6adb2", $hash);
+    }
+
+
 }
