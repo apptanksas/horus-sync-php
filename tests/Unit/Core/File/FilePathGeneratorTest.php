@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Repository\DefaultCacheRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ChildFakeEntityFactory;
@@ -28,7 +29,7 @@ class FilePathGeneratorTest extends TestCase
         $horus = Horus::getInstance();
         $mapper = $horus->getEntityMapper();
 
-        $repository = new EloquentEntityRepository($mapper, new DateTimeUtil(), $horus->getConfig());
+        $repository = new EloquentEntityRepository($mapper, new DefaultCacheRepository(), new DateTimeUtil(), $horus->getConfig());
 
         $this->config = new Config();
         $this->filePathGenerator = new FilePathGenerator($repository, $this->config);
