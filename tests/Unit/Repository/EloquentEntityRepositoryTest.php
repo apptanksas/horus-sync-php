@@ -12,12 +12,14 @@ use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Mockery\Mock;
 use Tests\_Stubs\AdjacentFakeWritableEntity;
 use Tests\_Stubs\AdjacentFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
@@ -34,6 +36,8 @@ class EloquentEntityRepositoryTest extends TestCase
 
     private EloquentEntityRepository $entityRepository;
 
+    private CacheRepository|Mock $cacheRepository;
+
     function setUp(): void
     {
         Horus::initialize([
@@ -46,8 +50,11 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $horus = Horus::getInstance();
 
+        $this->cacheRepository = $this->mock(CacheRepository::class);
+
         $this->entityRepository = new EloquentEntityRepository(
             $horus->getEntityMapper(),
+            $this->cacheRepository,
             new DateTimeUtil(),
             $horus->getConfig()
         );
@@ -339,6 +346,9 @@ class EloquentEntityRepositoryTest extends TestCase
             $adjacentEntities[$parentEntity->getId()] = AdjacentFakeEntityFactory::create($parentEntity->getId(), $ownerId);
         }
 
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
+
         // When
         /**
          * @var $result EntityData[]
@@ -410,6 +420,9 @@ class EloquentEntityRepositoryTest extends TestCase
             $parentEntity->delete();
         }
 
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
+
         // When
         /**
          * @var $result EntityData[]
@@ -459,6 +472,8 @@ class EloquentEntityRepositoryTest extends TestCase
         // Others records
         $this->generateArray(fn() => ParentFakeEntityFactory::create());
 
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
         // When
         $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName());
 
@@ -476,6 +491,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $parentsEntitiesToSearch = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
         $idsExpected = array_map(fn(ParentFakeWritableEntity $entity) => $entity->getId(), $parentsEntitiesToSearch);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
 
         // When
         $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName(), $idsExpected);
@@ -504,6 +521,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId, [
             WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->getDateTimeUtil()->getFormatDate($this->faker->dateTimeBetween(endDate: $timestamp)->getTimestamp())
         ]));
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
 
         // When
         $result = $this->entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName(), [], $timestamp - 1);
@@ -586,6 +605,9 @@ class EloquentEntityRepositoryTest extends TestCase
         // Given
         $ownerId = $this->faker->uuid;
         $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
 
         // When
         $lookupEntity = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
@@ -681,6 +703,7 @@ class EloquentEntityRepositoryTest extends TestCase
 
         $entityRepository = new EloquentEntityRepository(
             $horus->getEntityMapper(),
+            $this->cacheRepository,
             new DateTimeUtil(),
             $horus->getConfig()
         );
@@ -688,6 +711,9 @@ class EloquentEntityRepositoryTest extends TestCase
         $ownerId = $this->faker->uuid;
         $entities = $this->generateCountArray(fn() => ReadableFakeEntityFactory::create(), 20);
         $countExpected = count(array_filter($entities, fn(ReadableFakeEntity $entity) => $entity->type === "type1"));
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
 
         // When
         $entitiesResult = $entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
@@ -757,5 +783,29 @@ class EloquentEntityRepositoryTest extends TestCase
         // Then
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities) + 1);
         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), count($childEntities) + 1);
+    }
+
+    function testSearchEntitiesReadableMustBeCached()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+
+        $entities = $this->generateArray(function () {
+            return ReadableFakeEntityFactory::create();
+        });
+        $entitiesFromCache = array(new EntityData(ReadableFakeEntity::getEntityName()));
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false, true);
+        $this->cacheRepository->shouldReceive("get")->andReturn($entitiesFromCache);
+        $this->cacheRepository->shouldReceive("set")->once();
+
+        // When
+        $entitiesResult = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($entities), $entitiesResult);
+
+        // Valida cache
+        $this->assertEquals($entitiesFromCache, $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName()));
     }
 }
