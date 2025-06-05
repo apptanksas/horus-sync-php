@@ -11,6 +11,7 @@ use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Repository\DefaultCacheRepository;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use Tests\_Stubs\ChildFakeWritableEntity;
@@ -29,7 +30,7 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         parent::setUp();
         $mapper = Horus::getInstance()->getEntityMapper();
         $config = new Config(true);
-        $entityRepository = new EloquentEntityRepository($mapper, new DateTimeUtil(), $config);
+        $entityRepository = new EloquentEntityRepository($mapper, new DefaultCacheRepository(), new DateTimeUtil(), $config);
 
         $this->repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
     }
