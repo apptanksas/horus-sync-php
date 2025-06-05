@@ -17,10 +17,12 @@ use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
+use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -39,19 +41,23 @@ use Illuminate\Support\Facades\DB;
 class EloquentEntityRepository implements EntityRepository
 {
 
+    const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
+
     private array $cacheEntityParameters = array();
 
     /**
      * @param EntityMapper $entityMapper
      * @param IDateTimeUtil $dateTimeUtil
+     * @param CacheRepository $cacheRepository
      * @param Config $config
      * @param string|null $connectionName
      */
     public function __construct(
-        readonly private EntityMapper  $entityMapper,
-        readonly private IDateTimeUtil $dateTimeUtil,
-        readonly private Config        $config,
-        readonly private ?string       $connectionName = null,
+        readonly private EntityMapper    $entityMapper,
+        readonly private CacheRepository $cacheRepository,
+        readonly private IDateTimeUtil   $dateTimeUtil,
+        readonly private Config          $config,
+        readonly private ?string         $connectionName = null,
     )
     {
         if (empty($this->entityMapper->getEntities())) {
@@ -336,6 +342,14 @@ class EloquentEntityRepository implements EntityRepository
                             array      $ids = [],
                             ?int       $afterTimestamp = null): array
     {
+
+        $cacheKey = "readable_entity_$entityName";
+
+        // Check if the entity is cacheable and if the cache exists
+        if (empty($ids) && is_null($afterTimestamp) && $this->cacheRepository->exists($cacheKey)) {
+            return $this->cacheRepository->get($cacheKey);
+        }
+
         /**
          * @var $entityClass EntitySynchronizable
          */
@@ -380,7 +394,14 @@ class EloquentEntityRepository implements EntityRepository
 
         $queryBuilder = $queryBuilder->get();
 
-        return $this->iterateItemsAndSearchRelated($queryBuilder);
+
+        $result = $this->iterateItemsAndSearchRelated($queryBuilder);
+
+        if (empty($ids) && is_null($afterTimestamp) && $instanceClass instanceof ReadableEntitySynchronizable) {
+            $this->cacheRepository->set($cacheKey, $result, self::CACHE_TTL_ONE_DAY);
+        }
+
+        return $result;
     }
 
     /**

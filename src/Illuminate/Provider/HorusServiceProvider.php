@@ -94,6 +94,7 @@ class HorusServiceProvider extends ServiceProvider
 
             return new EloquentEntityRepository(
                 $this->app->make(EntityMapper::class),
+                $this->app->make(CacheRepository::class),
                 $this->app->make(IDateTimeUtil::class),
                 $horusInstance->getConfig(),
                 $horusInstance->getConnectionName()
