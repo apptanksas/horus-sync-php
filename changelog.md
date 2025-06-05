@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.6
+- Fixed validation columns in migration entities.
+
 ## v0.9.5
 - Fixed sorting insert operation in entity repository.
 

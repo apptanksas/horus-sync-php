@@ -38,7 +38,7 @@ return new class extends Migration {
             $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName, $columnIndexes, $connectionName) {
                 $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
-                    if (Schema::hasColumn($tableName, $parameter->name)) {
+                    if (Schema::connection($connectionName)->hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
                     $this->createColumn($table, $parameter);
@@ -52,7 +52,7 @@ return new class extends Migration {
             $createTableConstraintsTable = function () use ($entityClass, $tableName, $connectionName) {
                 $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
-                    if (Schema::hasColumn($tableName, $parameter->name)) {
+                    if (Schema::connection($connectionName)->hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
                     $this->applyCustomConstraints($connectionName, $tableName, $parameter);
@@ -156,7 +156,7 @@ return new class extends Migration {
             $builder->nullable($parameter->isNullable);
         }
 
-        if($parameter->withIndex) {
+        if ($parameter->withIndex) {
             $builder->index();
         }
     }
