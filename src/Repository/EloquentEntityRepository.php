@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\DB;
 class EloquentEntityRepository implements EntityRepository
 {
 
+    const int BATCH_SIZE = 2500; // Maximum number of records to insert in a single batch
     const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
 
     private array $cacheEntityParameters = array();
@@ -69,12 +70,12 @@ class EloquentEntityRepository implements EntityRepository
      * Inserts multiple entity records into the database.
      *
      * This method processes an array of EntityInsert operations, groups them by entity type,
-     * and inserts the corresponding data into the database table for each entity.
+     * and inserts the corresponding data into the database table for each entity in batches of 2500 records.
      *
      * Steps:
      * 1. Group operations by entity type.
      * 2. Prepare the data for each entity, including sync hash, owner ID, and timestamps.
-     * 3. Insert the grouped data into the appropriate database tables.
+     * 3. Insert the grouped data into the appropriate database tables in batches.
      *
      * @param EntityInsert ...$operations An array of EntityInsert operations to be processed.
      * @throws \Exception If any insert operation fails.
@@ -113,12 +114,18 @@ class EloquentEntityRepository implements EntityRepository
              */
             $entityClass = $this->entityMapper->getEntityClass($entity);
             $tableName = $entityClass::getTableName();
-            $table = $this->getTableBuilder($tableName);
 
             $this->validateOperation($entityClass);
 
-            if (!$table->insert($operations)) {
-                throw new \Exception('Failed to insert entities');
+            // Process inserts in batches of 2500 records
+            $batches = array_chunk($operations, self::BATCH_SIZE);
+
+            foreach ($batches as $batch) {
+                $table = $this->getTableBuilder($tableName);
+                
+                if (!$table->insert($batch)) {
+                    throw new \Exception('Failed to insert entities batch');
+                }
             }
         }
     }

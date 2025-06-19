@@ -1,10 +1,13 @@
 # Changelog
 
-## v0.9.6
-- Fixed validation columns in migration entities.
+## v0.10.1
+- Added batch insert processing.
 
 ## v0.10.0
 - Added cache to get readable entities.
+
+## v0.9.6
+- Fixed validation columns in migration entities.
 
 ## v0.9.5
 - Fixed sorting insert operation in entity repository.

@@ -808,4 +808,107 @@ class EloquentEntityRepositoryTest extends TestCase
         // Valida cache
         $this->assertEquals($entitiesFromCache, $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName()));
     }
+
+    function testInsertInBatchesOfTwentyFiveHundredIsSuccess()
+    {
+        // Given
+        ChildFakeWritableEntity::query()->forceDelete();
+        ParentFakeWritableEntity::query()->forceDelete();
+
+        $ownerId = $this->faker->uuid;
+        $batchSize = EloquentEntityRepository::BATCH_SIZE + 500; // More than 2500 to test batching
+        $operations = [];
+
+        // Generate operations for parent entities that will be processed in batches
+        for ($i = 0; $i < $batchSize; $i++) {
+            $operations[] = EntityOperationFactory::createEntityInsert(
+                $ownerId,
+                ParentFakeWritableEntity::getEntityName(),
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            );
+        }
+
+        // When
+        $this->entityRepository->insert(...$operations);
+
+        // Then
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), $batchSize);
+
+        // Verify that all records were inserted correctly with proper hashes
+        $insertedEntities = ParentFakeWritableEntity::all();
+        $this->assertCount($batchSize, $insertedEntities);
+
+        foreach ($insertedEntities as $entity) {
+            $this->assertNotNull($entity->{WritableEntitySynchronizable::ATTR_SYNC_HASH});
+            $this->assertEquals($ownerId, $entity->{WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID});
+            $this->assertNotNull($entity->{WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT});
+            $this->assertNotNull($entity->{WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT});
+        }
+    }
+
+    function testInsertMultipleEntitiesInBatchesIsSuccess()
+    {
+        // Given
+        ChildFakeWritableEntity::query()->forceDelete();
+        ParentFakeWritableEntity::query()->forceDelete();
+
+        $ownerId = $this->faker->uuid;
+        $parentBatchSize = EloquentEntityRepository::BATCH_SIZE + 100; // More than 2500 to test batching
+        $childBatchSize = EloquentEntityRepository::BATCH_SIZE + 300; // More than 2500 to test batching
+        $operations = [];
+
+        // Create parent entities first to get valid parent IDs
+        $parentEntitiesForRelation = [];
+        for ($i = 0; $i < $childBatchSize; $i++) {
+            $parentEntitiesForRelation[] = ParentFakeEntityFactory::create($ownerId);
+        }
+
+        // Generate operations for parent entities
+        for ($i = 0; $i < $parentBatchSize; $i++) {
+            $operations[] = EntityOperationFactory::createEntityInsert(
+                $ownerId,
+                ParentFakeWritableEntity::getEntityName(),
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            );
+        }
+
+        // Generate operations for child entities
+        for ($i = 0; $i < $childBatchSize; $i++) {
+            $operations[] = EntityOperationFactory::createEntityInsert(
+                $ownerId,
+                ChildFakeWritableEntity::getEntityName(),
+                ChildFakeEntityFactory::newData($parentEntitiesForRelation[$i]->getId()),
+                now()->toDateTimeImmutable()
+            );
+        }
+
+        shuffle($operations);
+
+        // When
+        $this->entityRepository->insert(...$operations);
+
+        // Then
+        // Verify parent entities count (including the ones created for relation + the new ones)
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), $parentBatchSize + $childBatchSize);
+
+        // Verify child entities count
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), $childBatchSize);
+
+        // Verify that records are properly inserted with batching
+        $parentEntities = ParentFakeWritableEntity::where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerId)->get();
+        $childEntities = ChildFakeWritableEntity::where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerId)->get();
+
+        // Check that all entities have proper sync attributes
+        foreach ($parentEntities as $entity) {
+            $this->assertNotNull($entity->{WritableEntitySynchronizable::ATTR_SYNC_HASH});
+            $this->assertEquals($ownerId, $entity->{WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID});
+        }
+
+        foreach ($childEntities as $entity) {
+            $this->assertNotNull($entity->{WritableEntitySynchronizable::ATTR_SYNC_HASH});
+            $this->assertEquals($ownerId, $entity->{WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID});
+        }
+    }
 }
