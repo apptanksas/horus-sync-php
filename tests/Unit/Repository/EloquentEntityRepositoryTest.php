@@ -911,4 +911,89 @@ class EloquentEntityRepositoryTest extends TestCase
             $this->assertEquals($ownerId, $entity->{WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID});
         }
     }
+
+    function testDeleteInBatchesIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $batchSize = 3000; // More than 2500 to test batching
+        $parentsEntities = [];
+
+        // Create entities first
+        for ($i = 0; $i < $batchSize; $i++) {
+            $parentsEntities[] = ParentFakeEntityFactory::create($ownerId);
+        }
+
+        $deleteOperations = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId) {
+            return EntityOperationFactory::createEntityDelete(
+                $ownerId,
+                ParentFakeWritableEntity::getEntityName(),
+                $entity->getId(),
+                now()->toDateTimeImmutable()
+            );
+        }, $parentsEntities);
+
+        // When
+        $this->entityRepository->delete(...$deleteOperations);
+
+        // Then
+        foreach ($deleteOperations as $operation) {
+            $expectedData = ["id" => $operation->id];
+            $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(),
+                $expectedData,
+                deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        }
+    }
+
+    function testDeleteWithRelatedEntitiesInBatchesIsSuccess()
+    {
+        // Given
+        Schema::disableForeignKeyConstraints();
+        $ownerId = $this->faker->uuid;
+        $parentBatchSize = EloquentEntityRepository::BATCH_SIZE * 1.5; // More than 2500 to test batching
+        $childrenPerParent = 2;
+        $parentsEntities = [];
+        $childEntities = [];
+
+        // Create parent entities
+        for ($i = 0; $i < $parentBatchSize; $i++) {
+            $parentsEntities[] = ParentFakeEntityFactory::create($ownerId);
+        }
+
+        // Create child entities for each parent
+        foreach ($parentsEntities as $parentEntity) {
+            for ($j = 0; $j < $childrenPerParent; $j++) {
+                $childEntities[] = ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId);
+            }
+        }
+
+        $deleteOperations = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId) {
+            return EntityOperationFactory::createEntityDelete(
+                $ownerId,
+                ParentFakeWritableEntity::getEntityName(),
+                $entity->getId(),
+                now()->toDateTimeImmutable()
+            );
+        }, $parentsEntities);
+
+        // When
+        $this->entityRepository->delete(...$deleteOperations);
+
+        // Then
+        // Validate parent entities are soft deleted
+        foreach ($parentsEntities as $parentFakeEntity) {
+            $expectedData = ["id" => $parentFakeEntity->getId()];
+            $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(),
+                $expectedData,
+                deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        }
+
+        // Validate child entities are soft deleted
+        foreach ($childEntities as $childFakeEntity) {
+            $expectedData = ["id" => $childFakeEntity->getId()];
+            $this->assertSoftDeleted(ChildFakeWritableEntity::getTableName(),
+                $expectedData,
+                deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
+        }
+    }
 }

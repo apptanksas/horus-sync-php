@@ -242,6 +242,8 @@ class EloquentEntityRepository implements EntityRepository
     /**
      * Deletes multiple entity records from the database and any related entities on cascade.
      *
+     * This method processes deletes in batches to optimize performance and avoid large IN clauses.
+     *
      * @param EntityDelete ...$operations
      * @return void
      */
@@ -264,26 +266,36 @@ class EloquentEntityRepository implements EntityRepository
 
             $this->validateOperation($entityClass);
 
-            foreach ($entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids)->get() as $eloquentModel) {
+            // Process deletion queries in batches to avoid large IN clauses
+            $idBatches = array_chunk($ids, self::BATCH_SIZE);
 
-                $entityData = $this->buildEntityData($eloquentModel);
-                $idsRelated = $this->parseRelatedIds($entityData);
+            foreach ($idBatches as $idBatch) {
+                foreach ($entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $idBatch)->get() as $eloquentModel) {
 
-                // Delete related entities
-                foreach ($idsRelated as $entityName => $ids) {
-                    $dataPreparedToDelete[$entityName] =
-                        array_merge($dataPreparedToDelete[$entityName] ?? [], (array)$ids);
+                    $entityData = $this->buildEntityData($eloquentModel);
+                    $idsRelated = $this->parseRelatedIds($entityData);
+
+                    // Delete related entities
+                    foreach ($idsRelated as $entityName => $relatedIds) {
+                        $dataPreparedToDelete[$entityName] = array_merge($dataPreparedToDelete[$entityName] ?? [], (array)$relatedIds);
+                    }
                 }
             }
         }
 
-        // Delete entities and related entities
+        // Delete entities and related entities in batches
         foreach ($dataPreparedToDelete as $entityName => $ids) {
             /**
              * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entityName);
-            $entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $ids)->delete();
+            
+            // Process deletes in batches to avoid large IN clauses  
+            $idBatches = array_chunk($ids, self::BATCH_SIZE);
+            
+            foreach ($idBatches as $idBatch) {
+                $entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $idBatch)->delete();
+            }
         }
     }
 

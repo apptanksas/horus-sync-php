@@ -1,7 +1,7 @@
 # Changelog
 
 ## v0.10.1
-- Added batch insert processing.
+- Added batch insert and delete data processing.
 
 ## v0.10.0
 - Added cache to get readable entities.
