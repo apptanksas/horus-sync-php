@@ -139,6 +139,7 @@ class SyncQueueActionsTest extends TestCase
                 $args[0]->actionedAt < $args[count($args) - 1]->actionedAt;
         });
 
+        $this->entityRepository->shouldReceive("getEntityOwner")->andReturn($this->faker->uuid);
         $this->fileHandler->shouldReceive("copy")->andReturn(true);
         $this->fileHandler->shouldReceive("delete")->andReturn(true);
         $this->entityRepository->shouldReceive("getEntityPathHierarchy")->andReturn([ParentFakeEntityFactory::create()]);

@@ -18,9 +18,9 @@ abstract class EntityOperation
     /**
      * Constructor for the EntityOperation class.
      *
-     * @param string|int         $ownerId The ID of the owner performing the operation.
-     * @param string             $entity  The name of the entity involved in the operation.
-     * @param string             $id      The ID of the entity involved in the operation.
+     * @param string|int $ownerId The ID of the owner performing the operation.
+     * @param string $entity The name of the entity involved in the operation.
+     * @param string $id The ID of the entity involved in the operation.
      * @param \DateTimeImmutable $actionedAt The date and time when the action was performed.
      */
     public function __construct(
@@ -34,6 +34,17 @@ abstract class EntityOperation
     }
 
     /**
+     * Clones the entity operation with a new owner ID.
+     *
+     * This method must be implemented by subclasses to provide a specific cloning behavior
+     * for the operation with a new owner ID.
+     *
+     * @param string|int $ownerId The new owner ID for the cloned operation.
+     * @return static A new instance of the entity operation with the specified owner ID.
+     */
+    public abstract function cloneWithOwnerId(string|int $ownerId): self;
+
+    /**
      * Converts the entity operation to an array representation.
      *
      * This method must be implemented by subclasses to provide a specific array representation
@@ -42,4 +53,6 @@ abstract class EntityOperation
      * @return array The array representation of the operation.
      */
     public abstract function toArray(): array;
+
+
 }

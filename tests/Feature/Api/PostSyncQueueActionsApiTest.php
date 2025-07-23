@@ -16,6 +16,8 @@ use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\_Stubs\ChildFakeEntityFactory;
+use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
@@ -264,10 +266,108 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertUnauthorized();
     }
 
-    function testPostSyncQueueWithUserActingAsIsSuccess()
+    function testPostSyncQueueWithUserActingAsWithChildEntityIsSuccess()
     {
         $userOwnerId = $this->faker->uuid;
         $userId = $this->faker->uuid;
+
+        $parent = ParentFakeEntityFactory::create($userOwnerId);
+        $childrenData = ChildFakeEntityFactory::newData($parent->getId());
+
+        $entityId = $childrenData['id'];
+        $entityName = ChildFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $floatValueExpected = $this->faker->randomFloat();
+        $colorExpected = $this->faker->colorName;
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parent->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+
+        $data = [
+            // delete action
+            [
+                "action" => "DELETE",
+                "entity" => $entityName,
+                "data" => ["id" => $entityId],
+                "actioned_at" => $actionedAt
+            ],
+            // update action
+            [
+                "action" => "UPDATE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        ChildFakeWritableEntity::ATTR_FLOAT_VALUE => $floatValueExpected,
+                        ChildFakeWritableEntity::ATTR_STRING_VALUE => $colorExpected,
+                    ]
+                ],
+                "actioned_at" => $actionedAt - 1000
+            ],
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenData,
+                "actioned_at" => $actionedAt - 2000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+
+        $response->assertAccepted();
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+            'id' => $entityId,
+            ChildFakeWritableEntity::ATTR_FLOAT_VALUE => $floatValueExpected,
+            ChildFakeWritableEntity::ATTR_STRING_VALUE => $colorExpected,
+        ]);
+        $this->assertSoftDeleted(ChildFakeWritableEntity::getTableName(), [
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+            'id' => $entityId
+        ], deletedAtColumn: ChildFakeWritableEntity::ATTR_SYNC_DELETED_AT);
+
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
+            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::INSERT->value(),
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
+        ]);
+
+
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
+            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value(),
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
+        ]);
+
+
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
+            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::DELETE->value(),
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
+        ]);
+    }
+
+    function testPostSyncQueueWithUserActingAsWithParentEntityIsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
 
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeWritableEntity::getEntityName();
@@ -281,13 +381,13 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $timestampExpected = $this->faker->dateTimeBetween->getTimestamp();
         $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
 
-        Horus::getInstance()->setUserAuthenticated(
-            new UserAuth($userId,
-                [new EntityGranted($userOwnerId,
-                    new EntityReference($entityName, $entityId), AccessLevel::all())
-                ], new UserActingAs($userOwnerId))
-        )->setConfig(new Config(true));
+        $entityAnotherGranted = [new EntityGranted($userOwnerId,
+            new EntityReference($entityName, ParentFakeEntityFactory::create($userOwnerId)->getId()), AccessLevel::all())
+        ];
 
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId, $entityAnotherGranted, new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
 
         $data = [
             // delete action
@@ -332,22 +432,22 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         // Then
 
         $response->assertAccepted();
-        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 2);
         $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
-            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userGuestId,
             'id' => $entityId,
             'name' => $nameExpected,
             'color' => $colorExpected,
             'value_enum' => $valueEnumExpected
         ]);
         $this->assertSoftDeleted(ParentFakeWritableEntity::getTableName(), [
-            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userGuestId,
             'id' => $entityId
         ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
 
         $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
-            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
-            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::FK_OWNER_ID => $userGuestId,
+            SyncQueueActionModel::FK_USER_ID => $userGuestId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::INSERT->value(),
             SyncQueueActionModel::ATTR_ENTITY => $entityName,
             SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
@@ -355,8 +455,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
 
         $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
-            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
-            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::FK_OWNER_ID => $userGuestId,
+            SyncQueueActionModel::FK_USER_ID => $userGuestId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value(),
             SyncQueueActionModel::ATTR_ENTITY => $entityName,
             SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
@@ -364,8 +464,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
 
         $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
-            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
-            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::FK_OWNER_ID => $userGuestId,
+            SyncQueueActionModel::FK_USER_ID => $userGuestId,
             SyncQueueActionModel::ATTR_ACTION => SyncAction::DELETE->value(),
             SyncQueueActionModel::ATTR_ENTITY => $entityName,
             SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
@@ -614,4 +714,129 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($entities));
     }
 
+    function testPostSyncQueueInsertIsSuccessWithChildrenAsOwner()
+    {
+        $userId = $this->faker->uuid;
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $parent = ParentFakeEntityFactory::create($userId);
+        $childrenData = ChildFakeEntityFactory::newData($parent->getId());
+        $entityId = $childrenData['id'];
+        $entityName = ChildFakeWritableEntity::getEntityName();
+
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenData,
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityId,
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+        ]);
+    }
+
+    function testPostSyncQueueInsertIsSuccessWithChildrenAsGuest()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userGuestId));
+
+        $parent = ParentFakeEntityFactory::create($userOwnerId);
+        $childrenData = ChildFakeEntityFactory::newData($parent->getId());
+        $entityId = $childrenData['id'];
+        $entityName = ChildFakeWritableEntity::getEntityName();
+
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parent->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenData,
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityId,
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        ]);
+    }
+
+    function testPostSyncQueueInsertIsSuccessWithParentAsGuestAuthenticatedAndInsertedAsOwnerInPrimaryEntity()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+        $timestamp = 1674579600;
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference($entityName, $entityId), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestamp,
+                    "value_enum" => $enumValue
+                ],
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userGuestId,
+            'id' => $entityId,
+            'name' => $name,
+            'color' => $color,
+            'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
+        ]);
+    }
 }

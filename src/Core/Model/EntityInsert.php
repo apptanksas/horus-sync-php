@@ -42,6 +42,17 @@ class EntityInsert extends EntityOperation
         parent::__construct($ownerId, $entity, $this->data["id"], $actionedAt);
     }
 
+
+    public function cloneWithOwnerId(int|string $ownerId): self
+    {
+        return new self(
+            $ownerId,
+            $this->entity,
+            $this->actionedAt,
+            $this->data
+        );
+    }
+
     /**
      * Validates the provided data for the entity insertion.
      *

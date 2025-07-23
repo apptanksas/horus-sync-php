@@ -18,11 +18,11 @@ class EntityUpdate extends EntityOperation
     /**
      * Constructor for the EntityUpdate class.
      *
-     * @param string|int         $ownerId      The ID of the owner performing the operation.
-     * @param string             $entity       The name of the entity being updated.
-     * @param string             $id           The ID of the entity being updated.
-     * @param \DateTimeImmutable $actionedAt   The date and time when the update was performed.
-     * @param array              $attributes  The attributes that were updated in the entity.
+     * @param string|int $ownerId The ID of the owner performing the operation.
+     * @param string $entity The name of the entity being updated.
+     * @param string $id The ID of the entity being updated.
+     * @param \DateTimeImmutable $actionedAt The date and time when the update was performed.
+     * @param array $attributes The attributes that were updated in the entity.
      */
     function __construct(
         string|int            $ownerId,
@@ -34,6 +34,18 @@ class EntityUpdate extends EntityOperation
     {
         parent::__construct($ownerId, $entity, $id, $actionedAt);
     }
+
+    public function cloneWithOwnerId(int|string $ownerId): self
+    {
+        return new self(
+            $ownerId,
+            $this->entity,
+            $this->id,
+            $this->actionedAt,
+            $this->attributes
+        );
+    }
+
 
     /**
      * Converts the entity update to an array representation.

@@ -136,4 +136,15 @@ interface EntityRepository
      * @return EntityData[] An array of entity data matching the specified references.
      */
     function searchRawEntitiesByReference(EntityReference ...$entityReferences): array;
+
+
+    /**
+     * Retrieves the owner ID of a specific entity by its name and ID.
+     *
+     * @param string $entityName The name of the entity.
+     * @param string $entityId The ID of the entity.
+     *
+     * @return string|int The ID of the user who owns the entity.
+     */
+    function getEntityOwner(string $entityName, string $entityId): string|int;
 }
