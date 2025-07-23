@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.10.2
+- Fixed issue a user wanted to make operations with a primary entity that is not shared.
+
 ## v0.10.1
 - Added batch insert and delete data processing.
 

@@ -43,6 +43,7 @@ class EloquentEntityRepository implements EntityRepository
 
     const int BATCH_SIZE = 2500; // Maximum number of records to insert in a single batch
     const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
+    const int CACHE_TTL_ONE_YEAR = 31536000; // 365 days in seconds
 
     private array $cacheEntityParameters = array();
 
@@ -122,7 +123,7 @@ class EloquentEntityRepository implements EntityRepository
 
             foreach ($batches as $batch) {
                 $table = $this->getTableBuilder($tableName);
-                
+
                 if (!$table->insert($batch)) {
                     throw new \Exception('Failed to insert entities batch');
                 }
@@ -289,10 +290,10 @@ class EloquentEntityRepository implements EntityRepository
              * @var WritableEntitySynchronizable $entityClass
              */
             $entityClass = $this->entityMapper->getEntityClass($entityName);
-            
+
             // Process deletes in batches to avoid large IN clauses  
             $idBatches = array_chunk($ids, self::BATCH_SIZE);
-            
+
             foreach ($idBatches as $idBatch) {
                 $entityClass::query()->whereIn(WritableEntitySynchronizable::ATTR_ID, $idBatch)->delete();
             }
@@ -507,6 +508,78 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         return $entityHierarchy;
+    }
+
+    /**
+     * Searches for entities based on their references.
+     *
+     * Note: Dont matter if the entities was deleted. Dont apply restrictions and nothing.
+     *
+     * @param EntityReference ...$entityReferences The entity references to search for.
+     *
+     * @return EntityData[] An array of entity data matching the specified references.
+     */
+
+    function searchRawEntitiesByReference(EntityReference ...$entityReferences): array
+    {
+        $groupedEntitiesByName = [];
+        $output = [];
+
+        // Group entity references by entity name
+        foreach ($entityReferences as $entityReference) {
+            $groupedEntitiesByName[$entityReference->entityName][] = $entityReference->entityId;
+        }
+
+        foreach ($groupedEntitiesByName as $entityName => $ids) {
+
+            /**
+             * @var $entityClass EntitySynchronizable
+             */
+            $entityClass = $this->entityMapper->getEntityClass($entityName);
+
+            $result = $entityClass::withTrashed()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get();
+
+            foreach ($result as $entityResult) {
+                $output[] = new EntityData($entityResult->getEntityName(), $this->prepareData($entityResult->toArray()));
+            }
+        }
+
+        return $output;
+    }
+
+    /**
+     * Retrieves the owner ID of a specific entity by its name and ID.
+     *
+     * @param string $entityName The name of the entity.
+     * @param string $entityId The ID of the entity.
+     *
+     * @return string|int The ID of the user who owns the entity.
+     * @throws ClientException
+     */
+    public function getEntityOwner(string $entityName, string $entityId): string|int
+    {
+        $cacheKey = "entity_owner_$entityName." . "$entityId";
+
+        if ($this->cacheRepository->exists($cacheKey)) {
+            return $this->cacheRepository->get($cacheKey);
+        }
+
+        /**
+         * @var $entityClass WritableEntitySynchronizable
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entityName);
+
+        // Retrieve the owner ID of the entity by its ID
+        $ownerId = $entityClass::withTrashed()
+            ->where(WritableEntitySynchronizable::ATTR_ID, $entityId)
+            ->value(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID);
+
+        if (is_null($ownerId)) {
+            throw new ClientException("Entity with ID $entityId does not exist in entity $entityName.");
+        }
+
+        $this->cacheRepository->set($cacheKey, $ownerId, self::CACHE_TTL_ONE_YEAR);
+        return $ownerId;
     }
 
 
@@ -761,7 +834,6 @@ class EloquentEntityRepository implements EntityRepository
         return $output;
     }
 
-
     /**
      * Retrieves the parameters of an entity class.
      *
@@ -788,43 +860,6 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         $this->cacheEntityParameters[$entity] = $output;
-
-        return $output;
-    }
-
-    /**
-     * Searches for entities based on their references.
-     *
-     * Note: Dont matter if the entities was deleted. Dont apply restrictions and nothing.
-     *
-     * @param EntityReference ...$entityReferences The entity references to search for.
-     *
-     * @return EntityData[] An array of entity data matching the specified references.
-     */
-
-    function searchRawEntitiesByReference(EntityReference ...$entityReferences): array
-    {
-        $groupedEntitiesByName = [];
-        $output = [];
-
-        // Group entity references by entity name
-        foreach ($entityReferences as $entityReference) {
-            $groupedEntitiesByName[$entityReference->entityName][] = $entityReference->entityId;
-        }
-
-        foreach ($groupedEntitiesByName as $entityName => $ids) {
-
-            /**
-             * @var $entityClass EntitySynchronizable
-             */
-            $entityClass = $this->entityMapper->getEntityClass($entityName);
-
-            $result = $entityClass::withTrashed()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get();
-
-            foreach ($result as $entityResult) {
-                $output[] = new EntityData($entityResult->getEntityName(), $this->prepareData($entityResult->toArray()));
-            }
-        }
 
         return $output;
     }

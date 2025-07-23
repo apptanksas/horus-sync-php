@@ -6,6 +6,7 @@ namespace Tests\Unit\Repository;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
@@ -995,5 +996,34 @@ class EloquentEntityRepositoryTest extends TestCase
                 $expectedData,
                 deletedAtColumn: WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT);
         }
+    }
+
+    function testGetEntityOwnerIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($ownerId);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
+
+        // When
+        $result = $this->entityRepository->getEntityOwner(ParentFakeWritableEntity::getEntityName(), $parentEntity->getId());
+
+        // Then
+        $this->assertEquals($ownerId, $result);
+    }
+
+    function testGetEntityOwnerIsFailureByNotFound()
+    {
+        $this->expectException(ClientException::class);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        // Given
+        $invalidEntityId = $this->faker->uuid;
+
+        // When
+        $this->entityRepository->getEntityOwner(ParentFakeWritableEntity::getEntityName(), $invalidEntityId);
     }
 }

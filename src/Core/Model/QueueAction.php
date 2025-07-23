@@ -45,4 +45,20 @@ readonly class QueueAction
     }
 
 
+    function cloneWithUsers(string|int $userId, string|int $ownerId): self
+    {
+        return new self(
+            $this->action,
+            $this->entity,
+            $this->entityId,
+            $this->operation->cloneWithOwnerId($ownerId),
+            $this->actionedAt,
+            $this->syncedAt,
+            $userId,
+            $ownerId,
+            $this->bySystem
+        );
+    }
+
+
 }

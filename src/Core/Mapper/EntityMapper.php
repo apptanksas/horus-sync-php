@@ -7,6 +7,8 @@ use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
+use http\Message\Body;
+use Illuminate\Validation\Rules\In;
 
 /**
  * @internal Class EntityMapper
@@ -126,4 +128,44 @@ class EntityMapper
     {
         return $this->paths;
     }
+
+    /**
+     * Checks if the given entity is a primary entity (i.e., it has no parent entity).
+     *
+     * @param string $entity The name of the entity to check.
+     * @return bool True if the entity is a primary entity, otherwise false.
+     */
+    function isPrimaryEntity(string $entity): bool
+    {
+        return $this->getHierarchicalLevel($entity) === 0;
+    }
+
+    /**
+     * Gets the hierarchical level of the given entity.
+     *
+     * This method searches through all registered paths to find where the entity appears
+     * and returns the lowest hierarchical level (closest to root) where it is found.
+     * Level 0 represents the root level, level 1 represents first child level, etc.
+     *
+     * @param string $entity The name of the entity to get the hierarchical level for.
+     * @return int The hierarchical level of the entity (0 for root level).
+     */
+    private function getHierarchicalLevel(string $entity): int
+    {
+        $minLevel = PHP_INT_MAX;
+        
+        foreach ($this->paths as $path) {
+            // Handle both single paths and nested path arrays
+            $pathArray = is_array($path[0]) ? $path[0] : $path;
+            
+            $position = array_search($entity, $pathArray);
+            if ($position !== false) {
+                $minLevel = min($minLevel, $position);
+            }
+        }
+        
+        // If entity is not found in any path, return 0 (assume root level)
+        return $minLevel === PHP_INT_MAX ? 0 : $minLevel;
+    }
+
 }

@@ -33,6 +33,17 @@ class EntityDelete extends EntityOperation
         parent::__construct($ownerId, $entity, $id, $actionedAt);
     }
 
+    public function cloneWithOwnerId(int|string $ownerId): self
+    {
+        return new self(
+            $ownerId,
+            $this->entity,
+            $this->id,
+            $this->actionedAt
+        );
+    }
+
+
     /**
      * Converts the entity delete operation details to an associative array.
      *

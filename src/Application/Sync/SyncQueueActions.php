@@ -102,7 +102,7 @@ class SyncQueueActions
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
             $this->entityRepository->delete(...array_map(fn(QueueAction $action) => $action->operation, $deleteActions));
-            $this->queueActionRepository->save(...$actions);
+            $this->queueActionRepository->save(...array_merge($insertActions, $updateActions, $deleteActions));
 
             $this->validateFilesUploaded($userAuth, $insertEntities);
 
@@ -150,28 +150,34 @@ class SyncQueueActions
         $updateActions = [];
         $deleteActions = [];
 
+        $userEffectiveUserId = $userAuth->getEffectiveUserId();
+
         foreach ($actions as $action) {
 
             $entityReference = new EntityReference($action->entity, $action->operation->id);
 
             // Check if the update about entity is not on a new entity
-            $isEntityIdtInInsertActions = in_array($action->operation->id, array_map(fn(QueueAction $action) => $action->operation->id, $insertActions));
+            $isEntityIdInInsertActions = in_array($action->operation->id, array_map(fn(QueueAction $action) => $action->operation->id, $insertActions));
+            $realUserOwnerId = $this->getRealUserOwnerId($action, $isEntityIdInInsertActions);
+
+            if ($realUserOwnerId != $userEffectiveUserId) {
+                $action = $action->cloneWithUsers($realUserOwnerId, $realUserOwnerId);
+            }
 
             if ($action->operation instanceof EntityInsert) {
                 $insertActions[] = $action;
             } elseif ($action->operation instanceof EntityUpdate) {
 
                 // Check if user has permission to update entity
-                if ($isEntityIdtInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
+                if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
                     throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}");
                 }
-
                 $updateActions[] = $action;
 
             } elseif ($action->operation instanceof EntityDelete) {
 
                 // Check if user has permission to delete entity
-                if ($isEntityIdtInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
+                if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
                     throw new OperationNotPermittedException("No have access to delete entity {$action->entity} with id {$action->operation->id}");
                 }
 
@@ -228,6 +234,31 @@ class SyncQueueActions
 
             }
         }
+    }
+
+    /**
+     * Get the real user owner ID based on the entity and action type validating if the entity is primary or not.
+     *
+     * @param QueueAction $action The action being performed (insert, update, delete).
+     * @return int|string The real user owner ID.
+     */
+    private function getRealUserOwnerId(QueueAction $action, bool $isEntityIdInInsertActions): int|string
+    {
+        $isPrimaryEntity = $this->entityMapper->isPrimaryEntity($action->entity);
+
+        if ($isEntityIdInInsertActions && $isPrimaryEntity) {
+            return $action->userId;
+        }
+
+        if ($isEntityIdInInsertActions) {
+            return $action->ownerId;
+        }
+
+        return match (true) {
+            $action->operation instanceof EntityInsert => $isPrimaryEntity ? $action->userId : $action->ownerId,
+            $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => ($this->entityRepository->getEntityOwner($action->entity, $action->entityId) == $action->userId) ? $action->userId : $action->ownerId,
+            default => $action->ownerId
+        };
     }
 
 }

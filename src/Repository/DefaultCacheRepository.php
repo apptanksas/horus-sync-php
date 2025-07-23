@@ -4,6 +4,7 @@ namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Repository\CacheRepository;
 use Illuminate\Support\Facades\Cache;
+
 class DefaultCacheRepository implements CacheRepository
 {
     public function get(string $key): mixed
@@ -43,6 +44,6 @@ class DefaultCacheRepository implements CacheRepository
 
     private function createCacheKey(string $key): string
     {
-        return md5($key);
+        return md5("horus_cache_" . $key);
     }
 }
