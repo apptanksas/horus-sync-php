@@ -84,6 +84,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
 
+        $this->cacheRepository->shouldReceive("set")->times(count($operations));
+
         // When
         $this->entityRepository->insert(...$operations);
 
@@ -126,6 +128,8 @@ class EloquentEntityRepositoryTest extends TestCase
         ));
         $operations = array_merge($parentsEntities, $childEntities);
         shuffle($operations);
+
+        $this->cacheRepository->shouldReceive("set")->times(count($operations));
 
         // When
         $this->entityRepository->insert(...$operations);
@@ -778,6 +782,8 @@ class EloquentEntityRepositoryTest extends TestCase
         $operations = array_merge($parentsEntities, $childEntities, [$childPrime]);
         shuffle($operations);
 
+        $this->cacheRepository->shouldReceive("set")->times(count($operations));
+
         // When
         $this->entityRepository->insert(...$operations);
 
@@ -830,6 +836,8 @@ class EloquentEntityRepositoryTest extends TestCase
             );
         }
 
+        $this->cacheRepository->shouldReceive("set")->times(count($operations));
+
         // When
         $this->entityRepository->insert(...$operations);
 
@@ -855,8 +863,8 @@ class EloquentEntityRepositoryTest extends TestCase
         ParentFakeWritableEntity::query()->forceDelete();
 
         $ownerId = $this->faker->uuid;
-        $parentBatchSize = EloquentEntityRepository::BATCH_SIZE + 100; // More than 2500 to test batching
-        $childBatchSize = EloquentEntityRepository::BATCH_SIZE + 300; // More than 2500 to test batching
+        $parentBatchSize = EloquentEntityRepository::BATCH_SIZE + 100; // More than 500 to test batching
+        $childBatchSize = EloquentEntityRepository::BATCH_SIZE + 300; // More than 500 to test batching
         $operations = [];
 
         // Create parent entities first to get valid parent IDs
@@ -886,6 +894,8 @@ class EloquentEntityRepositoryTest extends TestCase
         }
 
         shuffle($operations);
+
+        $this->cacheRepository->shouldReceive("set")->times(count($operations));
 
         // When
         $this->entityRepository->insert(...$operations);

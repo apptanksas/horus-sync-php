@@ -83,11 +83,15 @@ class EloquentEntityRepository implements EntityRepository
      */
     function insert(EntityInsert ...$operations): void
     {
+        $entityIdsCachePending = [];
         $operations = $this->sortByActionedAt($operations);
         $entities = $this->entityMapper->getEntities();
         $groupOperationByEntity = [];
 
         foreach ($operations as $operation) {
+
+            $entityIdsCachePending[$operation->entity][$operation->id] = $operation->ownerId;
+
             $groupOperationByEntity[$operation->entity][] = array_merge([
                 WritableEntitySynchronizable::ATTR_SYNC_HASH => $operation->hash(),
                 WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID => $operation->ownerId,
@@ -127,6 +131,17 @@ class EloquentEntityRepository implements EntityRepository
                 if (!$table->insert($batch)) {
                     throw new \Exception('Failed to insert entities batch');
                 }
+            }
+        }
+
+        // *************************************
+        // Cache the entity IDs for the owner
+        // *************************************
+
+        foreach ($entityIdsCachePending as $entityName => $ids) {
+            foreach ($ids as $entityId => $ownerId) {
+                $cacheKey = $this->createEntityOwnerCacheKey($entityName, $entityId);
+                $this->cacheRepository->set($cacheKey, $ownerId, self::CACHE_TTL_ONE_YEAR);
             }
         }
     }
@@ -558,7 +573,7 @@ class EloquentEntityRepository implements EntityRepository
      */
     public function getEntityOwner(string $entityName, string $entityId): string|int
     {
-        $cacheKey = "entity_owner_$entityName." . "$entityId";
+        $cacheKey = $this->createEntityOwnerCacheKey($entityName, $entityId);
 
         if ($this->cacheRepository->exists($cacheKey)) {
             return $this->cacheRepository->get($cacheKey);
@@ -862,5 +877,18 @@ class EloquentEntityRepository implements EntityRepository
         $this->cacheEntityParameters[$entity] = $output;
 
         return $output;
+    }
+
+
+    /**
+     * Creates a cache key for the entity owner based on the entity name and ID.
+     *
+     * @param string $entityName The name of the entity.
+     * @param string $entityId The ID of the entity.
+     * @return string The generated cache key.
+     */
+    private function createEntityOwnerCacheKey(string $entityName, string $entityId): string
+    {
+        return "entity_owner_$entityName." . "$entityId";
     }
 }
