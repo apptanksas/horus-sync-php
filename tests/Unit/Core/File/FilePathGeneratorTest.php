@@ -35,7 +35,7 @@ class FilePathGeneratorTest extends TestCase
         $this->filePathGenerator = new FilePathGenerator($repository, $this->config);
     }
 
-    function testCreate()
+    function testCreatePathEntityReference()
     {
         // Given
         $userOwnerId = $this->faker->uuid;
@@ -47,7 +47,21 @@ class FilePathGeneratorTest extends TestCase
         $pathExpected = $this->config->basePathFiles . "/{$userOwnerId}/{$parentEntity->entityName}/{$parentEntity->getId()}/{$childEntity->entityName}/{$childEntity->getId()}/";
 
         // When
-        $path = $this->filePathGenerator->create(new UserAuth($userOwnerId), $entityReference);
+        $path = $this->filePathGenerator->createPathEntityReference(new UserAuth($userOwnerId), $entityReference);
+
+        // Then
+        $this->assertEquals($pathExpected, $path);
+    }
+
+    function testCreateCustomPath()
+    {
+        // Given
+        $path = $this->faker->filePath();
+
+        $pathExpected = $this->config->basePathFiles . '/' . $path."/";
+
+        // When
+        $path = $this->filePathGenerator->createCustomPath($path);
 
         // Then
         $this->assertEquals($pathExpected, $path);

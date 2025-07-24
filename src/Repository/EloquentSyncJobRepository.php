@@ -4,9 +4,7 @@ namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Model\SyncJob;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
-use AppTank\Horus\Core\SyncJobStatus;
 use AppTank\Horus\Illuminate\Database\SyncJobModel;
-use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 
 /**
  * @internal Class EloquentSyncJobRepository

@@ -5,6 +5,7 @@ namespace AppTank\Horus\Illuminate\Provider;
 use AppTank\Horus\Client\HorusQueueActionClient;
 use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
+use AppTank\Horus\Core\Bus\IJobDispatcher;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -12,10 +13,12 @@ use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
+use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
+use AppTank\Horus\Illuminate\Bus\JobDispatcher;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
 use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
@@ -25,6 +28,7 @@ use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
 use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
+use AppTank\Horus\Repository\EloquentSyncJobRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use Carbon\Laravel\ServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +73,10 @@ class HorusServiceProvider extends ServiceProvider
             return new EventBus();
         });
 
+        $this->app->singleton(IJobDispatcher::class, function () {
+            return new JobDispatcher();
+        });
+
         $this->app->bind(EntityMapper::class, function () {
             return Horus::getInstance()->getEntityMapper();
         });
@@ -111,6 +119,10 @@ class HorusServiceProvider extends ServiceProvider
 
         $this->app->singleton(FileUploadedRepository::class, function () {
             return new EloquentFileUploadedRepository();
+        });
+
+        $this->app->singleton(SyncJobRepository::class, function () {
+            return new EloquentSyncJobRepository();
         });
 
         $this->app->bind(IHorusQueueActionClient::class, function () {

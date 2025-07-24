@@ -211,7 +211,7 @@ class SyncQueueActions
                         throw new \Exception("File not found");
                     }
 
-                    $pathFileDestination = $this->filePathGenerator->create($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
+                    $pathFileDestination = $this->filePathGenerator->createPathEntityReference($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
                     $urlFile = $this->fileHandler->generateUrl($pathFileDestination);
 
                     if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
