@@ -17,6 +17,8 @@ use AppTank\Horus\Core\Repository\EntityRepository;
  *
  * @author John Ospina
  * Year: 2024
+ *
+ * @deprecated This class is deprecated and will be removed in future versions. Because its uses is unperformant.
  */
 readonly class GetDataEntities extends BaseGetEntities
 {
