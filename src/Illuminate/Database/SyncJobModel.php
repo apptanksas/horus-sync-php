@@ -31,6 +31,10 @@ final class SyncJobModel extends Model
     const string FK_USER_ID = "user_id"; // User Identifier
 
     protected $table = self::TABLE_NAME;
+
+    public $usesUniqueIds = true;
+    protected $primaryKey = self::ATTR_ID;
+    public $incrementing = false;
     public $timestamps = true;
 
     protected $fillable = [
@@ -118,6 +122,10 @@ final class SyncJobModel extends Model
      */
     public function getResultAt(): \DateTimeImmutable|null
     {
+        if (is_null($this->getAttribute(self::ATTR_RESULTED_AT))) {
+            return null;
+        }
+
         return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_RESULTED_AT)));
     }
 
