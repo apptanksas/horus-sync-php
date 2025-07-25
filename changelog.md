@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.11.0
+- Added endpoint to start sync and generate sync data to download.
+- Deprecated endpoint to get entities data.
+
 ## v0.10.2
 - Fixed issue a user wanted to make operations with a primary entity that is not shared.
 

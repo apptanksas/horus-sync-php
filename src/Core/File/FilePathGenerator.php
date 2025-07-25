@@ -54,4 +54,5 @@ readonly class FilePathGenerator
 
         return $path;
     }
+
 }

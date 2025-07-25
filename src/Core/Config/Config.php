@@ -109,6 +109,16 @@ class Config
     }
 
     /**
+     * Gets the path for the files that are being processed.
+     *
+     * @return string The path for the processing files.
+     */
+    function getPathFilesSync(): string
+    {
+        return $this->basePathFiles . "/sync";
+    }
+
+    /**
      * Gets the entity restrictions.
      *
      * @return EntityRestriction[]

@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Core\Repository\IGetDataEntitiesUseCase;
 
 /**
  * @internal Class GetDataEntities
@@ -18,7 +19,7 @@ use AppTank\Horus\Core\Repository\EntityRepository;
  * @author John Ospina
  * Year: 2024
  */
-readonly class GetDataEntities extends BaseGetEntities
+readonly class GetDataEntities extends BaseGetEntities implements IGetDataEntitiesUseCase
 {
     /**
      * GetDataEntities constructor.

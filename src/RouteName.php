@@ -77,4 +77,14 @@ enum RouteName: string
      */
     case GET_DATA_SHARED = "horus.get.data.shared";
 
+    /**
+     * Route for starting sync data job.
+     */
+    case POST_START_SYNC_DATA_JOB = "horus.post.start.sync.data.job";
+
+    /**
+     * Route for getting sync data job status.
+     */
+    case GET_SYNC_DATA_JOB_STATUS = "horus.get.sync.data.job.status";
+
 }

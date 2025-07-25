@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
  * to fetch data based on user authentication and query parameters.
  *
  * @package AppTank\Horus\Illuminate\Http\Controller
+ *
+ * @deprecated This class is deprecated and will be removed in future versions. Because its uses is unperformant.
  */
 class GetDataEntitiesController extends Controller
 {
@@ -41,6 +43,7 @@ class GetDataEntitiesController extends Controller
      */
     function __invoke(Request $request): JsonResponse
     {
+
         return $this->handle(function () use ($request) {
             return $this->responseSuccess(
                 $this->useCase->__invoke(

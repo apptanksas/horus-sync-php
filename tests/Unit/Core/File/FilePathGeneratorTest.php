@@ -35,7 +35,7 @@ class FilePathGeneratorTest extends TestCase
         $this->filePathGenerator = new FilePathGenerator($repository, $this->config);
     }
 
-    function testCreate()
+    function testCreatePathEntityReference()
     {
         // Given
         $userOwnerId = $this->faker->uuid;

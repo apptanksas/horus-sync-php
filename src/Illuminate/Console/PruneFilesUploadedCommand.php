@@ -2,12 +2,15 @@
 
 namespace AppTank\Horus\Illuminate\Console;
 
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\SyncJobStatus;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
+use AppTank\Horus\Illuminate\Database\SyncJobModel;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Command\Command as CommandAlias;
 
@@ -59,6 +62,8 @@ class PruneFilesUploadedCommand extends Command
      */
     private EntityMapper $entityMapper;
 
+    private Config $config;
+
     /**
      * Constructor initializes the command and assigns file handler and entity mapper instances.
      */
@@ -67,6 +72,7 @@ class PruneFilesUploadedCommand extends Command
         parent::__construct();
         $this->fileHandler = Horus::getInstance()->getFileHandler();
         $this->entityMapper = Horus::getInstance()->getEntityMapper();
+        $this->config = Horus::getInstance()->getConfig();
     }
 
     /**
@@ -82,6 +88,7 @@ class PruneFilesUploadedCommand extends Command
             $expirationDays = intval($this->argument('expirationDays'));
             $this->deleteFilesPendingExpired($expirationDays);
             $this->deleteFilesReferencedInDataDeleted($expirationDays);
+            $this->deleteFilesSyncExpired();
         } catch (\Exception $e) {
             $this->error($e->getMessage());
             return CommandAlias::FAILURE;
@@ -155,4 +162,37 @@ class PruneFilesUploadedCommand extends Command
             $this->info(sprintf(self::OUTPUT_FORMAT_MESSAGE_DELETED_FILES, $recordsDeleted->count(), $entityClass::getEntityName()));
         }
     }
+
+    /**
+     * Deletes files that are older than one hour and have a status of SUCCESS.
+     * These files are considered expired and are removed from the system.
+     * The status of the sync jobs is updated to COMPLETED after deletion.
+     */
+    private function deleteFilesSyncExpired(): void
+    {
+
+        try {
+            $syncFilesExpired = SyncJobModel::query()->where(SyncJobModel::ATTR_RESULTED_AT, '<', now()->hour(1)->toDateTimeString())
+                ->where(SyncJobModel::ATTR_STATUS, SyncJobStatus::SUCCESS->value())
+                ->where(SyncJobModel::ATTR_RESULTED_AT, '!=', null)
+                ->where(SyncJobModel::ATTR_DOWNLOAD_URL, '!=', null)
+                ->get([SyncJobModel::ATTR_ID, SyncJobModel::ATTR_DOWNLOAD_URL])->toArray();
+
+            $this->info(sprintf('Found %d sync files that are expired.', count($syncFilesExpired)));
+
+            foreach ($syncFilesExpired as $file) {
+                $filename = basename($file[SyncJobModel::ATTR_DOWNLOAD_URL]);
+                $pathFile = $this->config->getPathFilesSync() . "/$filename";
+                $this->fileHandler->delete($pathFile);
+            }
+
+            // Update the status of the sync jobs to indicate that the files have been deleted
+            SyncJobModel::query()->whereIn(SyncJobModel::ATTR_ID, array_column($syncFilesExpired, SyncJobModel::ATTR_ID))
+                ->update([SyncJobModel::ATTR_STATUS => SyncJobStatus::COMPLETED->value()]);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+
 }
