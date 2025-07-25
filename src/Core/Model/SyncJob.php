@@ -33,4 +33,20 @@ readonly class SyncJob
     {
 
     }
+
+    /**
+     * Converts the SyncJob instance to an array representation.
+     *
+     * @return array The array representation of the SyncJob.
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'user_id' => $this->userId,
+            'status' => strtolower($this->status->name),
+            'result_at' => $this->resultAt?->getTimestamp(),
+            'download_url' => $this->downloadUrl,
+        ];
+    }
 }
