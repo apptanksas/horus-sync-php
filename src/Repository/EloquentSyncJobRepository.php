@@ -73,7 +73,7 @@ class EloquentSyncJobRepository implements SyncJobRepository
     {
         return [
             SyncJobModel::ATTR_ID => $syncJob->id,
-            SyncJobModel::ATTR_STATUS => $syncJob->status->value,
+            SyncJobModel::ATTR_STATUS => $syncJob->status->value(),
             SyncJobModel::ATTR_DOWNLOAD_URL => $syncJob->downloadUrl,
             SyncJobModel::ATTR_RESULTED_AT => $syncJob->resultAt,
             SyncJobModel::ATTR_CHECKPOINT => $syncJob->checkpoint,
