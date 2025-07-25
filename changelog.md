@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.2
+- Fix save sync job repository.
+
 ## v0.11.1
 - Fix endpoint start sync to receive the after parameter to filter the entities that are going to be updated.
 

@@ -117,7 +117,7 @@ class EloquentFileUploadedRepository implements FileUploadedRepository
             SyncFileUploadedModel::ATTR_MIME_TYPE => $file->mimeType,
             SyncFileUploadedModel::ATTR_PATH => $file->path,
             SyncFileUploadedModel::ATTR_PUBLIC_URL => $file->publicUrl,
-            SyncFileUploadedModel::ATTR_STATUS => $file->status->value,
+            SyncFileUploadedModel::ATTR_STATUS => $file->status->value(),
             SyncFileUploadedModel::FK_OWNER_ID => $file->ownerId
         ];
     }
