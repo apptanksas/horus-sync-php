@@ -6,6 +6,7 @@ use AppTank\Horus\Client\HorusQueueActionClient;
 use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
+use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -129,6 +130,14 @@ class HorusServiceProvider extends ServiceProvider
             return new HorusQueueActionClient(
                 $this->app->make(ITransactionHandler::class),
                 $this->app->make(QueueActionRepository::class),
+                $this->app->make(EntityRepository::class),
+                Horus::getInstance()->getConfig()
+            );
+        });
+
+
+        $this->app->singleton(FilePathGenerator::class, function () {
+            return new FilePathGenerator(
                 $this->app->make(EntityRepository::class),
                 Horus::getInstance()->getConfig()
             );

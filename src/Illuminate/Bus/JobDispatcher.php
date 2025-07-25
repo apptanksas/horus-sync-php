@@ -24,7 +24,7 @@ class JobDispatcher implements IJobDispatcher
      * @param array $data
      * @return void
      */
-    public function dispatch(JobType $type, array $data): void
+    public function dispatch(JobType $type, ...$data): void
     {
         match ($type) {
             JobType::GENERATE_SYNC_DATA => GenerateDataSyncJob::dispatch(...$data)

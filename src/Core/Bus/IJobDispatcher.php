@@ -22,5 +22,5 @@ interface IJobDispatcher
      *
      * @return void
      */
-    function dispatch(JobType $type, array $data): void;
+    function dispatch(JobType $type, ...$data): void;
 }
