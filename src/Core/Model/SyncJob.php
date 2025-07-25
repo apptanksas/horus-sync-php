@@ -38,6 +38,25 @@ readonly class SyncJob
 
 
     /**
+     * Creates a new SyncJob instance with the same properties but a different status.
+     *
+     * @param SyncJobStatus $status The new status for the SyncJob.
+     * @return SyncJob A new instance of SyncJob with the updated status.
+     */
+    public function cloneWithStatus(SyncJobStatus $status): SyncJob
+    {
+        return new self(
+            $this->id,
+            $this->userId,
+            $status,
+            $this->resultAt,
+            $this->downloadUrl,
+            $this->checkpoint
+        );
+    }
+
+
+    /**
      * Converts the SyncJob instance to an array representation.
      *
      * @return array The array representation of the SyncJob.

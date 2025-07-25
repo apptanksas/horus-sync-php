@@ -12,6 +12,7 @@ use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
+use AppTank\Horus\Core\Repository\IGetDataEntitiesUseCase;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
@@ -24,6 +25,7 @@ use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
 use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
+use AppTank\Horus\Application\Get\GetDataEntities;
 use AppTank\Horus\Repository\DefaultCacheRepository;
 use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
 use AppTank\Horus\Repository\EloquentEntityRepository;
@@ -147,6 +149,12 @@ class HorusServiceProvider extends ServiceProvider
             return new DefaultCacheRepository();
         });
 
+        $this->app->bind(IGetDataEntitiesUseCase::class, function () {
+            return new GetDataEntities(
+                $this->app->make(EntityRepository::class),
+                $this->app->make(EntityAccessValidatorRepository::class)
+            );
+        });
 
     }
 

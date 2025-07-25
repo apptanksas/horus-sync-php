@@ -12,7 +12,8 @@ class SyncJobModelFactory
         ?SyncJobStatus $status = null,
         ?string $downloadUrl = null,
         ?\DateTimeInterface $resultedAt = null,
-        ?\DateTimeInterface $createdAt = null
+        ?\DateTimeInterface $createdAt = null,
+        ?int $checkpoint = null
     ): SyncJobModel
     {
         $faker = \Faker\Factory::create();
@@ -22,7 +23,8 @@ class SyncJobModelFactory
             SyncJobModel::FK_USER_ID => $userId ?? $faker->uuid,
             SyncJobModel::ATTR_STATUS => $status ? $status->value : SyncJobStatus::PENDING->value,
             SyncJobModel::ATTR_DOWNLOAD_URL => $downloadUrl ?? $faker->optional()->url,
-            SyncJobModel::ATTR_RESULTED_AT => $resultedAt ? $resultedAt->format('Y-m-d H:i:s') : null
+            SyncJobModel::ATTR_RESULTED_AT => $resultedAt ? $resultedAt->format('Y-m-d H:i:s') : null,
+            SyncJobModel::ATTR_CHECKPOINT => $checkpoint
         ];
 
         if ($createdAt) {
