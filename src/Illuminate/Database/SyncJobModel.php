@@ -69,7 +69,9 @@ final class SyncJobModel extends Model
     {
         $data = parent::toArray();
 
-        $data[self::ATTR_RESULTED_AT] = Carbon::parse($data[self::ATTR_RESULTED_AT], "UTC")->timestamp;
+        if (isset($data[self::ATTR_RESULTED_AT])) {
+            $data[self::ATTR_RESULTED_AT] = Carbon::parse($data[self::ATTR_RESULTED_AT], "UTC")->timestamp;
+        }
 
         return $data;
     }

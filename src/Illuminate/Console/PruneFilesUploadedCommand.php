@@ -171,22 +171,27 @@ class PruneFilesUploadedCommand extends Command
     private function deleteFilesSyncExpired(): void
     {
 
-        $syncFilesExpired = SyncJobModel::query()->where(SyncJobModel::ATTR_RESULTED_AT, '<', now()->hour(1)->toDateTimeString())
-            ->where(SyncJobModel::ATTR_STATUS, SyncJobStatus::SUCCESS->value())
-            ->where(SyncJobModel::ATTR_DOWNLOAD_URL, '!=', null)
-            ->get([SyncJobModel::ATTR_ID, SyncJobModel::ATTR_DOWNLOAD_URL])->toArray();
+        try {
+            $syncFilesExpired = SyncJobModel::query()->where(SyncJobModel::ATTR_RESULTED_AT, '<', now()->minutes(10)->toDateTimeString())
+                ->where(SyncJobModel::ATTR_STATUS, SyncJobStatus::SUCCESS->value())
+                ->where(SyncJobModel::ATTR_RESULTED_AT, '!=', null)
+                ->where(SyncJobModel::ATTR_DOWNLOAD_URL, '!=', null)
+                ->get([SyncJobModel::ATTR_ID, SyncJobModel::ATTR_DOWNLOAD_URL])->toArray();
 
-        foreach ($syncFilesExpired as $file) {
-            $id = $file[SyncJobModel::ATTR_ID];
-            $filename = basename($file[SyncJobModel::ATTR_DOWNLOAD_URL]);
-            $pathFile = $this->config->getPathFilesSync() . "/{$id}.json";
-            $this->fileHandler->delete($pathFile);
+            $this->info(sprintf('Found %d sync files that are expired.', count($syncFilesExpired)));
+
+            foreach ($syncFilesExpired as $file) {
+                $filename = basename($file[SyncJobModel::ATTR_DOWNLOAD_URL]);
+                $pathFile = $this->config->getPathFilesSync() . "/$filename";
+                $this->fileHandler->delete($pathFile);
+            }
+
+            // Update the status of the sync jobs to indicate that the files have been deleted
+            SyncJobModel::query()->whereIn(SyncJobModel::ATTR_ID, array_column($syncFilesExpired, SyncJobModel::ATTR_ID))
+                ->update([SyncJobModel::ATTR_STATUS => SyncJobStatus::COMPLETED->value()]);
+        } catch (\Throwable $exception) {
+            report($exception);
         }
-
-        // Update the status of the sync jobs to indicate that the files have been deleted
-        SyncJobModel::query()->whereIn(SyncJobModel::ATTR_ID, array_column($syncFilesExpired, SyncJobModel::ATTR_ID))
-            ->where(SyncJobModel::ATTR_STATUS, SyncJobStatus::SUCCESS->value())
-            ->update([SyncJobModel::ATTR_STATUS => SyncJobStatus::COMPLETED->value()]);
     }
 
 
