@@ -36,18 +36,20 @@ class StartGenerateSyncDataJobTest extends TestCase
         // Given
         $userId = $this->faker->uuid;
         $syncId = $this->faker->uuid;
+        $timestamp = $this->faker->dateTimeThisYear->getTimestamp();
         $userAuth = new UserAuth($userId);
 
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
+            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId, $timestamp) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
                     $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
                     $syncJob->status === SyncJobStatus::PENDING &&
                     $syncJob->resultAt === null &&
-                    $syncJob->downloadUrl === null;
+                    $syncJob->downloadUrl === null &&
+                    $syncJob->checkpoint === $timestamp;
             });
 
         $this->syncJobRepository->shouldReceive('save')
@@ -61,7 +63,7 @@ class StartGenerateSyncDataJobTest extends TestCase
             });
 
         // When
-        $this->startGenerateSyncDataJob->__invoke($userAuth, $syncId);
+        $this->startGenerateSyncDataJob->__invoke($userAuth, $syncId, $timestamp);
     }
 
     public function testInvokeWithDifferentUserIds()

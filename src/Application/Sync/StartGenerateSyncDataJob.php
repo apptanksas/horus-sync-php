@@ -31,9 +31,9 @@ readonly class StartGenerateSyncDataJob
      * @param string $syncId The ID of the sync job to be started.
      * @return void
      */
-    function __invoke(UserAuth $userAuth, string $syncId): void
+    function __invoke(UserAuth $userAuth, string $syncId, int|null $checkpoint = null): void
     {
-        $syncJob = new SyncJob($syncId, $userAuth->userId);
+        $syncJob = new SyncJob($syncId, $userAuth->userId, checkpoint: $checkpoint);
 
         $this->jobDispatcher->dispatch(JobType::GENERATE_SYNC_DATA, $userAuth, $syncJob);
         $this->syncJobRepository->save($syncJob);

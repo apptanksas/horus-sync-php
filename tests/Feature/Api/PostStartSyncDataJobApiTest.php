@@ -24,6 +24,7 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
 
     private const array JSON_SCHEME = [
         'sync_id',
+        'after'
     ];
 
     function setUp(): void
@@ -42,6 +43,7 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->uuid;
         $syncId = $this->faker->uuid;
+        $after = $this->faker->dateTimeThisYear->getTimestamp();
         $userAuth = new UserAuth($userId);
 
         Horus::getInstance()->setUserAuthenticated($userAuth)->setConfig(new Config(true));
@@ -70,14 +72,16 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
 
         // When
         $response = $this->postJson(route(RouteName::POST_START_SYNC_DATA_JOB->value), [
-            "sync_id" => $syncId
+            "sync_id" => $syncId,
+            "after" => $after
         ]);
 
         // Then
         $response->assertAccepted();
         $response->assertJsonStructure(self::JSON_SCHEME);
         $response->assertJson([
-            'sync_id' => $syncId
+            'sync_id' => $syncId,
+            'after' => $after
         ]);
     }
 
