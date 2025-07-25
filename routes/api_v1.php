@@ -6,6 +6,7 @@ use AppTank\Horus\Illuminate\Http\Controller\Data\GetMigrationSchemaController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetQueueLastActionController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\GetSharedEntitiesController;
+use AppTank\Horus\Illuminate\Http\Controller\Data\PostStartSyncDataJobController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\PostSyncQueueActionsController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\SearchEntitiesController;
 use AppTank\Horus\Illuminate\Http\Controller\Data\ValidateEntitiesDataController;
@@ -123,5 +124,12 @@ Route::post("upload/files", [
 Route::get("shared", [
     'uses' => GetSharedEntitiesController::class,
     'as' => RouteName::GET_DATA_SHARED->value,
+    'middleware' => $middlewares
+]);
+
+// Route to start sync data job
+Route::post("sync/start", [
+    'uses' => PostStartSyncDataJobController::class,
+    'as' => RouteName::POST_START_SYNC_DATA_JOB->value,
     'middleware' => $middlewares
 ]);

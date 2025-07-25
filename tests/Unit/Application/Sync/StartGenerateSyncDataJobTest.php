@@ -35,15 +35,15 @@ class StartGenerateSyncDataJobTest extends TestCase
     {
         // Given
         $userId = $this->faker->uuid;
-        $jobId = $this->faker->uuid;
+        $syncId = $this->faker->uuid;
         $userAuth = new UserAuth($userId);
 
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($jobId, $userId) {
+            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
-                    $syncJob->id === $jobId &&
+                    $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
                     $syncJob->status === SyncJobStatus::PENDING &&
                     $syncJob->resultAt === null &&
@@ -52,8 +52,8 @@ class StartGenerateSyncDataJobTest extends TestCase
 
         $this->syncJobRepository->shouldReceive('save')
             ->once()
-            ->withArgs(function (SyncJob $syncJob) use ($jobId, $userId) {
-                return $syncJob->id === $jobId &&
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
                     $syncJob->status === SyncJobStatus::PENDING &&
                     $syncJob->resultAt === null &&
@@ -61,36 +61,36 @@ class StartGenerateSyncDataJobTest extends TestCase
             });
 
         // When
-        $this->startGenerateSyncDataJob->__invoke($userAuth, $jobId);
+        $this->startGenerateSyncDataJob->__invoke($userAuth, $syncId);
     }
 
     public function testInvokeWithDifferentUserIds()
     {
         // Given
         $userId = $this->faker->numberBetween(1, 1000); // Test with integer userId
-        $jobId = $this->faker->uuid;
+        $syncId = $this->faker->uuid;
         $userAuth = new UserAuth($userId);
 
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($jobId, $userId) {
+            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
-                    $syncJob->id === $jobId &&
+                    $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
                     $syncJob->status === SyncJobStatus::PENDING;
             });
 
         $this->syncJobRepository->shouldReceive('save')
             ->once()
-            ->withArgs(function (SyncJob $syncJob) use ($jobId, $userId) {
-                return $syncJob->id === $jobId &&
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
                     $syncJob->status === SyncJobStatus::PENDING;
             });
 
         // When
-        $this->startGenerateSyncDataJob->__invoke($userAuth, $jobId);
+        $this->startGenerateSyncDataJob->__invoke($userAuth, $syncId);
 
         // Then - Assertions are handled by the mock expectations
     }
