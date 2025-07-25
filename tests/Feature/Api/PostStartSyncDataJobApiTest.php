@@ -32,7 +32,7 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
 
         $this->jobDispatcher = $this->mock(IJobDispatcher::class);
         $this->syncJobRepository = $this->mock(SyncJobRepository::class);
-        
+
         $this->app->bind(IJobDispatcher::class, fn() => $this->jobDispatcher);
         $this->app->bind(SyncJobRepository::class, fn() => $this->syncJobRepository);
     }
@@ -42,13 +42,14 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->uuid;
         $syncId = $this->faker->uuid;
+        $userAuth = new UserAuth($userId);
 
-        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
+        Horus::getInstance()->setUserAuthenticated($userAuth)->setConfig(new Config(true));
 
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
+            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
                     $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
@@ -85,13 +86,14 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         // Given
         $userId = $this->faker->numberBetween(1, 1000);
         $syncId = $this->faker->uuid;
+        $userAuth = new UserAuth($userId);
 
-        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId))->setConfig(new Config(true));
+        Horus::getInstance()->setUserAuthenticated($userAuth)->setConfig(new Config(true));
 
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
+            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
                     $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&

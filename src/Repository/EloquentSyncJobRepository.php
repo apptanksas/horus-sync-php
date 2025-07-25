@@ -58,7 +58,8 @@ class EloquentSyncJobRepository implements SyncJobRepository
             $item->getUserId(),
             $item->getStatus(),
             $item->getResultAt(),
-            $item->getDownloadUrl()
+            $item->getDownloadUrl(),
+            $item->getCheckpoint()
         );
     }
 
@@ -75,7 +76,8 @@ class EloquentSyncJobRepository implements SyncJobRepository
             SyncJobModel::ATTR_STATUS => $syncJob->status->value,
             SyncJobModel::ATTR_DOWNLOAD_URL => $syncJob->downloadUrl,
             SyncJobModel::ATTR_RESULTED_AT => $syncJob->resultAt,
-            SyncJobModel::FK_USER_ID => $syncJob->userId
+            SyncJobModel::ATTR_CHECKPOINT => $syncJob->checkpoint,
+            SyncJobModel::FK_USER_ID => $syncJob->userId,
         ];
     }
 

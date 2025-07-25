@@ -35,7 +35,7 @@ readonly class StartGenerateSyncDataJob
     {
         $syncJob = new SyncJob($syncId, $userAuth->userId);
 
-        $this->jobDispatcher->dispatch(JobType::GENERATE_SYNC_DATA, $syncJob);
+        $this->jobDispatcher->dispatch(JobType::GENERATE_SYNC_DATA, $userAuth, $syncJob);
         $this->syncJobRepository->save($syncJob);
     }
 }

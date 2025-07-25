@@ -19,6 +19,19 @@ interface IFileHandler
      */
     function upload(string|int $userOwnerId, string $fileId, string $path, UploadedFile $file): FileUploaded;
 
+
+    /**
+     * Creates a temporary file for download.
+     *
+     * @param string $pathFile The path to the file.
+     * @param string $content The content of the file.
+     * @param string $contentType The MIME type of the content.
+     * @param int $expiresInSeconds The number of seconds until the file expires (default is 3600 seconds).
+     *
+     * @return string Return the url of the temporary file.
+     */
+    function createDownloadableTemporaryFile(string $pathFile, string $content, string $contentType, int $expiresInSeconds = 3600): string;
+
     /**
      * Deletes a file.
      *

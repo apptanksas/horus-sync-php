@@ -47,21 +47,7 @@ class FilePathGeneratorTest extends TestCase
         $pathExpected = $this->config->basePathFiles . "/{$userOwnerId}/{$parentEntity->entityName}/{$parentEntity->getId()}/{$childEntity->entityName}/{$childEntity->getId()}/";
 
         // When
-        $path = $this->filePathGenerator->createPathEntityReference(new UserAuth($userOwnerId), $entityReference);
-
-        // Then
-        $this->assertEquals($pathExpected, $path);
-    }
-
-    function testCreateCustomPath()
-    {
-        // Given
-        $path = $this->faker->filePath();
-
-        $pathExpected = $this->config->basePathFiles . '/' . $path."/";
-
-        // When
-        $path = $this->filePathGenerator->createCustomPath($path);
+        $path = $this->filePathGenerator->create(new UserAuth($userOwnerId), $entityReference);
 
         // Then
         $this->assertEquals($pathExpected, $path);

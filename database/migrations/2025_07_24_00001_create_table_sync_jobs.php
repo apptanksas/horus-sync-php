@@ -23,6 +23,7 @@ return new class extends Migration {
         $callbackCreateTable = function (Blueprint $table) use ($container) {
             $table->uuid(SyncJobModel::ATTR_ID)->primary();
             $table->enum(SyncJobModel::ATTR_STATUS, SyncJobStatus::getValues());
+            $table->string(SyncJobModel::ATTR_CHECKPOINT)->nullable();
             $table->string(SyncJobModel::ATTR_DOWNLOAD_URL, 1000)->nullable();
             $table->timestamp(SyncJobModel::ATTR_RESULTED_AT)->nullable();
 

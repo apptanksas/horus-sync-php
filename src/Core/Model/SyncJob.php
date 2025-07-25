@@ -22,6 +22,7 @@ readonly class SyncJob
      * @param SyncJobStatus $status
      * @param \DateTimeImmutable|null $resultAt
      * @param string|null $downloadUrl
+     * @param int|null $checkpoint
      */
     public function __construct(
         public string              $id,
@@ -29,10 +30,12 @@ readonly class SyncJob
         public SyncJobStatus       $status = SyncJobStatus::PENDING,
         public ?\DateTimeImmutable $resultAt = null,
         public ?string             $downloadUrl = null,
+        public int|null            $checkpoint = null,
     )
     {
 
     }
+
 
     /**
      * Converts the SyncJob instance to an array representation.
@@ -47,6 +50,7 @@ readonly class SyncJob
             'status' => strtolower($this->status->name),
             'result_at' => $this->resultAt?->getTimestamp(),
             'download_url' => $this->downloadUrl,
+            'checkpoint' => $this->checkpoint,
         ];
     }
 }

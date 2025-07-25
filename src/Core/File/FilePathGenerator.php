@@ -41,8 +41,8 @@ readonly class FilePathGenerator
      *
      * @return string The path for the file upload.
      */
-    function createPathEntityReference(UserAuth        $userAuth,
-                                       EntityReference $entityReference): string
+    function create(UserAuth        $userAuth,
+                    EntityReference $entityReference): string
     {
 
         $path = "{$this->config->basePathFiles}/{$userAuth->getEffectiveUserId()}/";
@@ -55,9 +55,4 @@ readonly class FilePathGenerator
         return $path;
     }
 
-
-    function createCustomPath(string $path): string
-    {
-        return "{$this->config->basePathFiles}/{$path}/";
-    }
 }

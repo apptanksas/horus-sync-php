@@ -25,7 +25,7 @@ final class SyncJobModel extends Model
     const string ATTR_ID = 'id'; // Primary key of the job
     const string ATTR_STATUS = 'status'; // Status of the job (e.g., pending, completed, failed)
     const string ATTR_DOWNLOAD_URL = 'download_url'; // URL to download the file associated with the job
-
+    const string ATTR_CHECKPOINT = 'checkpoint'; //  Checkpoint for the job, used to filter results after a certain timestamp
     const string ATTR_RESULTED_AT = 'resulted_at'; // Timestamp when the job was processed
 
     const string FK_USER_ID = "user_id"; // User Identifier
@@ -41,6 +41,7 @@ final class SyncJobModel extends Model
         self::ATTR_ID,
         self::ATTR_STATUS,
         self::ATTR_DOWNLOAD_URL,
+        self::ATTR_CHECKPOINT,
         self::ATTR_RESULTED_AT,
         self::FK_USER_ID
     ];
@@ -127,6 +128,16 @@ final class SyncJobModel extends Model
         }
 
         return \DateTimeImmutable::createFromMutable((new DateTimeUtil())->parseDatetime($this->getAttribute(self::ATTR_RESULTED_AT)));
+    }
+
+    /**
+     * Get the checkpoint in timestamp.
+     *
+     * @return int|null The parameter value, or null if not set.
+     */
+    public function getCheckpoint(): ?int
+    {
+        return $this->getAttribute(self::ATTR_CHECKPOINT);
     }
 
 

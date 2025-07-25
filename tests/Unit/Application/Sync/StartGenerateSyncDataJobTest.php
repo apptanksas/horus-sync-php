@@ -41,7 +41,7 @@ class StartGenerateSyncDataJobTest extends TestCase
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
+            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
                     $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
@@ -74,7 +74,7 @@ class StartGenerateSyncDataJobTest extends TestCase
         // Mocks
         $this->jobDispatcher->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function (JobType $type, SyncJob $syncJob) use ($syncId, $userId) {
+            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
                 return $type === JobType::GENERATE_SYNC_DATA &&
                     $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&

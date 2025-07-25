@@ -8,11 +8,12 @@ use AppTank\Horus\Core\SyncJobStatus;
 class SyncJobFactory
 {
     public static function create(
-        ?string $id = null, 
-        ?string $userId = null, 
-        ?SyncJobStatus $status = null,
+        ?string             $id = null,
+        ?string             $userId = null,
+        ?SyncJobStatus      $status = null,
         ?\DateTimeImmutable $resultAt = null,
-        ?string $downloadUrl = null
+        ?string             $downloadUrl = null,
+        ?int                $checkpoint = null
     ): SyncJob
     {
         $faker = \Faker\Factory::create();
@@ -22,7 +23,8 @@ class SyncJobFactory
             $userId ?? $faker->uuid,
             $status ?? SyncJobStatus::PENDING,
             $resultAt,
-            $downloadUrl ?? $faker->optional()->url
+            $downloadUrl ?? $faker->optional()->url,
+            $checkpoint ?? $faker->dateTime()->getTimestamp(),
         );
     }
 } 

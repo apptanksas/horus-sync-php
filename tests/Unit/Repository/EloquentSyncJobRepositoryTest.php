@@ -36,6 +36,7 @@ class EloquentSyncJobRepositoryTest extends TestCase
             SyncJobModel::FK_USER_ID => $syncJob->userId,
             SyncJobModel::ATTR_STATUS => $syncJob->status->value,
             SyncJobModel::ATTR_DOWNLOAD_URL => $syncJob->downloadUrl,
+            SyncJobModel::ATTR_CHECKPOINT => $syncJob->checkpoint,
         ]);
     }
 
@@ -54,6 +55,7 @@ class EloquentSyncJobRepositoryTest extends TestCase
             SyncJobModel::FK_USER_ID => $syncJob->userId,
             SyncJobModel::ATTR_STATUS => $syncJob->status->value,
             SyncJobModel::ATTR_DOWNLOAD_URL => $syncJob->downloadUrl,
+            SyncJobModel::ATTR_CHECKPOINT => $syncJob->checkpoint,
         ]);
         $this->assertDatabaseCount(SyncJobModel::TABLE_NAME, 1);
     }
@@ -72,6 +74,7 @@ class EloquentSyncJobRepositoryTest extends TestCase
         $this->assertEquals($syncJob->userId, $result->userId);
         $this->assertEquals($syncJob->status, $result->status);
         $this->assertEquals($syncJob->downloadUrl, $result->downloadUrl);
+        $this->assertEquals($syncJob->checkpoint, $result->checkpoint);
     }
 
     public function testSearchIsNull()

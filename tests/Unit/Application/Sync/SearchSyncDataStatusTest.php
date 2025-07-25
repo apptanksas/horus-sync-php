@@ -47,6 +47,7 @@ class SearchSyncDataStatusTest extends TestCase
             'status' => strtolower($syncJob->status->name),
             'result_at' => $syncJob->resultAt?->getTimestamp(),
             'download_url' => $syncJob->downloadUrl,
+            'checkpoint' => $syncJob->checkpoint,
         ];
 
         $this->assertEquals($expectedArray, $result);
@@ -75,6 +76,7 @@ class SearchSyncDataStatusTest extends TestCase
             'status' => strtolower($syncJob->status->name),
             'result_at' => $syncJob->resultAt?->getTimestamp(),
             'download_url' => $syncJob->downloadUrl,
+            'checkpoint' => $syncJob->checkpoint,
         ];
 
         $this->assertEquals($expectedArray, $result);
