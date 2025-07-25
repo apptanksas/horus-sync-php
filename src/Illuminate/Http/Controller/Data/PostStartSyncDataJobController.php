@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 /**
  * @internal Class PostStartSyncDataJobController
  *
- * This controller handles HTTP requests to start a sync data generation job. It uses the `StartGenerateSyncDataJob` 
+ * This controller handles HTTP requests to start a sync data generation job. It uses the `StartGenerateSyncDataJob`
  * use case to initiate the job and save it to the repository.
  *
  * @package AppTank\Horus\Illuminate\Http\Controller\Data
@@ -28,7 +28,7 @@ class PostStartSyncDataJobController extends Controller
      * Constructor for PostStartSyncDataJobController.
      *
      * @param SyncJobRepository $syncJobRepository Repository for sync job operations.
-     * @param IJobDispatcher    $jobDispatcher Job dispatcher for handling background jobs.
+     * @param IJobDispatcher $jobDispatcher Job dispatcher for handling background jobs.
      */
     function __construct(
         SyncJobRepository $syncJobRepository,
@@ -49,6 +49,7 @@ class PostStartSyncDataJobController extends Controller
         return $this->handle(function () use ($request) {
 
             $syncId = $request->input('sync_id');
+            $after = $request->input('after');
 
             if (!$syncId) {
                 return $this->responseBadRequest('No sync ID was provided');
@@ -60,11 +61,13 @@ class PostStartSyncDataJobController extends Controller
 
             $this->useCase->__invoke(
                 $this->getUserAuthenticated(),
-                $syncId
+                $syncId,
+                $after
             );
 
             return $this->responseAccepted([
-                'sync_id' => $syncId
+                'sync_id' => $syncId,
+                'after' => $after
             ]);
         });
     }

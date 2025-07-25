@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.1
+- Fix endpoint start sync to receive the after parameter to filter the entities that are going to be updated.
+
 ## v0.11.0
 - Added endpoint to start sync and generate sync data to download.
 - Deprecated endpoint to get entities data.
