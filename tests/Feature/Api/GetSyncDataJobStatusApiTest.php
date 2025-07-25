@@ -51,7 +51,7 @@ class GetSyncDataJobStatusApiTest extends ApiTestCase
         $syncJob = SyncJobFactory::create(
             id: $syncId,
             userId: $userId,
-            status: SyncJobStatus::COMPLETED,
+            status: SyncJobStatus::SUCCESS,
             resultAt: $resultAt,
             downloadUrl: $downloadUrl,
             checkpoint: $checkpoint
@@ -75,7 +75,7 @@ class GetSyncDataJobStatusApiTest extends ApiTestCase
         $response->assertJson([
             'id' => $syncId,
             'user_id' => $userId,
-            'status' => strtolower(SyncJobStatus::COMPLETED->name),
+            'status' => strtolower(SyncJobStatus::SUCCESS->name),
             'result_at' => $resultAt->getTimestamp(),
             'download_url' => $downloadUrl,
             'checkpoint' => $checkpoint
@@ -267,7 +267,7 @@ class GetSyncDataJobStatusApiTest extends ApiTestCase
         $syncJob = SyncJobFactory::create(
             id: $syncId,
             userId: (string)$userId,
-            status: SyncJobStatus::COMPLETED
+            status: SyncJobStatus::SUCCESS
         );
 
         Horus::getInstance()
@@ -288,7 +288,7 @@ class GetSyncDataJobStatusApiTest extends ApiTestCase
         $response->assertJson([
             'id' => $syncId,
             'user_id' => (string)$userId,
-            'status' => strtolower(SyncJobStatus::COMPLETED->name)
+            'status' => strtolower(SyncJobStatus::SUCCESS->name)
         ]);
     }
 } 

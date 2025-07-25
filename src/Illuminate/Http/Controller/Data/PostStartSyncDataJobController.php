@@ -63,7 +63,7 @@ class PostStartSyncDataJobController extends Controller
                 $syncId
             );
 
-            return $this->responseSuccess([
+            return $this->responseAccepted([
                 'sync_id' => $syncId
             ]);
         });

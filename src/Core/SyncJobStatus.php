@@ -26,10 +26,15 @@ enum SyncJobStatus: int
     /**
      * The job has completed successfully.
      */
-    case COMPLETED = 2;
+    case SUCCESS = 2;
 
     /**
      * The job has failed.
      */
     case FAILED = 3;
+
+    /**
+     * The job has been completed and the file has been deleted.
+     */
+    case COMPLETED = 4;
 }

@@ -74,7 +74,7 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         ]);
 
         // Then
-        $response->assertOk();
+        $response->assertAccepted();
         $response->assertJsonStructure(self::JSON_SCHEME);
         $response->assertJson([
             'sync_id' => $syncId
@@ -114,7 +114,7 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         ]);
 
         // Then
-        $response->assertOk();
+        $response->assertAccepted();
         $response->assertJsonStructure(self::JSON_SCHEME);
         $response->assertJson([
             'sync_id' => $syncId

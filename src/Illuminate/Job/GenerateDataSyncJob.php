@@ -58,7 +58,7 @@ class GenerateDataSyncJob implements ShouldQueue
             $jobCompleted = new SyncJob(
                 $this->syncJob->id,
                 $this->syncJob->userId,
-                SyncJobStatus::COMPLETED,
+                SyncJobStatus::SUCCESS,
                 resultAt: now()->toImmutable(),
                 downloadUrl: $fileUrl,
                 checkpoint: $this->syncJob->checkpoint

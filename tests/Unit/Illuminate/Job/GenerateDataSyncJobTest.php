@@ -60,7 +60,7 @@ class GenerateDataSyncJobTest extends TestCase
             ->once()
             ->withArgs(function ($syncJob) use ($userAuth) {
                 return $syncJob->userId === $userAuth->getEffectiveUserId() &&
-                    $syncJob->status === SyncJobStatus::COMPLETED &&
+                    $syncJob->status === SyncJobStatus::SUCCESS &&
                     $syncJob->resultAt != null && filter_var($syncJob->downloadUrl, FILTER_VALIDATE_URL);
             });
 
