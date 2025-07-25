@@ -172,7 +172,7 @@ class PruneFilesUploadedCommand extends Command
     {
 
         try {
-            $syncFilesExpired = SyncJobModel::query()->where(SyncJobModel::ATTR_RESULTED_AT, '<', now()->minutes(10)->toDateTimeString())
+            $syncFilesExpired = SyncJobModel::query()->where(SyncJobModel::ATTR_RESULTED_AT, '<', now()->hour(1)->toDateTimeString())
                 ->where(SyncJobModel::ATTR_STATUS, SyncJobStatus::SUCCESS->value())
                 ->where(SyncJobModel::ATTR_RESULTED_AT, '!=', null)
                 ->where(SyncJobModel::ATTR_DOWNLOAD_URL, '!=', null)
