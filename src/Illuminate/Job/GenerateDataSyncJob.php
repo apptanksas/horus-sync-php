@@ -31,39 +31,42 @@ class GenerateDataSyncJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     function __construct(
-        private readonly IGetDataEntitiesUseCase $getDataEntitiesUseCase,
-        private readonly SyncJobRepository       $syncJobRepository,
-        private readonly IFileHandler            $fileHandler,
-        private readonly Config                  $config
+        private readonly UserAuth $userAuth,
+        private readonly SyncJob  $syncJob
     )
     {
     }
 
-    public function handle(UserAuth $userAuth, SyncJob $job): void
+    public function handle(
+        IGetDataEntitiesUseCase $getDataEntitiesUseCase,
+        SyncJobRepository       $syncJobRepository,
+        IFileHandler            $fileHandler,
+        Config                  $config
+    ): void
     {
         // Update the job status to IN_PROGRESS
-        $jobInProgress = $job->cloneWithStatus(SyncJobStatus::IN_PROGRESS);
-        $this->syncJobRepository->save($jobInProgress);
+        $jobInProgress = $this->syncJob->cloneWithStatus(SyncJobStatus::IN_PROGRESS);
+        $syncJobRepository->save($jobInProgress);
 
         try {
             // Get the data entities using the repository
-            $data = json_encode($this->getDataEntitiesUseCase->__invoke($userAuth, $job->checkpoint));
-            $pathFile = $this->config->getPathFilesSync() . "/{$job->id}.json";
-            $fileUrl = $this->fileHandler->createDownloadableTemporaryFile($pathFile, $data, "application/json");
+            $data = json_encode($getDataEntitiesUseCase->__invoke($this->userAuth, $this->syncJob->checkpoint));
+            $pathFile = $config->getPathFilesSync() . "/{$this->syncJob->id}.json";
+            $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $data, "application/json");
 
             // Update the job with the download URL and result timestamp
             $jobCompleted = new SyncJob(
-                $job->id,
-                $job->userId,
+                $this->syncJob->id,
+                $this->syncJob->userId,
                 SyncJobStatus::COMPLETED,
                 resultAt: now()->toImmutable(),
                 downloadUrl: $fileUrl,
-                checkpoint: $job->checkpoint
+                checkpoint: $this->syncJob->checkpoint
             );
-            $this->syncJobRepository->save($jobCompleted);
+            $syncJobRepository->save($jobCompleted);
         } catch (\Throwable $e) {
             report($e);
-            $this->syncJobRepository->save($job->cloneWithStatus(SyncJobStatus::FAILED));
+            $syncJobRepository->save($this->syncJob->cloneWithStatus(SyncJobStatus::FAILED));
         }
 
     }

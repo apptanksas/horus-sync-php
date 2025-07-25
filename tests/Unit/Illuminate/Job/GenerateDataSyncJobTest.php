@@ -29,13 +29,6 @@ class GenerateDataSyncJobTest extends TestCase
         $this->syncJobRepository = $this->mock(SyncJobRepository::class);
         $this->fileHandler = $this->mock(IFileHandler::class);
         $this->config = $this->mock(Config::class);
-
-        $this->generateDataSyncJob = new GenerateDataSyncJob(
-            $this->getDataEntitiesUseCase,
-            $this->syncJobRepository,
-            $this->fileHandler,
-            $this->config
-        );
     }
 
     public function testGenerateDataIsSuccess()
@@ -72,7 +65,15 @@ class GenerateDataSyncJobTest extends TestCase
             });
 
         // When
-        $this->generateDataSyncJob->handle($userAuth, $syncJob);
+        $this->generateDataSyncJob = new GenerateDataSyncJob(
+            $userAuth,
+            $syncJob,
+        );
+        $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
+            $this->syncJobRepository,
+            $this->fileHandler,
+            $this->config
+        );
     }
 
     public function testGenerateDataWithException()
@@ -102,8 +103,15 @@ class GenerateDataSyncJobTest extends TestCase
             });
 
         // When
-        $this->generateDataSyncJob->handle($userAuth, $syncJob);
+        $this->generateDataSyncJob = new GenerateDataSyncJob(
+            $userAuth,
+            $syncJob,
+        );
+        $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
+            $this->syncJobRepository,
+            $this->fileHandler,
+            $this->config
+        );
     }
-
 
 } 
