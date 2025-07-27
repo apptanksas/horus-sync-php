@@ -37,7 +37,6 @@ class EntityData
      */
     function setEntitiesRelatedOneOfMany(string $relationName, array $relatedEntities): void
     {
-        unset($this->data[$relationName]);
         $this->data["_$relationName"] = $relatedEntities;
     }
 
@@ -51,7 +50,6 @@ class EntityData
      */
     function setEntitiesRelatedOneToOne(string $relationName, EntityData $relatedEntity): void
     {
-        unset($this->data[$relationName]);
         $this->data["_$relationName"] = $relatedEntity;
     }
 
