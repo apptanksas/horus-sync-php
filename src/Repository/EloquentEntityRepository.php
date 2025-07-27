@@ -572,7 +572,7 @@ class EloquentEntityRepository implements EntityRepository
             $result = $entityClass::withTrashed()->whereIn(EntitySynchronizable::ATTR_ID, $ids)->get();
 
             foreach ($result as $entityResult) {
-                $output[] = new EntityData($entityResult->getEntityName(), $this->prepareData($entityResult->toArray()));
+                $output[] = new EntityData($entityResult->getEntityName(), $this->prepareData($entityResult->getEntityName(), $entityResult->toArray()));
             }
         }
 
@@ -702,7 +702,7 @@ class EloquentEntityRepository implements EntityRepository
      */
     private function buildEntityData(IEntitySynchronizable $parentEntity): EntityData
     {
-        $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->toArray()));
+        $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->getEntityName(), $parentEntity->toArray()));
 
         $relationsOneOfMany = $parentEntity->getRelationsOneOfMany();
 
@@ -765,17 +765,25 @@ class EloquentEntityRepository implements EntityRepository
      * Prepares the data from a model by converting datetime fields to timestamps
      * and filtering out null attributes.
      *
+     * @param string $entity The name of the entity to prepare data for.
      * @param array $modelData The model data to prepare.
      * @return array The prepared data with datetime fields converted to timestamps and null attributes removed.
      */
-    private function prepareData(array $modelData): array
+    private function prepareData(string $entity, array $modelData): array
     {
+        $relations = $this->getEagerLoadRelations($this->entityMapper->getEntityClass($entity));
         $output = $modelData;
 
         if (isset($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))
             $output[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
         if (isset($modelData[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT]))
             $output[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT]))->timestamp;
+
+        foreach ($relations as $relation) {
+            unset($output[$relation]);
+            // snake case form
+            unset($output[strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $relation))]);
+        }
 
         // Filter attributes null
         return array_filter($output, fn($item) => !is_null($item));
