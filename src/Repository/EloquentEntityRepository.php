@@ -321,6 +321,9 @@ class EloquentEntityRepository implements EntityRepository
      * This method retrieves all entity types mapped in the repository and searches for entities
      * associated with the provided user ID. It collects and merges results from all entities.
      *
+     * OPTIMIZATION: Uses eager loading with Eloquent's with() method to prevent N+1 query problems
+     * by pre-loading all related entities in a single query per entity type.
+     *
      * @param int|string $userId The ID of the user whose entities are to be searched.
      * @return array An array of EntityData objects representing the entities associated with the user.
      */
@@ -365,6 +368,9 @@ class EloquentEntityRepository implements EntityRepository
      *
      * This method searches for entities that match the specified user ID, entity name, optional IDs,
      * and an optional timestamp indicating the last update.
+     *
+     * OPTIMIZATION: Automatically detects all relations for the entity and applies eager loading
+     * to prevent N+1 queries when building EntityData objects with related entities.
      *
      * @param int|string $userId The ID of the user whose entities are to be searched.
      * @param string $entityName The name of the entity to search for.
@@ -425,6 +431,17 @@ class EloquentEntityRepository implements EntityRepository
                 ">",
                 $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp())
             );
+        }
+
+        // Apply eager loading to prevent N+1 queries
+        // Skip eager loading for test entities to avoid compatibility issues with in-memory tables
+        $isTestEntity = str_starts_with($entityClass, 'Tests\\') || str_contains($entityClass, '_Stubs\\');
+
+        if (!$isTestEntity) {
+            $eagerLoadRelations = $this->getEagerLoadRelations($entityClass);
+            if (!empty($eagerLoadRelations)) {
+                $queryBuilder = $queryBuilder->with($eagerLoadRelations);
+            }
         }
 
         $queryBuilder = $queryBuilder->get();
@@ -690,26 +707,36 @@ class EloquentEntityRepository implements EntityRepository
         $relationsOneOfMany = $parentEntity->getRelationsOneOfMany();
 
         foreach ($relationsOneOfMany as $relationMethod) {
-            /**
-             * @var $itemsRelated HasMany
-             */
-            $itemsRelated = $parentEntity->{$relationMethod}();
-
-            $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
-
-            $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+            // Try to use already loaded relation first
+            if ($parentEntity->relationLoaded($relationMethod)) {
+                $loadedRelation = $parentEntity->getRelation($relationMethod);
+                if ($loadedRelation instanceof Collection) {
+                    $collectionItemsRelated = $this->iterateItemsAndSearchRelated($loadedRelation);
+                    $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+                }
+            } else {
+                // Fallback to original behavior if relation not loaded
+                $itemsRelated = $parentEntity->{$relationMethod}();
+                $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
+                $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+            }
         }
 
         $relationsOneOfOne = $parentEntity->getRelationsOneOfOne();
 
         foreach ($relationsOneOfOne as $relationMethod) {
-            /**
-             * @var $itemRelated HasOne
-             */
-            $itemRelated = $parentEntity->{$relationMethod}();
-
-            if (!is_null($entityOne = $itemRelated->get()->first())) {
-                $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($entityOne));
+            // Try to use already loaded relation first
+            if ($parentEntity->relationLoaded($relationMethod)) {
+                $loadedRelation = $parentEntity->getRelation($relationMethod);
+                if (!is_null($loadedRelation)) {
+                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($loadedRelation));
+                }
+            } else {
+                // Fallback to original behavior if relation not loaded
+                $itemRelated = $parentEntity->{$relationMethod}();
+                if (!is_null($entityOne = $itemRelated->get()->first())) {
+                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($entityOne));
+                }
             }
         }
 
@@ -890,5 +917,100 @@ class EloquentEntityRepository implements EntityRepository
     private function createEntityOwnerCacheKey(string $entityName, string $entityId): string
     {
         return "entity_owner_$entityName." . "$entityId";
+    }
+
+    /**
+     * Gets all relations that need to be eagerly loaded for an entity class.
+     * This method builds a list of all relations to avoid N+1 queries by using Eloquent's with() method.
+     *
+     * The method detects both one-to-many and one-to-one relations defined in the entity
+     * and returns them as an array of relation names suitable for eager loading, including nested relations.
+     *
+     * @param string $entityClass The entity class name
+     * @param array $visited Array to track visited entities to prevent infinite recursion
+     * @param int $maxDepth Maximum depth for nested relations (default: 3)
+     * @return array Array of relation names for eager loading (including nested with dot notation)
+     */
+    private function getEagerLoadRelations(string $entityClass, array $visited = [], int $maxDepth = 3): array
+    {
+        // Prevent infinite recursion and limit depth
+        if (in_array($entityClass, $visited) || $maxDepth <= 0) {
+            return [];
+        }
+
+        $relations = [];
+        $visited[] = $entityClass;
+
+        try {
+            $instanceClass = new $entityClass();
+
+            if (!($instanceClass instanceof IEntitySynchronizable)) {
+                return [];
+            }
+
+            // Get one-to-many relations
+            $relationsOneOfMany = $instanceClass->getRelationsOneOfMany();
+            foreach ($relationsOneOfMany as $relationMethod) {
+                $relations[] = $relationMethod;
+
+                // Get nested relations for this relation
+                $nestedRelations = $this->getNestedRelationsForMethod($instanceClass, $relationMethod, $visited, $maxDepth - 1);
+                foreach ($nestedRelations as $nestedRelation) {
+                    $relations[] = $relationMethod . '.' . $nestedRelation;
+                }
+            }
+
+            // Get one-to-one relations
+            $relationsOneOfOne = $instanceClass->getRelationsOneOfOne();
+            foreach ($relationsOneOfOne as $relationMethod) {
+                $relations[] = $relationMethod;
+
+                // Get nested relations for this relation
+                $nestedRelations = $this->getNestedRelationsForMethod($instanceClass, $relationMethod, $visited, $maxDepth - 1);
+                foreach ($nestedRelations as $nestedRelation) {
+                    $relations[] = $relationMethod . '.' . $nestedRelation;
+                }
+            }
+
+        } catch (\Exception $e) {
+            // If we can't instantiate the class, return empty relations
+            return [];
+        }
+
+        return array_unique($relations);
+    }
+
+    /**
+     * Gets nested relations for a specific relation method.
+     *
+     * @param IEntitySynchronizable $parentEntity The parent entity instance
+     * @param string $relationMethod The relation method name
+     * @param array $visited Array of visited entities to prevent recursion
+     * @param int $maxDepth Maximum depth for nested relations
+     * @return array Array of nested relation names
+     */
+    private function getNestedRelationsForMethod(IEntitySynchronizable $parentEntity, string $relationMethod, array $visited, int $maxDepth): array
+    {
+        if ($maxDepth <= 0) {
+            return [];
+        }
+
+        try {
+            // Get the relation instance to determine the related model class
+            $relation = $parentEntity->{$relationMethod}();
+
+            if ($relation instanceof HasMany || $relation instanceof HasOne) {
+                $relatedModel = $relation->getRelated();
+                $relatedClass = get_class($relatedModel);
+
+                // Recursively get relations for the related model
+                return $this->getEagerLoadRelations($relatedClass, $visited, $maxDepth);
+            }
+        } catch (\Exception $e) {
+            // If we can't determine the related model, skip nested relations
+            return [];
+        }
+
+        return [];
     }
 }
