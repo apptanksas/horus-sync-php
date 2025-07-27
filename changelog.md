@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.3
+- Optimized the query to get entities data.
+
 ## v0.11.2
 - Fix save sync job repository.
 
