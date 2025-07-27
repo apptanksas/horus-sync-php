@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.4
+- Fix entity data with attributes relations.
+
 ## v0.11.3
 - Optimized the query to get entities data.
 
