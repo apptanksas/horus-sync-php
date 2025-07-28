@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.5
+- The file generated in the synchronization data is no longer of type application/json, but is now of type application/nd-json so that it can be processed line by line.
+
 ## v0.11.4
 - Fix entity data with attributes relations.
 

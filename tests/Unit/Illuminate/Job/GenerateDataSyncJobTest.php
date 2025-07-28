@@ -11,6 +11,7 @@ use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\SyncJobStatus;
 use AppTank\Horus\Illuminate\Job\GenerateDataSyncJob;
 use Mockery\Mock;
+use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\TestCase;
 
 class GenerateDataSyncJobTest extends TestCase
@@ -36,14 +37,18 @@ class GenerateDataSyncJobTest extends TestCase
         // Given
         $userAuth = new UserAuth($this->faker->uuid);
         $syncJob = new SyncJob($this->faker->uuid, $userAuth->getEffectiveUserId(), SyncJobStatus::PENDING);
-        $dataResult = $this->generateArray(fn() => $this->faker->randomElements());
+        $dataResult = $this->generateCountArray(fn() => ParentFakeEntityFactory::newData(), 5);
         $fileUrlExpected = $this->faker->url;
 
         $this->getDataEntitiesUseCase->shouldReceive("__invoke")->andReturn($dataResult);
         $this->config->shouldReceive("getPathFilesSync")->andReturn($this->faker->filePath());
 
         $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->once()->withArgs(function ($pathFile, $data, $contentType) use ($dataResult) {
-            return $data == json_encode($dataResult);
+            $contentNDJsonExpected = json_encode(array_map(fn($item) => json_decode($item), explode(PHP_EOL, $data)));
+            $contentJson = json_encode($dataResult);
+            $this->assertEquals($contentNDJsonExpected, $contentJson);
+            $this->assertEquals("application/x-ndjson", $contentType);
+            return true;
         })->andReturn($fileUrlExpected);
 
         // Validate save in progress
