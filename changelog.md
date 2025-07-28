@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.7
+- Fix generate data sync job.
+
 ## v0.11.6
 - Flattened the entities data in the synchronization data to make it easier to process.
 
