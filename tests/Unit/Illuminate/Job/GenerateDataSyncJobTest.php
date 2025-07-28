@@ -18,6 +18,7 @@ use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\TestCase;
+use function Orchestra\Testbench\package_path;
 
 class GenerateDataSyncJobTest extends TestCase
 {
@@ -51,6 +52,8 @@ class GenerateDataSyncJobTest extends TestCase
                 $countEntitiesExpected++;
                 return (new EntityData(ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData($parent["id"])));
             });
+            $parent["_empty"] = [];
+
             return new EntityData(ParentFakeWritableEntity::getEntityName(), $parent);
         }, 5));
 
@@ -104,6 +107,68 @@ class GenerateDataSyncJobTest extends TestCase
             $this->config
         );
     }
+
+    public function testGenerateDataWithSampleIsSuccess()
+    {
+        // Given
+        $sample = json_decode(file_get_contents(package_path("tests/Unit/sample_sync_data.json")), true);
+        $countEntitiesExpected = 1599; // This is the expected count of entities in the sample file
+
+        $userAuth = new UserAuth($this->faker->uuid);
+        $syncJob = new SyncJob($this->faker->uuid, $userAuth->getEffectiveUserId(), SyncJobStatus::PENDING);
+
+
+        $fileUrlExpected = $this->faker->url;
+
+        $this->getDataEntitiesUseCase->shouldReceive("__invoke")->andReturn($sample);
+        $this->config->shouldReceive("getPathFilesSync")->andReturn($this->faker->filePath());
+        $dataFileSaved = "";
+
+        // Validate file creation
+        $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->once()->withArgs(function ($pathFile, $data, $contentType) use (&$dataFileSaved) {
+            $dataFileSaved = $data;
+            $this->assertEquals("application/x-ndjson", $contentType);
+            return true;
+        })->andReturn($fileUrlExpected);
+
+        // Validate save in progress
+        $this->syncJobRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function ($syncJob) use ($userAuth) {
+                return $syncJob->userId === $userAuth->getEffectiveUserId() &&
+                    $syncJob->status === SyncJobStatus::IN_PROGRESS &&
+                    $syncJob->resultAt === null && $syncJob->downloadUrl === null;
+            });
+
+        // Validate save completed
+        $this->syncJobRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function ($syncJob) use ($userAuth) {
+                return $syncJob->userId === $userAuth->getEffectiveUserId() &&
+                    $syncJob->status === SyncJobStatus::SUCCESS &&
+                    $syncJob->resultAt != null && filter_var($syncJob->downloadUrl, FILTER_VALIDATE_URL);
+            });
+
+        // When
+        $this->generateDataSyncJob = new GenerateDataSyncJob(
+            $userAuth,
+            $syncJob,
+        );
+        $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
+            $this->syncJobRepository,
+            $this->fileHandler,
+            $this->config
+        );
+
+        $entities = explode(PHP_EOL, $dataFileSaved);
+        $this->assertCount($countEntitiesExpected, $entities);
+        $this->assertCount($countEntitiesExpected, array_unique($entities)); // Validate no duplicated
+
+        foreach ($entities as $entity) {
+            $this->assertJson($entity);
+        }
+    }
+
 
     public function testGenerateDataWithException()
     {

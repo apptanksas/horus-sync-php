@@ -94,17 +94,28 @@ class GenerateDataSyncJob implements ShouldQueue
     {
         $content = '';
 
-        foreach ($data as $index => $entity) {
+        foreach ($data as $attr => $entity) {
 
-            $data = $entity["data"];
+            if (!isset($entity["data"])) {
+                throw new \InvalidArgumentException("Entity [$entity] at index {$attr} does not contain 'data' key.");
+            }
+
+            $data = array_reverse($entity["data"]);
             $entityFiltered = $this->filterRelations($entity);
             $content .= json_encode($entityFiltered) . PHP_EOL;
 
             foreach ($data as $key => $value) {
-                // Check if the key represents a related entity
-                if (str_starts_with($key, "_") and is_array($value)) {
+
+                // Check if the key represents a related entity with relation many
+                if (str_starts_with($key, "_") and is_array($value) and !empty($value) && isset($value[0]["data"])) {
                     $content .= $this->createContentNdJson($value) . PHP_EOL;
                 }
+
+                // Check if the key represents a related entity with relation one
+                if (str_starts_with($key, "_") and is_array($value) and !empty($value) && isset($value["entity"])) {
+                    $content .= json_encode($this->filterRelations($value)) . PHP_EOL;
+                }
+
             }
         }
 
