@@ -37,6 +37,16 @@ class GenerateDataSyncJob implements ShouldQueue
     {
     }
 
+    /**
+     * Handle the job execution.
+     *
+     * This method retrieves data entities, creates an NDJSON file, and updates the sync job status.
+     *
+     * @param IGetDataEntitiesUseCase $getDataEntitiesUseCase Use case for retrieving data entities.
+     * @param SyncJobRepository       $syncJobRepository Repository for managing sync jobs.
+     * @param IFileHandler            $fileHandler File handler for creating downloadable files.
+     * @param Config                  $config Configuration settings.
+     */
     public function handle(
         IGetDataEntitiesUseCase $getDataEntitiesUseCase,
         SyncJobRepository       $syncJobRepository,
@@ -50,9 +60,11 @@ class GenerateDataSyncJob implements ShouldQueue
 
         try {
             // Get the data entities using the repository
-            $data = json_encode($getDataEntitiesUseCase->__invoke($this->userAuth, $this->syncJob->checkpoint));
-            $pathFile = $config->getPathFilesSync() . "/{$this->syncJob->id}.json";
-            $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $data, "application/json");
+            $data = $getDataEntitiesUseCase->__invoke($this->userAuth, $this->syncJob->checkpoint);
+            $pathFile = $config->getPathFilesSync() . "/{$this->syncJob->id}.ndjson";
+
+            $content = $this->createContentNdJson($data);
+            $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $content, "application/x-ndjson");
 
             // Update the job with the download URL and result timestamp
             $jobCompleted = new SyncJob(
@@ -69,5 +81,22 @@ class GenerateDataSyncJob implements ShouldQueue
             $syncJobRepository->save($this->syncJob->cloneWithStatus(SyncJobStatus::FAILED));
         }
 
+    }
+
+
+    /**
+     * Creates the content for the NDJSON file from the provided data.
+     *
+     * @param array $data The data to be converted to NDJSON format.
+     * @return string The NDJSON formatted content.
+     */
+    private function createContentNdJson(array $data): string
+    {
+        $content = '';
+        $lastIndex = count($data) - 1;
+        foreach ($data as $index => $entity) {
+            $content .= json_encode($entity) . ($index === $lastIndex ? '' : PHP_EOL);
+        }
+        return $content;
     }
 }
