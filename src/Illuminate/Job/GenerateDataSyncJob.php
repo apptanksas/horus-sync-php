@@ -43,9 +43,9 @@ class GenerateDataSyncJob implements ShouldQueue
      * This method retrieves data entities, creates an NDJSON file, and updates the sync job status.
      *
      * @param IGetDataEntitiesUseCase $getDataEntitiesUseCase Use case for retrieving data entities.
-     * @param SyncJobRepository       $syncJobRepository Repository for managing sync jobs.
-     * @param IFileHandler            $fileHandler File handler for creating downloadable files.
-     * @param Config                  $config Configuration settings.
+     * @param SyncJobRepository $syncJobRepository Repository for managing sync jobs.
+     * @param IFileHandler $fileHandler File handler for creating downloadable files.
+     * @param Config $config Configuration settings.
      */
     public function handle(
         IGetDataEntitiesUseCase $getDataEntitiesUseCase,
@@ -93,10 +93,43 @@ class GenerateDataSyncJob implements ShouldQueue
     private function createContentNdJson(array $data): string
     {
         $content = '';
-        $lastIndex = count($data) - 1;
+
         foreach ($data as $index => $entity) {
-            $content .= json_encode($entity) . ($index === $lastIndex ? '' : PHP_EOL);
+
+            $data = $entity["data"];
+            $entityFiltered = $this->filterRelations($entity);
+            $content .= json_encode($entityFiltered) . PHP_EOL;
+
+            foreach ($data as $key => $value) {
+                // Check if the key represents a related entity
+                if (str_starts_with($key, "_") and is_array($value)) {
+                    $content .= $this->createContentNdJson($value) . PHP_EOL;
+                }
+            }
         }
-        return $content;
+
+        return rtrim($content);
+    }
+
+
+    private function filterRelations(array $data): array
+    {
+        $output = [];
+        foreach ($data as $key => $value) {
+
+            if (str_starts_with($key, "_")) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $output[$key] = $this->filterRelations($value);
+                continue;
+            }
+
+            $output[$key] = $value;
+
+        }
+
+        return $output;
     }
 }

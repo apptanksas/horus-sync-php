@@ -5,13 +5,18 @@ namespace Tests\Unit\Illuminate\Job;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\SyncJob;
 use AppTank\Horus\Core\Repository\IGetDataEntitiesUseCase;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\SyncJobStatus;
 use AppTank\Horus\Illuminate\Job\GenerateDataSyncJob;
+use AppTank\Horus\Illuminate\Util\EntitiesDataParser;
 use Mockery\Mock;
+use Tests\_Stubs\ChildFakeEntityFactory;
+use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
+use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\TestCase;
 
 class GenerateDataSyncJobTest extends TestCase
@@ -37,18 +42,37 @@ class GenerateDataSyncJobTest extends TestCase
         // Given
         $userAuth = new UserAuth($this->faker->uuid);
         $syncJob = new SyncJob($this->faker->uuid, $userAuth->getEffectiveUserId(), SyncJobStatus::PENDING);
-        $dataResult = $this->generateCountArray(fn() => ParentFakeEntityFactory::newData(), 5);
+        $countEntitiesExpected = 0;
+
+        $dataResult = EntitiesDataParser::parseToArrayRaw($this->generateCountArray(function () use (&$countEntitiesExpected) {
+            $parent = ParentFakeEntityFactory::newData();
+            $countEntitiesExpected++;
+            $parent["_children"] = $this->generateCountArray(function () use ($parent, &$countEntitiesExpected) {
+                $countEntitiesExpected++;
+                return (new EntityData(ChildFakeWritableEntity::getEntityName(), ChildFakeEntityFactory::newData($parent["id"])));
+            });
+            return new EntityData(ParentFakeWritableEntity::getEntityName(), $parent);
+        }, 5));
+
         $fileUrlExpected = $this->faker->url;
 
         $this->getDataEntitiesUseCase->shouldReceive("__invoke")->andReturn($dataResult);
         $this->config->shouldReceive("getPathFilesSync")->andReturn($this->faker->filePath());
 
-        $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->once()->withArgs(function ($pathFile, $data, $contentType) use ($dataResult) {
-            $contentNDJsonExpected = json_encode(array_map(fn($item) => json_decode($item), explode(PHP_EOL, $data)));
-            $contentJson = json_encode($dataResult);
-            $this->assertEquals($contentNDJsonExpected, $contentJson);
+        // Validate file creation
+        $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->once()->withArgs(function ($pathFile, $data, $contentType) use ($countEntitiesExpected) {
+
+            $entities = explode(PHP_EOL, $data);
+            $this->assertCount($countEntitiesExpected, $entities);
+
+            foreach ($entities as $entity) {
+                $this->assertJson($entity);
+            }
+
             $this->assertEquals("application/x-ndjson", $contentType);
+
             return true;
+
         })->andReturn($fileUrlExpected);
 
         // Validate save in progress
