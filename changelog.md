@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.6
+- Flattened the entities data in the synchronization data to make it easier to process.
+
 ## v0.11.5
 - The file generated in the synchronization data is no longer of type application/json, but is now of type application/nd-json so that it can be processed line by line.
 
