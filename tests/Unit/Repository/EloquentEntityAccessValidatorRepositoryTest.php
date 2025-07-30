@@ -6,6 +6,7 @@ namespace Tests\Unit\Repository;
 use AppTank\Horus\Core\Auth\AccessLevel;
 use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\Permission;
+use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Entity\EntityReference;
@@ -159,4 +160,22 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         $this->assertFalse($canAccess);
     }
 
+    function test_when_user_update_as_user_guest()
+    {
+        $userOwnerId = "809a7eec-af67-4b61-87e0-ce9da74f1dcd";
+        $parentId = "e0392744-1b09-49c2-a14f-9883cf3b52ab";
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $userAuth = new UserAuth("d104e048-e781-4986-8af0-0c56394e9c02", [
+            new EntityGranted($userOwnerId, new EntityReference($entityName, $parentId), AccessLevel::decode("CRUD"))
+        ], new UserActingAs($userOwnerId));
+
+        ParentFakeEntityFactory::create($userOwnerId, ["id" => $parentId]);
+        $childEntity = ChildFakeEntityFactory::create($parentId, $userOwnerId);
+
+        // When
+        $canAccess = $this->repository->canAccessEntity($userAuth, new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId()), Permission::UPDATE);
+
+        // Then
+        $this->assertTrue($canAccess);
+    }
 }

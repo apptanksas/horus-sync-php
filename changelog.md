@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.10
+- Fix issue in entity mapping when the map is nested.
+
 ## v0.11.9
 - Fix message in operation not permitted exception.
 
