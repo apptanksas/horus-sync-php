@@ -25,6 +25,6 @@ class OperationNotPermittedException extends NotAuthorizedException
      */
     public function __construct(string $message = "Operation not permitted", UserAuth $userAuth = null)
     {
-        parent::__construct($message . " | " . (is_null($userAuth)) ? "" : json_encode($userAuth->toArray()));
+        parent::__construct($message . " | " . ((is_null($userAuth)) ? "" : json_encode($userAuth->toArray())));
     }
 }
