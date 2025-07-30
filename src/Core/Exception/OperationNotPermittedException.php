@@ -2,6 +2,8 @@
 
 namespace AppTank\Horus\Core\Exception;
 
+use AppTank\Horus\Core\Auth\UserAuth;
+
 /**
  * @internal Class OperationNotPermittedException
  *
@@ -21,8 +23,8 @@ class OperationNotPermittedException extends NotAuthorizedException
      *
      * @param string $message The exception message. Defaults to "Operation not permitted".
      */
-    public function __construct(string $message = "Operation not permitted")
+    public function __construct(string $message = "Operation not permitted", UserAuth $userAuth = null)
     {
-        parent::__construct($message);
+        parent::__construct($message . " | " . (is_null($userAuth)) ? "" : json_encode($userAuth->toArray()));
     }
 }

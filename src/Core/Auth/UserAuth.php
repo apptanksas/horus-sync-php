@@ -98,4 +98,15 @@ readonly class UserAuth
     {
         return !is_null($this->userActingAs);
     }
+
+
+    function toArray(): array
+    {
+        return [
+            'userId' => $this->userId,
+            'entityGrants' => array_map(fn($grant) => $grant->toArray(), $this->entityGrants),
+            'userActingAs' => $this->userActingAs?->userId,
+            "effectiveUserId" => $this->getEffectiveUserId()
+        ];
+    }
 }

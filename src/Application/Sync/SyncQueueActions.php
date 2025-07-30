@@ -170,7 +170,7 @@ class SyncQueueActions
 
                 // Check if user has permission to update entity
                 if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
-                    throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}");
+                    throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
                 $updateActions[] = $action;
 
@@ -178,7 +178,7 @@ class SyncQueueActions
 
                 // Check if user has permission to delete entity
                 if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
-                    throw new OperationNotPermittedException("No have access to delete entity {$action->entity} with id {$action->operation->id}");
+                    throw new OperationNotPermittedException("No have access to delete entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
 
                 $deleteActions[] = $action;
