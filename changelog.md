@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.9
+- Fix message in operation not permitted exception.
+
 ## v0.11.8
 - Add information about User auth in operation not permitted exception
 
