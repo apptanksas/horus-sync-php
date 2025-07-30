@@ -57,7 +57,7 @@ readonly class SearchDataEntities extends BaseGetEntities
             if ($this->accessValidatorRepository->canAccessEntity($userAuth,
                     new EntityReference($entityName, $id),
                     Permission::READ) === false) {
-                throw new OperationNotPermittedException("No have access to entity $entityName with id $id");
+                throw new OperationNotPermittedException("No have access to entity $entityName with id $id", $userAuth);
             }
         }
 

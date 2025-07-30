@@ -44,7 +44,7 @@ class FilePathGeneratorTest extends TestCase
         $childEntity = ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
         $entityReference = new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId());
 
-        $pathExpected = $this->config->basePathFiles . "/{$userOwnerId}/{$parentEntity->entityName}/{$parentEntity->getId()}/{$childEntity->entityName}/{$childEntity->getId()}/";
+        $pathExpected = $this->config->getPathFilesUploads() . "/{$userOwnerId}/{$parentEntity->entityName}/{$parentEntity->getId()}/{$childEntity->entityName}/{$childEntity->getId()}/";
 
         // When
         $path = $this->filePathGenerator->create(new UserAuth($userOwnerId), $entityReference);

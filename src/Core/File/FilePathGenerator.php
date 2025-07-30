@@ -45,7 +45,7 @@ readonly class FilePathGenerator
                     EntityReference $entityReference): string
     {
 
-        $path = "{$this->config->basePathFiles}/{$userAuth->getEffectiveUserId()}/";
+        $path = "{$this->config->getPathFilesUploads()}/{$userAuth->getEffectiveUserId()}/";
         $entityHierarchy = $this->entityRepository->getEntityPathHierarchy($entityReference);
 
         foreach ($entityHierarchy as $entity) {

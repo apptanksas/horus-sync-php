@@ -25,4 +25,12 @@ readonly class EntityReference
     {
 
     }
+
+    function toArray(): array
+    {
+        return [
+            'entityName' => $this->entityName,
+            'entityId' => $this->entityId
+        ];
+    }
 }

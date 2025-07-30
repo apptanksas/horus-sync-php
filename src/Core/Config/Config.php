@@ -49,7 +49,7 @@ class Config
         public readonly ?string $connectionName = null,
         public readonly bool    $usesUUIDs = false,
         public readonly ?string $prefixTables = "sync",
-        string                  $basePathFiles = "horus/upload",
+        string                  $basePathFiles = "horus",
         array                   $entityRestrictions = [],
         array                   $sharedEntities = []
     )
@@ -103,9 +103,19 @@ class Config
      *
      * @return string The path for the pending files.
      */
+    function getPathFilesUploads(): string
+    {
+        return $this->basePathFiles . "/upload";
+    }
+
+    /**
+     * Gets the path for the files that are pending to be uploaded.
+     *
+     * @return string The path for the pending files.
+     */
     function getPathFilesPending(): string
     {
-        return $this->basePathFiles . "/pending";
+        return $this->basePathFiles . "/upload-pending";
     }
 
     /**

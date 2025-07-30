@@ -28,4 +28,14 @@ readonly class EntityGranted
     {
 
     }
+
+
+    public function toArray(): string
+    {
+        return json_encode([
+            'userOwnerId' => $this->userOwnerId,
+            'entityReference' => $this->entityReference->toArray(),
+            'accessLevel' => $this->accessLevel->encode()
+        ]);
+    }
 }
