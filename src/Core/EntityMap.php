@@ -45,13 +45,43 @@ readonly class EntityMap
         }
 
         // Generate paths for related entities
-        $groupPaths = array_map(fn($map) => $map->generateArrayPaths(), $this->related);
+        $groupPaths = $this->flattenToArrayOfArrays(array_map(fn($map) => $map->generateArrayPaths(), $this->related));
 
         // Combine the current entity's name with paths from related entities
         foreach ($groupPaths as $paths) {
             $output[] = array_merge([$this->name], $paths);
         }
 
-        return $output;
+        return $this->flattenToArrayOfArrays($output);
+    }
+
+    private function flattenToArrayOfArrays(array $input): array
+    {
+        $result = [];
+
+        $flatten = function ($item) use (&$flatten, &$result) {
+            if (!is_array($item)) {
+                return; // ignorar elementos que no son arrays
+            }
+
+            // Si todos los elementos internos NO son arrays → ya es una unidad válida
+            $allValuesAreScalars = array_reduce($item, function ($carry, $value) {
+                return $carry && !is_array($value);
+            }, true);
+
+            if ($allValuesAreScalars) {
+                $result[] = $item;
+            } else {
+                foreach ($item as $subItem) {
+                    $flatten($subItem);
+                }
+            }
+        };
+
+        foreach ($input as $element) {
+            $flatten($element);
+        }
+
+        return $result;
     }
 }

@@ -7,8 +7,6 @@ use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
-use http\Message\Body;
-use Illuminate\Validation\Rules\In;
 
 /**
  * @internal Class EntityMapper
@@ -67,8 +65,8 @@ class EntityMapper
 
         $paths = $map->generateArrayPaths();
 
-        if (count($paths) == 1) {
-            $this->paths[] = $paths;
+        if (count($paths) == 1 && is_string($paths[0])) {
+            $this->paths = array_merge($this->paths, [$paths]);
             return;
         }
 
@@ -153,17 +151,17 @@ class EntityMapper
     private function getHierarchicalLevel(string $entity): int
     {
         $minLevel = PHP_INT_MAX;
-        
+
         foreach ($this->paths as $path) {
             // Handle both single paths and nested path arrays
             $pathArray = is_array($path[0]) ? $path[0] : $path;
-            
+
             $position = array_search($entity, $pathArray);
             if ($position !== false) {
                 $minLevel = min($minLevel, $position);
             }
         }
-        
+
         // If entity is not found in any path, return 0 (assume root level)
         return $minLevel === PHP_INT_MAX ? 0 : $minLevel;
     }
