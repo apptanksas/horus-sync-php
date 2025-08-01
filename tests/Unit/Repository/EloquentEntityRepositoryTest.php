@@ -1036,4 +1036,51 @@ class EloquentEntityRepositoryTest extends TestCase
         // When
         $this->entityRepository->getEntityOwner(ParentFakeWritableEntity::getEntityName(), $invalidEntityId);
     }
+
+    function testGetEntityParenOwnerIsSuccess()
+    {
+        $ownerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($ownerId);
+        $childEntity = ChildFakeEntityFactory::newData($parentEntity->getId());
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+        $this->cacheRepository->shouldReceive("set")->once();
+
+        // When
+        $result = $this->entityRepository->getEntityParentOwner(new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity["id"]), $childEntity);
+
+        // Then
+        $this->assertEquals($ownerId, $result);
+    }
+
+    function testGetEntityParenOwnerIsNullWhenHaveNotParent()
+    {
+        $ownerId = $this->faker->uuid;
+        ParentFakeEntityFactory::create($ownerId);
+        $childEntity = ChildFakeEntityFactory::newData();
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        // When
+        $result = $this->entityRepository->getEntityParentOwner(new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity["id"]), $childEntity);
+
+        // Then
+        $this->assertNull($result);
+    }
+
+    function testGetEntityParenOwnerIsNullWhenIsParent()
+    {
+        $ownerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::newData($ownerId);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        // When
+        $result = $this->entityRepository->getEntityParentOwner(new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentEntity["id"]), $parentEntity);
+
+        // Then
+        $this->assertNull($result);
+    }
+
+
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.11
+- Fix issue when insert a new entity without validation the real owner
+
 ## v0.11.10
 - Fix issue in entity mapping when the map is nested.
 
