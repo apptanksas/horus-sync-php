@@ -6,11 +6,8 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
-use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
-use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
@@ -255,8 +252,8 @@ class SyncQueueActions
         }
 
         return match (true) {
-            $action->operation instanceof EntityInsert => $isPrimaryEntity ? $action->userId : $action->ownerId,
-            $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => ($this->entityRepository->getEntityOwner($action->entity, $action->entityId) == $action->userId) ? $action->userId : $action->ownerId,
+            $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->userId,
+            $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId),
             default => $action->ownerId
         };
     }

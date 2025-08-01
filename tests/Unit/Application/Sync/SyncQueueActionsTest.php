@@ -143,6 +143,8 @@ class SyncQueueActionsTest extends TestCase
         $this->fileHandler->shouldReceive("copy")->andReturn(true);
         $this->fileHandler->shouldReceive("delete")->andReturn(true);
         $this->entityRepository->shouldReceive("getEntityPathHierarchy")->andReturn([ParentFakeEntityFactory::create()]);
+        $this->entityRepository->shouldReceive("getEntityParentOwner")->andReturn($this->faker->uuid);
+
         $this->fileHandler->shouldReceive("generateUrl")->andReturn($this->faker->imageUrl);
         $this->fileUploadedRepository->shouldReceive("save")->times(count($filesUploaded));
 
@@ -190,6 +192,7 @@ class SyncQueueActionsTest extends TestCase
         });
 
         $this->entityRepository->shouldReceive('getCount')->andReturn(1);
+        $this->entityRepository->shouldReceive("getEntityParentOwner")->andReturn($this->faker->uuid);
 
         // When
         $syncQueueActions->__invoke(new UserAuth($userId), ...$insertActions);

@@ -839,4 +839,64 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
         ]);
     }
+
+    function testPostSyncQueueInsertOwnEntityUsingActingAs()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentGuest = ParentFakeEntityFactory::create($userGuestId);
+
+        $childrenGuestData = ChildFakeEntityFactory::newData($parentGuest->getId());
+        $childrenOwnerData = ChildFakeEntityFactory::newData($parentOwner->getId());
+        $entityGuestId = $childrenGuestData['id'];
+        $entityOwnerId = $childrenOwnerData['id'];
+
+
+        $entityName = ChildFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenGuestData,
+                "actioned_at" => $actionedAt
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenOwnerData,
+                "actioned_at" => $actionedAt + 1000
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 2);
+
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityOwnerId,
+            ChildFakeWritableEntity::FK_PARENT_ID => $parentOwner->getId(),
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        ]);
+
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityGuestId,
+            ChildFakeWritableEntity::FK_PARENT_ID => $parentGuest->getId(),
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userGuestId,
+        ]);
+
+    }
 }

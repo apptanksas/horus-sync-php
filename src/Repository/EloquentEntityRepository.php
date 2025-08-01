@@ -633,6 +633,47 @@ class EloquentEntityRepository implements EntityRepository
     }
 
     /**
+     * Retrieves the parent entity of the current entity.
+     *
+     * @param EntityReference $childReference The reference of the child entity.
+     * @param array $childData The data of the child entity.
+     * @return EntityData|null
+     */
+    function getEntityParentOwner(EntityReference $childReference, array $childData): string|int|null
+    {
+        $cacheKey = $this->createEntityParentOwnerCacheKey($childReference->entityName, $childReference->entityId);
+
+        if ($this->cacheRepository->exists($cacheKey)) {
+            return $this->cacheRepository->get($cacheKey);
+        }
+
+        /**
+         * @var EntitySynchronizable $childEntityClass
+         */
+        $childEntityClass = $this->entityMapper->getEntityClass($childReference->entityName);
+
+        $childEntity = new $childEntityClass($childData);
+
+        try {
+            if ($childEntity instanceof EntityDependsOn) {
+                $parentEntity = $childEntity->dependsOn();
+                $ownerId = $parentEntity->getAttribute(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID);
+                $this->cacheRepository->set($cacheKey, $ownerId, self::CACHE_TTL_ONE_DAY);
+                return $ownerId;
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
+
+        return null;
+    }
+
+    // -----------------------------------------------------
+    // PRIVATE METHODS
+    // -----------------------------------------------------
+
+    /**
      * Groups entity IDs by entity name from a list of operations.
      *
      * This method organizes entity IDs from the provided operations into groups based on the entity name.
@@ -925,6 +966,18 @@ class EloquentEntityRepository implements EntityRepository
     private function createEntityOwnerCacheKey(string $entityName, string $entityId): string
     {
         return "entity_owner_$entityName." . "$entityId";
+    }
+
+    /**
+     * Creates a cache key for the parent entity based on the entity name and ID.
+     *
+     * @param string $entityName The name of the entity.
+     * @param string $entityId The ID of the entity.
+     * @return string The generated cache key.
+     */
+    private function createEntityParentOwnerCacheKey(string $entityName, string $entityId): string
+    {
+        return "entity_parent_owner_$entityName." . "$entityId";
     }
 
     /**
