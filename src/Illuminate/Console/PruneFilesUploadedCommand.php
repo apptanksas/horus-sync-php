@@ -181,7 +181,7 @@ class PruneFilesUploadedCommand extends Command
             $this->info(sprintf('Found %d sync files that are expired.', count($syncFilesExpired)));
 
             foreach ($syncFilesExpired as $file) {
-                $filename = basename($file[SyncJobModel::ATTR_DOWNLOAD_URL]);
+                $filename = basename(parse_url($file[SyncJobModel::ATTR_DOWNLOAD_URL], PHP_URL_PATH));
                 $pathFile = $this->config->getPathFilesSync() . "/$filename";
                 $this->fileHandler->delete($pathFile);
             }
