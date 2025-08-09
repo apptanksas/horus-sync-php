@@ -899,4 +899,41 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         ]);
 
     }
+
+    function testPostSyncQueueInsertWhenParentAndChildAreInTheInsertActions()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentData = ParentFakeEntityFactory::newData($userOwnerId);
+        unset($parentData[ParentFakeWritableEntity::ATTR_IMAGE]);
+
+        $childData = ChildFakeEntityFactory::newData($parentData['id']);
+
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userOwnerId))->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => ParentFakeWritableEntity::getEntityName(),
+                "data" => $parentData,
+                "actioned_at" => $actionedAt
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => ChildFakeWritableEntity::getEntityName(),
+                "data" => $childData,
+                "actioned_at" => $actionedAt - 1 // Validate that child is inserted before parent to verify the sorting of actions
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+    }
 }

@@ -1,8 +1,6 @@
 <?php
 
-namespace AppTank\Horus\Illuminate\Database;
-
-use AppTank\Horus\Core\Entity\IEntitySynchronizable;
+namespace AppTank\Horus\Core\Entity;
 
 /**
  * Interface EntityDependsOn
@@ -20,4 +18,11 @@ interface EntityDependsOn
      * @return IEntitySynchronizable The entity that the class depends on.
      */
     public function dependsOn(): IEntitySynchronizable;
+
+    /**
+     * Get the reference to the parent entity that this class depends on.
+     *
+     * @return string|null The reference to the parent entity, typically a UUID or similar identifier.
+     */
+    public function getEntityParentId(): string|null;
 }

@@ -2,11 +2,11 @@
 
 namespace Tests\_Stubs;
 
+use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
-use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 class ChildFakeWritableEntity extends WritableEntitySynchronizable implements EntityDependsOn
@@ -73,5 +73,10 @@ class ChildFakeWritableEntity extends WritableEntitySynchronizable implements En
     public function dependsOn(): IEntitySynchronizable
     {
         return $this->belongsTo(ParentFakeWritableEntity::class, self::FK_PARENT_ID, EntitySynchronizable::ATTR_ID)->first();
+    }
+
+    public function getEntityParentId(): string|null
+    {
+        return $this->getAttribute(self::FK_PARENT_ID);
     }
 }
