@@ -4,6 +4,7 @@ namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
+use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
@@ -20,7 +21,6 @@ use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
-use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
@@ -662,7 +662,7 @@ class EloquentEntityRepository implements EntityRepository
                 return $ownerId;
             }
         } catch (\Throwable $e) {
-            report($e);
+            report(new \Exception("Error retrieving parent entity for {$childReference->entityName} with ID {$childReference->entityId}: " . $e->getMessage()));
             return null;
         }
 

@@ -10,7 +10,6 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
-use AppTank\Horus\Illuminate\Database\EntityDependsOn;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 /**

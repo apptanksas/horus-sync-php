@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\File\FilePathGenerator;
@@ -148,14 +149,17 @@ class SyncQueueActions
         $deleteActions = [];
 
         $userEffectiveUserId = $userAuth->getEffectiveUserId();
+        $allInsertIds = array_map(fn(QueueAction $action) => $action->operation->id, array_filter($actions, fn(QueueAction $action) => $action->operation instanceof EntityInsert));
 
         foreach ($actions as $action) {
 
             $entityReference = new EntityReference($action->entity, $action->operation->id);
 
             // Check if the update about entity is not on a new entity
-            $isEntityIdInInsertActions = in_array($action->operation->id, array_map(fn(QueueAction $action) => $action->operation->id, $insertActions));
-            $realUserOwnerId = $this->getRealUserOwnerId($action, $isEntityIdInInsertActions);
+            $insertIds = array_map(fn(QueueAction $action) => $action->operation->id, $insertActions);
+            $isEntityIdInInsertActions = in_array($action->operation->id, $insertIds);
+            $parentExistsInInsertActions =  $this->parentExistsInInsertActions($action, $allInsertIds);
+            $realUserOwnerId = $this->getRealUserOwnerId($action, $isEntityIdInInsertActions, $parentExistsInInsertActions);
 
             if ($realUserOwnerId != $userEffectiveUserId) {
                 $action = $action->cloneWithUsers($realUserOwnerId, $realUserOwnerId);
@@ -239,7 +243,7 @@ class SyncQueueActions
      * @param QueueAction $action The action being performed (insert, update, delete).
      * @return int|string The real user owner ID.
      */
-    private function getRealUserOwnerId(QueueAction $action, bool $isEntityIdInInsertActions): int|string
+    private function getRealUserOwnerId(QueueAction $action, bool $isEntityIdInInsertActions, bool $parentExistsInInsertActions): int|string
     {
         $isPrimaryEntity = $this->entityMapper->isPrimaryEntity($action->entity);
 
@@ -247,7 +251,7 @@ class SyncQueueActions
             return $action->userId;
         }
 
-        if ($isEntityIdInInsertActions) {
+        if ($isEntityIdInInsertActions || $parentExistsInInsertActions) {
             return $action->ownerId;
         }
 
@@ -256,6 +260,25 @@ class SyncQueueActions
             $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId),
             default => $action->ownerId
         };
+    }
+
+    /**
+     * Checks if the parent entity exists in the insert actions.
+     *
+     * @param QueueAction $action The action being checked.
+     * @param array $insertIds The IDs of the entities that are being inserted.
+     * @return bool True if the parent entity exists in the insert actions, otherwise false.
+     */
+    private function parentExistsInInsertActions(QueueAction $action, array $insertIds): bool
+    {
+        $entityClass = $this->entityMapper->getEntityClass($action->entity);
+        $entity = new $entityClass($action->operation->toArray());
+
+        if ($entity instanceof EntityDependsOn && !is_null($parentId = $entity->getEntityParentId())) {
+            return in_array($parentId, $insertIds);
+        }
+
+        return false;
     }
 
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.11.12
+- Fix prune files with query params url.
+- Fix issue when get entity parent owner in sync actions with inserts.
+
 ## v0.11.11
 - Fix issue when insert a new entity without validation the real owner
 
