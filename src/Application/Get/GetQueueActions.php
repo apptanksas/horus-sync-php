@@ -2,7 +2,11 @@
 
 namespace AppTank\Horus\Application\Get;
 
+use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 
 /**
@@ -20,9 +24,13 @@ readonly class GetQueueActions
      * GetQueueActions constructor.
      *
      * @param QueueActionRepository $queueActionRepository Repository for accessing queue actions.
+     * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating entity access.
+     * @param EntityMapper $entityMapper Mapper for converting entities to arrays.
      */
     function __construct(
-        private QueueActionRepository $queueActionRepository
+        private QueueActionRepository           $queueActionRepository,
+        private EntityAccessValidatorRepository $accessValidatorRepository,
+        private EntityMapper                    $entityMapper,
     )
     {
 
@@ -40,7 +48,24 @@ readonly class GetQueueActions
      */
     function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
-        $actions = $this->queueActionRepository->getActions($userAuth->getEffectiveUserId(), $afterTimestamp, $excludeDateTimes);
+        $userIds = array_merge([$userAuth->userId], $userAuth->getUserOwnersId());
+
+        $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
+
+        $actionsFiltered = array_filter($actions, function ($action) use ($userAuth) {
+
+            // Validate is primary entity and has read permission
+            if ($this->entityMapper->isPrimaryEntity($action->entity) && $userAuth->hasGranted($action->entity, $action->entityId, Permission::READ)) {
+                return true;
+            }
+
+            // Validate if the user owner is user authenticated
+            if ($action->userId && $action->userId === $userAuth->userId) {
+                return true;
+            }
+
+            return $this->accessValidatorRepository->canAccessEntity($userAuth, new EntityReference($action->entity, $action->entityId), Permission::READ);
+        });
 
         return array_map(function ($action) {
             return [
@@ -50,6 +75,6 @@ readonly class GetQueueActions
                 'actioned_at' => $action->actionedAt->getTimestamp(),
                 'synced_at' => $action->syncedAt->getTimestamp(),
             ];
-        }, $actions);
+        }, $actionsFiltered);
     }
 }

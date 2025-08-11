@@ -3,6 +3,8 @@
 namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Get\GetQueueActions;
+use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
@@ -24,11 +26,17 @@ class GetQueueActionsController extends Controller
     /**
      * Constructor for GetQueueActionsController.
      *
-     * @param QueueActionRepository $repository Repository for fetching queue actions.
+     * @param QueueActionRepository $queueActionRepository Repository for fetching queue actions.
+     * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating entity access.
+     * @param EntityMapper $entityMapper Mapper for converting entities.
      */
-    function __construct(QueueActionRepository $repository)
+    function __construct(
+        QueueActionRepository           $queueActionRepository,
+        EntityAccessValidatorRepository $accessValidatorRepository,
+        EntityMapper                    $entityMapper,
+    )
     {
-        $this->useCase = new GetQueueActions($repository);
+        $this->useCase = new GetQueueActions($queueActionRepository, $accessValidatorRepository, $entityMapper);
     }
 
     /**

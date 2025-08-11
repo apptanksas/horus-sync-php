@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.13
+- Fix issue in get queue actions endpoint where retrieve the queue actions of the another users not granted.
+
 ## v0.11.12
 - Fix prune files with query params url.
 - Fix issue when get entity parent owner in sync actions with inserts.

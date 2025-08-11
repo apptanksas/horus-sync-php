@@ -166,4 +166,45 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount($countExpected, $result);
     }
 
+    function testGetActionsWithArrayUserIdsAfterTimestampIsSuccess()
+    {
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var SyncQueueActionModel[] $actions
+         */
+        $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId1, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt)
+        ]));
+
+        $actions2 = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId2, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt)
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(function () use ($ownerId1, $syncedAt) {
+            $timestamp = $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp();
+            return SyncQueueActionModelFactory::create($ownerId1, [
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
+            ]);
+        });
+
+        $this->generateArray(function () use ($ownerId2, $syncedAt) {
+            $timestamp = $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp();
+            return SyncQueueActionModelFactory::create($ownerId2, [
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp)
+            ]);
+        });
+
+        $syncedAtTarget = $syncedAt - 1;
+        $countExpected = count(array_filter(array_merge($actions, $actions2), fn(SyncQueueActionModel $entity) => $entity->getSyncedAt()->getTimestamp() > $syncedAtTarget));
+
+        // When
+        $result = $this->repository->getActions([$ownerId1, $ownerId2], $syncedAtTarget);
+
+        // Then
+        $this->assertCount($countExpected, $result);
+    }
+
 }
