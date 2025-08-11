@@ -103,20 +103,26 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      * Retrieves a list of queue actions for a specific user or owner ID,
      * optionally filtering by timestamp and excluding specific action times.
      *
-     * @param int|string $userOwnerId The ID of the user or owner to retrieve actions for.
+     * @param array|string|int $userOwnerIds The ID(s) of the user owner(s) whose actions are to be retrieved.
      * @param int|null $afterTimestamp Optional timestamp to filter actions after this time.
      * @param array $excludeDateTimes Optional list of timestamps to exclude from results.
      * @return QueueAction[] An array of QueueAction objects.
      */
-    function getActions(int|string $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
+    function getActions(int|string|array $userOwnerIds, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
-        $query = SyncQueueActionModel::query()
-            ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId);
+        $query = SyncQueueActionModel::query();
+
+        if (is_array($userOwnerIds)) {
+            $query = $query->whereIn(SyncQueueActionModel::FK_OWNER_ID, $userOwnerIds);
+        } else {
+            $query = $query->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerIds);
+        }
 
         if ($afterTimestamp !== null) {
             $query = $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=',
                 $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()))->orderBy("id");
         }
+
         if (!empty($excludeDateTimes)) {
             $query = $query->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT,
                 array_map(fn($timestamp) => $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp()), $excludeDateTimes));

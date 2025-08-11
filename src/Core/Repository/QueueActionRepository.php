@@ -36,10 +36,10 @@ interface QueueActionRepository
     /**
      * Retrieves a list of queue actions for a specific user owner ID, with optional filters.
      *
-     * @param string|int $userOwnerId The ID of the user owner whose actions are to be retrieved.
+     * @param array|string|int $userOwnerIds The ID(s) of the user owner(s) whose actions are to be retrieved.
      * @param int|null $afterTimestamp Optional timestamp to filter actions that occurred after this time.
      * @param int[] $excludeDateTimes Optional array of timestamps to exclude from the results.
      * @return QueueAction[] An array of queue actions that match the specified criteria.
      */
-    function getActions(string|int $userOwnerId, ?int $afterTimestamp = null, array $excludeDateTimes = []): array;
+    function getActions(array|string|int $userOwnerIds, ?int $afterTimestamp = null, array $excludeDateTimes = []): array;
 }
