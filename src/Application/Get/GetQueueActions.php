@@ -52,20 +52,22 @@ readonly class GetQueueActions
 
         $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
 
-        $actionsFiltered = array_filter($actions, function ($action) use ($userAuth) {
+        $actionsFiltered = array_values(
+            array_filter($actions, function ($action) use ($userAuth) {
 
-            // Validate is primary entity and has read permission
-            if ($this->entityMapper->isPrimaryEntity($action->entity) && $userAuth->hasGranted($action->entity, $action->entityId, Permission::READ)) {
-                return true;
-            }
+                // Validate is primary entity and has read permission
+                if ($this->entityMapper->isPrimaryEntity($action->entity) && $userAuth->hasGranted($action->entity, $action->entityId, Permission::READ)) {
+                    return true;
+                }
 
-            // Validate if the user owner is user authenticated
-            if ($action->userId && $action->userId === $userAuth->userId) {
-                return true;
-            }
+                // Validate if the user owner is user authenticated
+                if ($action->userId && $action->userId === $userAuth->userId) {
+                    return true;
+                }
 
-            return $this->accessValidatorRepository->canAccessEntity($userAuth, new EntityReference($action->entity, $action->entityId), Permission::READ);
-        });
+                return $this->accessValidatorRepository->canAccessEntity($userAuth, new EntityReference($action->entity, $action->entityId), Permission::READ);
+            })
+        );
 
         return array_map(function ($action) {
             return [

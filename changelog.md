@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.14
+- Fix issue in response format in get actions endpoint.
+
 ## v0.11.13
 - Fix issue in get queue actions endpoint where retrieve the queue actions of the another users not granted.
 

@@ -201,5 +201,18 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $response->assertOk();
         $response->assertJsonCount(count($guestsActions) + count($ownerActionsFromChild));
         $response->assertExactJsonStructure(self::JSON_SCHEME);
+
+
+        $data = $response->json();
+        $this->assertTrue(array_values($data) === $data, "The JSON must be an array of objects");
+
+        foreach ($data as $item) {
+            $this->assertIsArray($item);
+            $this->assertArrayHasKey('action', $item);
+            $this->assertArrayHasKey('entity', $item);
+            $this->assertArrayHasKey('data', $item);
+            $this->assertArrayHasKey('actioned_at', $item);
+            $this->assertArrayHasKey('synced_at', $item);
+        }
     }
 }
