@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.11.15
+- Implemented upset in eloquent entity repository to update or insert entities.
+
 ## v0.11.14
 - Fix issue in response format in get actions endpoint.
 
