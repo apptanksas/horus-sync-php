@@ -128,7 +128,7 @@ class EloquentEntityRepository implements EntityRepository
             foreach ($batches as $batch) {
                 $table = $this->getTableBuilder($tableName);
 
-                if (!$table->insert($batch)) {
+                if (!$table->upsert($batch, EntitySynchronizable::ATTR_ID)) {
                     throw new \Exception('Failed to insert entities batch');
                 }
             }
