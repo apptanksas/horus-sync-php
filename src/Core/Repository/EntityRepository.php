@@ -88,12 +88,12 @@ interface EntityRepository
     /**
      * Retrieves all entity hashes by entity name.
      *
-     * @param string|int $ownerUserId The ID of the owner user.
+     * @param array|string|int $userOwnerIds The ID(s) of the user(s) who own the entities.
      * @param string $entityName The name of the entity for which hashes are being retrieved.
      *
      * @return array An array of entity hashes associated with the specified entity name.
      */
-    function getEntityHashes(string|int $ownerUserId, string $entityName): array;
+    function getEntityHashes(array|string|int $userOwnerIds, string $entityName): array;
 
     /**
      * Checks if a specific entity exists.
