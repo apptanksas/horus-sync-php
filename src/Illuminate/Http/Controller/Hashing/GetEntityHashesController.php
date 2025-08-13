@@ -45,11 +45,15 @@ class GetEntityHashesController extends Controller
      */
     function __invoke(string $entityName, Request $request): JsonResponse
     {
-        return $this->handle(function () use ($entityName) {
+        return $this->handle(function () use ($entityName, $request) {
+
+            $userId = $request->get('user_id');
+
             return $this->responseSuccess(
                 $this->useCase->__invoke(
                     $this->getUserAuthenticated(),
-                    $entityName
+                    $entityName,
+                    $userId
                 )
             );
         });

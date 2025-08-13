@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.17
+- Added user id parameter in get entities hashes endpoint.
+
 # v0.11.16
 - Fixed validate entity hashes with entity granted.
 

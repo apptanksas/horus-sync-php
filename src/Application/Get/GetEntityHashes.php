@@ -5,6 +5,7 @@ namespace AppTank\Horus\Application\Get;
 use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Exception\UserNotAuthorizedException;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
@@ -42,11 +43,19 @@ readonly class GetEntityHashes
      *
      * @param UserAuth $userAuth The authenticated user.
      * @param string $entityName The name of the entity to retrieve hashes for.
+     * @param string|int|null $userIdRequested Optional user ID to filter results. If null, uses the authenticated user's ID.
      * @return array An array of entity hashes.
      */
-    function __invoke(UserAuth $userAuth, string $entityName): array
+    function __invoke(UserAuth $userAuth, string $entityName, string|int|null $userIdRequested = null): array
     {
         $userIds = array_merge([$userAuth->userId], $userAuth->getUserOwnersId());
+
+        $this->validateUserIdRequested($userIdRequested, $userIds);
+
+        if (!is_null($userIdRequested)) {
+            $userIds = $userIdRequested;
+        }
+
         $result = $this->entityRepository->getEntityHashes($userIds, $entityName);
 
         return array_values(array_filter($result, function ($item) use ($userAuth, $entityName) {
@@ -58,5 +67,13 @@ readonly class GetEntityHashes
                 return $this->accessValidatorRepository->canAccessEntity($userAuth, new EntityReference($entityName, $entityId), Permission::READ);
             })
         );
+    }
+
+
+    private function validateUserIdRequested(string|int|null $userIdRequested, array $userIds): void
+    {
+        if (!is_null($userIdRequested) && !in_array($userIdRequested, $userIds)) {
+            throw new UserNotAuthorizedException("User not authorized to access the requested user data");
+        }
     }
 }
