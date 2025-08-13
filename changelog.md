@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.16
+- Fixed validate entity hashes with entity granted.
+
 ## v0.11.15
 - Implemented upset in eloquent entity repository to update or insert entities.
 

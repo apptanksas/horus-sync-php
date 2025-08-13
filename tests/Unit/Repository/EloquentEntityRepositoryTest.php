@@ -154,7 +154,6 @@ class EloquentEntityRepositoryTest extends TestCase
     }
 
 
-
     function testInsertEventExistsIsSuccess()
     {
         // Given
@@ -573,6 +572,29 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertCount(count($parentsEntities), $result);
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[WritableEntitySynchronizable::ATTR_ID] == $parentEntity->getId()));
+            $this->assertNotEmpty(array_filter($result, fn($item) => $item[WritableEntitySynchronizable::ATTR_SYNC_HASH] == $parentEntity->getHash()));
+        }
+    }
+
+    function testEntityHashesWithMultiplesUsersIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        /**
+         * @var ParentFakeWritableEntity[] $parentsEntities
+         */
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId));
+        $parentsEntities2 = $this->generateArray(fn() => ParentFakeEntityFactory::create($ownerId2));
+
+        // When
+        $result = $this->entityRepository->getEntityHashes([$ownerId, $ownerId2], ParentFakeWritableEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($parentsEntities) + count($parentsEntities2), $result);
 
         foreach ($parentsEntities as $parentEntity) {
             $this->assertNotEmpty(array_filter($result, fn($item) => $item[WritableEntitySynchronizable::ATTR_ID] == $parentEntity->getId()));

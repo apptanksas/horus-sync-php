@@ -3,8 +3,10 @@
 namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Validate\ValidateEntitiesData;
+use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityHash;
 use AppTank\Horus\Core\Model\EntityHashValidation;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
@@ -28,9 +30,11 @@ class ValidateEntitiesDataController extends Controller
      *
      * @param EntityRepository $repository Repository for entity-related operations.
      */
-    function __construct(EntityRepository $repository)
+    function __construct(EntityRepository                $repository,
+                         EntityAccessValidatorRepository $accessValidatorRepository,
+                         EntityMapper                    $entityMapper)
     {
-        $this->useCase = new ValidateEntitiesData($repository);
+        $this->useCase = new ValidateEntitiesData($repository, $accessValidatorRepository, $entityMapper);
     }
 
     /**

@@ -2,12 +2,17 @@
 
 namespace AppTank\Horus\Application\Validate;
 
+use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Hasher;
+use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityHash;
 use AppTank\Horus\Core\Model\EntityHashValidation;
 use AppTank\Horus\Core\Model\HashValidation;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
+use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 
 /**
  * @internal Class ValidateEntitiesData
@@ -26,7 +31,9 @@ readonly class ValidateEntitiesData
      * @param EntityRepository $entityRepository Repository for managing entities and retrieving their data.
      */
     function __construct(
-        private EntityRepository $entityRepository
+        private EntityRepository                $entityRepository,
+        private EntityAccessValidatorRepository $accessValidatorRepository,
+        private EntityMapper                    $entityMapper,
     )
     {
     }
@@ -45,10 +52,11 @@ readonly class ValidateEntitiesData
     function __invoke(UserAuth $userAuth, array $entitiesHashes): array
     {
         $output = [];
+        $userIds = array_merge([$userAuth->userId], $userAuth->getUserOwnersId());
 
         foreach ($entitiesHashes as $entityHash) {
 
-            $result = $this->entityRepository->getEntityHashes($userAuth->getEffectiveUserId(), $entityHash->entityName);
+            $result = $this->filterValidateAccessEntity($userAuth, $entityHash->entityName, $this->entityRepository->getEntityHashes($userIds, $entityHash->entityName));
             $hashes = [];
 
             foreach ($result as $item) {
@@ -61,5 +69,19 @@ readonly class ValidateEntitiesData
         }
 
         return $output;
+    }
+
+
+    private function filterValidateAccessEntity(UserAuth $userAuth, string $entityName, array $result): array
+    {
+        return array_values(array_filter($result, function ($item) use ($userAuth, $entityName) {
+                $entityId = $item[EntitySynchronizable::ATTR_ID];
+                // Validate is primary entity and has read permission
+                if ($this->entityMapper->isPrimaryEntity($entityName) && $userAuth->hasGranted($entityName, $entityId, Permission::READ)) {
+                    return true;
+                }
+                return $this->accessValidatorRepository->canAccessEntity($userAuth, new EntityReference($entityName, $entityId), Permission::READ);
+            })
+        );
     }
 }

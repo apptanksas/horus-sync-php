@@ -462,19 +462,25 @@ class EloquentEntityRepository implements EntityRepository
      * This method queries the database for hashes of entities of the specified type that belong to
      * the provided user ID, returning the results in descending order of entity ID.
      *
-     * @param int|string $ownerUserId The ID of the owner whose entity hashes are to be retrieved.
+     * @param array|string|int $userOwnerIds The ID(s) of the user owner(s) to filter entities by.
      * @param string $entityName The name of the entity to retrieve hashes for.
      * @return array An array of arrays containing entity IDs and their corresponding hashes.
+     * @throws ClientException
      */
-    function getEntityHashes(string|int $ownerUserId, string $entityName): array
+    function getEntityHashes(array|string|int $userOwnerIds, string $entityName): array
     {
         /**
          * @var $entityClass WritableEntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
-        $result = $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $ownerUserId)
-            ->orderByDesc(WritableEntitySynchronizable::ATTR_ID)
-            ->get([WritableEntitySynchronizable::ATTR_ID, WritableEntitySynchronizable::ATTR_SYNC_HASH]);
+        $query = $entityClass::query();
+
+        if (is_array($userOwnerIds)) {
+            $query = $query->whereIn(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+        } else {
+            $query = $query->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+        }
+        $result = $query->orderByDesc(WritableEntitySynchronizable::ATTR_ID)->get([WritableEntitySynchronizable::ATTR_ID, WritableEntitySynchronizable::ATTR_SYNC_HASH]);
 
         return $result->toArray();
     }
