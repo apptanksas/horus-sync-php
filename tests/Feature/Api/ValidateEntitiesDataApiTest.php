@@ -111,6 +111,75 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
         $this->assertEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
     }
 
+    function testValidateEntitiesDataIOnlyOwnAndInvitedUsingActingWithUserIdIsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($userOwnerId));
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($userGuestId));
+
+        $hashExpected = Hasher::hash(array_map(fn(ParentFakeWritableEntity $entity) => Hasher::hash([
+            ParentFakeWritableEntity::ATTR_ID => $entity->getId(),
+            ParentFakeWritableEntity::ATTR_NAME => $entity->name,
+            ParentFakeWritableEntity::ATTR_COLOR => $entity->color,
+            ParentFakeWritableEntity::ATTR_TIMESTAMP => $entity->timestamp,
+            ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
+            ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
+        ]), [$parentOwner]));
+
+        $data = [[
+            'entity' => ParentFakeWritableEntity::getEntityName(),
+            'hash' => $hashExpected
+        ]];
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        // When
+        $response = $this->post(route(RouteName::POST_VALIDATE_DATA->value, ["user_id" => $userOwnerId]), $data);
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonStructure(self::JSON_SCHEME);
+        $this->assertTrue($response->json("0.hash.matched"), "Expected hash does not match obtained hash. Expected: {$hashExpected}, Obtained: {$response->json("0.hash.obtained")}");
+        $this->assertEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
+    }
+
+    function testValidateEntitiesDataWithUserIdUnauthorizedIsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+        $otherUserId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($userOwnerId));
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($userGuestId));
+
+        $data = [[
+            'entity' => ParentFakeWritableEntity::getEntityName(),
+            'hash' => $this->faker->uuid
+        ]];
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        // When
+        $response = $this->post(route(RouteName::POST_VALIDATE_DATA->value, ["user_id" => $otherUserId]), $data);
+
+        // Then
+        $response->assertUnauthorized();
+    }
 
     function testValidateEntitiesDataIsNotMatched()
     {

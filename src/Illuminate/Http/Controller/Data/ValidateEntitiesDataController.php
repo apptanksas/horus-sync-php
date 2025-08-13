@@ -46,13 +46,15 @@ class ValidateEntitiesDataController extends Controller
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
-            $data = $request->all();
+            $data = $request->getPayload()->all();
+            $userId = $request->get('user_id');
 
             return $this->responseSuccess(
                 $this->parseResponse(
                     $this->useCase->__invoke(
                         $this->getUserAuthenticated(),
-                        array_map(fn($item) => $this->parseEntityHash($item), $data)
+                        array_map(fn($item) => $this->parseEntityHash($item), $data),
+                        $userId
                     )
                 )
             );
