@@ -2,7 +2,12 @@
 
 namespace Api;
 
+use AppTank\Horus\Core\Auth\AccessLevel;
+use AppTank\Horus\Core\Auth\EntityGranted;
+use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\RouteName;
@@ -62,6 +67,51 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
     }
 
 
+    function testValidateEntitiesDataIOnlyOwnAndInvitedUsingActingIsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $ownerActions = $this->generateArray(fn() => ParentFakeEntityFactory::create($userOwnerId));
+        $guestsActions = $this->generateArray(fn() => ParentFakeEntityFactory::create($userGuestId));
+
+        $entities = array_merge([$parentOwner], $guestsActions);
+
+        $hashExpected = Hasher::hash(array_map(fn(ParentFakeWritableEntity $entity) => Hasher::hash([
+            ParentFakeWritableEntity::ATTR_ID => $entity->getId(),
+            ParentFakeWritableEntity::ATTR_NAME => $entity->name,
+            ParentFakeWritableEntity::ATTR_COLOR => $entity->color,
+            ParentFakeWritableEntity::ATTR_TIMESTAMP => $entity->timestamp,
+            ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
+            ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
+        ]), $entities));
+
+        $data = [[
+            'entity' => ParentFakeWritableEntity::getEntityName(),
+            'hash' => $hashExpected
+        ]];
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        // When
+        $response = $this->post(route(RouteName::POST_VALIDATE_DATA->value), $data);
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonStructure(self::JSON_SCHEME);
+        $this->assertTrue($response->json("0.hash.matched"), "Expected hash does not match obtained hash. Expected: {$hashExpected}, Obtained: {$response->json("0.hash.obtained")}");
+
+        $this->assertEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
+    }
+
+
     function testValidateEntitiesDataIsNotMatched()
     {
         // Given
@@ -88,6 +138,5 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
         $this->assertFalse($response->json("0.hash.matched"));
         $this->assertNotEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
     }
-
 
 }
