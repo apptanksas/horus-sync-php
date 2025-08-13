@@ -25,4 +25,11 @@ interface EntityDependsOn
      * @return string|null The reference to the parent entity, typically a UUID or similar identifier.
      */
     public function getEntityParentId(): string|null;
+
+    /**
+     * Get the name of the parameter that holds the parent entity's identifier.
+     *
+     * @return string The name of the parameter that holds the parent entity's identifier.
+     */
+    public function getEntityParentParameterName(): string;
 }

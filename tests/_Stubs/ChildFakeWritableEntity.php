@@ -79,4 +79,9 @@ class ChildFakeWritableEntity extends WritableEntitySynchronizable implements En
     {
         return $this->getAttribute(self::FK_PARENT_ID);
     }
+
+    public function getEntityParentParameterName(): string
+    {
+        return self::FK_PARENT_ID;
+    }
 }

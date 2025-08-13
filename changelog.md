@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.18
+- Added new method in EntityDependsOne to get parent parameter name.
+
 # v0.11.17
 - Added user id parameter in get entities hashes endpoint.
 - Added user id parameter in validate entities data endpoint.
