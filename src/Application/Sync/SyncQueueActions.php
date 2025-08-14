@@ -41,6 +41,10 @@ class SyncQueueActions
     private FilePathGenerator $filePathGenerator;
     private EntityRestrictionValidator $entityRestrictionValidator;
 
+    /**
+     * @var array <string, int|string> Cache to store the owner IDs of parent entities to avoid redundant database queries.
+     */
+    private array $entityOwnerIds = [];
 
     /**
      * SyncQueueActions constructor.
@@ -86,10 +90,16 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
-        usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
+        // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
+        usort($actions, function (QueueAction $a, QueueAction $b) {
+            $levelComparison = $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
+            if ($levelComparison !== 0) {
+                return $levelComparison;
+            }
+            return $a->actionedAt <=> $b->actionedAt;
+        });
 
         $this->transactionHandler->executeTransaction(function () use ($actions, $userAuth) {
-            usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
@@ -158,13 +168,12 @@ class SyncQueueActions
             // Check if the update about entity is not on a new entity
             $insertIds = array_map(fn(QueueAction $action) => $action->operation->id, $insertActions);
             $isEntityIdInInsertActions = in_array($action->operation->id, $insertIds);
-            $parentExistsInInsertActions =  $this->parentExistsInInsertActions($action, $allInsertIds);
+            $parentExistsInInsertActions = $this->parentExistsInInsertActions($action, $allInsertIds);
             $realUserOwnerId = $this->getRealUserOwnerId($action, $isEntityIdInInsertActions, $parentExistsInInsertActions);
 
             if ($realUserOwnerId != $userEffectiveUserId) {
-                $action = $action->cloneWithUsers($realUserOwnerId, $realUserOwnerId);
+                $action = $action->cloneWithUsers(userId: $userAuth->userId, ownerId: $realUserOwnerId);
             }
-
             if ($action->operation instanceof EntityInsert) {
                 $insertActions[] = $action;
             } elseif ($action->operation instanceof EntityUpdate) {
@@ -242,24 +251,39 @@ class SyncQueueActions
      *
      * @param QueueAction $action The action being performed (insert, update, delete).
      * @return int|string The real user owner ID.
+     * @throws \Exception
      */
     private function getRealUserOwnerId(QueueAction $action, bool $isEntityIdInInsertActions, bool $parentExistsInInsertActions): int|string
     {
-        $isPrimaryEntity = $this->entityMapper->isPrimaryEntity($action->entity);
+        // Closure to resolve the real owner ID based on the action and its context.
+        $resolveRealOwnerIdClosure = function (QueueAction $action, bool $isEntityIdInInsertActions, bool $parentExistsInInsertActions): int|string {
 
-        if ($isEntityIdInInsertActions && $isPrimaryEntity) {
-            return $action->userId;
-        }
+            $isPrimaryEntity = $this->entityMapper->isPrimaryEntity($action->entity);
+            if ($isEntityIdInInsertActions && $isPrimaryEntity) {
+                return $action->userId;
+            }
 
-        if ($isEntityIdInInsertActions || $parentExistsInInsertActions) {
-            return $action->ownerId;
-        }
+            if ($parentExistsInInsertActions) {
+                $parentId = $this->getParentIdFromQueueAction($action);
+                return $this->entityOwnerIds[$parentId] ?? throw new \Exception("Parent entity owner ID not found for entity {$action->entity} with ID {$parentId}");
+            }
 
-        return match (true) {
-            $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->userId,
-            $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId),
-            default => $action->ownerId
+            if ($isEntityIdInInsertActions) {
+                return $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->ownerId;
+            }
+
+            return match (true) {
+                $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->userId,
+                $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId),
+                default => $action->ownerId
+            };
         };
+
+        // Check if the real user owner ID is already cached to avoid redundant calculations.
+        $realUserOwnerId = $resolveRealOwnerIdClosure($action, $isEntityIdInInsertActions, $parentExistsInInsertActions);
+        $this->entityOwnerIds[$action->operation->id] = $realUserOwnerId;
+
+        return $realUserOwnerId;
     }
 
     /**
@@ -271,14 +295,28 @@ class SyncQueueActions
      */
     private function parentExistsInInsertActions(QueueAction $action, array $insertIds): bool
     {
-        $entityClass = $this->entityMapper->getEntityClass($action->entity);
-        $entity = new $entityClass($action->operation->toArray());
-
-        if ($entity instanceof EntityDependsOn && !is_null($parentId = $entity->getEntityParentId())) {
+        if (!is_null($parentId = $this->getParentIdFromQueueAction($action))) {
             return in_array($parentId, $insertIds);
         }
 
         return false;
     }
 
+    /**
+     * Retrieves the parent ID from the queue action.
+     *
+     * @param QueueAction $action The action from which to retrieve the parent ID.
+     * @return string|null The parent ID of the entity.
+     */
+    private function getParentIdFromQueueAction(QueueAction $action): string|null
+    {
+        $entityClass = $this->entityMapper->getEntityClass($action->entity);
+        $entity = new $entityClass($action->operation->toArray());
+
+        if ($entity instanceof EntityDependsOn) {
+            return $entity->getEntityParentId();
+        }
+
+        return null;
+    }
 }

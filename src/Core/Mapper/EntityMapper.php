@@ -26,6 +26,8 @@ class EntityMapper
     private array $paths = [];
     private array $parametersReferenceFile = [];
 
+    private array $hierarchyCache = [];
+
     /**
      * Retrieves the class name associated with the given entity name.
      *
@@ -148,8 +150,13 @@ class EntityMapper
      * @param string $entity The name of the entity to get the hierarchical level for.
      * @return int The hierarchical level of the entity (0 for root level).
      */
-    private function getHierarchicalLevel(string $entity): int
+    function getHierarchicalLevel(string $entity): int
     {
+        // Check cache first
+        if (isset($this->hierarchyCache[$entity])) {
+            return $this->hierarchyCache[$entity];
+        }
+
         $minLevel = PHP_INT_MAX;
 
         foreach ($this->paths as $path) {
@@ -163,7 +170,11 @@ class EntityMapper
         }
 
         // If entity is not found in any path, return 0 (assume root level)
-        return $minLevel === PHP_INT_MAX ? 0 : $minLevel;
+        $result = $minLevel === PHP_INT_MAX ? 0 : $minLevel;
+
+        // Cache the result
+        $this->hierarchyCache[$entity] = $result;
+        return $result;
     }
 
 }

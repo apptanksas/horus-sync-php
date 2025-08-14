@@ -18,6 +18,8 @@ use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\NestedChildFakeEntityFactory;
+use Tests\_Stubs\NestedChildFakeWritableEntity;
 use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
@@ -935,5 +937,113 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertStatus(202);
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+    }
+
+    function testPostActionWithDifferentOwnersUsingActingAs()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userOwnerId2 = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentOwner2 = ParentFakeEntityFactory::create($userOwnerId2);
+        $parentGuest = ParentFakeEntityFactory::create($userGuestId);
+
+        $childrenGuestData = ChildFakeEntityFactory::newData($parentGuest->getId());
+        $childrenOwnerData = ChildFakeEntityFactory::newData($parentOwner->getId());
+        $nestedChildrenOwnerData = NestedChildFakeEntityFactory::newData($childrenOwnerData['id']);
+        $childrenOwnerData2 = ChildFakeEntityFactory::newData($parentOwner2->getId());
+        $nestedChildrenOwnerData2 = NestedChildFakeEntityFactory::newData($childrenOwnerData2['id']);
+
+        $entityGuestId = $childrenGuestData['id'];
+        $entityOwnerId = $childrenOwnerData['id'];
+        $entityOwnerId2 = $childrenOwnerData2['id'];
+
+        $childEntityName = ChildFakeWritableEntity::getEntityName();
+        $nestedChildEntityName = NestedChildFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [
+                    new EntityGranted($userOwnerId,
+                        new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all()
+                    ),
+                    new EntityGranted($userOwnerId2,
+                        new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner2->getId()), AccessLevel::all()
+                    )
+                ], new UserActingAs($userOwnerId2))
+        )->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $childEntityName,
+                "data" => $childrenGuestData,
+                "actioned_at" => $actionedAt
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $childEntityName,
+                "data" => $childrenOwnerData,
+                "actioned_at" => $actionedAt + 1000
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $childEntityName,
+                "data" => $childrenOwnerData2,
+                "actioned_at" => $actionedAt + 2000
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $nestedChildEntityName,
+                "data" => $nestedChildrenOwnerData,
+                "actioned_at" => $actionedAt + 3000
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $nestedChildEntityName,
+                "data" => $nestedChildrenOwnerData2,
+                "actioned_at" => $actionedAt + 4000
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 3);
+        $this->assertDatabaseCount(NestedChildFakeWritableEntity::getTableName(), 2);
+
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityOwnerId,
+            ChildFakeWritableEntity::FK_PARENT_ID => $parentOwner->getId(),
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        ]);
+
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityGuestId,
+            ChildFakeWritableEntity::FK_PARENT_ID => $parentGuest->getId(),
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userGuestId,
+        ]);
+
+        $this->assertDatabaseHas(ChildFakeWritableEntity::getTableName(), [
+            'id' => $entityOwnerId2,
+            ChildFakeWritableEntity::FK_PARENT_ID => $parentOwner2->getId(),
+            ChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId2,
+        ]);
+
+        $this->assertDatabaseHas(NestedChildFakeWritableEntity::getTableName(), [
+            'id' => $nestedChildrenOwnerData['id'],
+            NestedChildFakeWritableEntity::FK_CHILD_ID => $childrenOwnerData['id'],
+            NestedChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId,
+        ]);
+
+        $this->assertDatabaseHas(NestedChildFakeWritableEntity::getTableName(), [
+            'id' => $nestedChildrenOwnerData2['id'],
+            NestedChildFakeWritableEntity::FK_CHILD_ID => $childrenOwnerData2['id'],
+            NestedChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId2,
+        ]);
     }
 }

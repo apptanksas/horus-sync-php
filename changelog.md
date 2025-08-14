@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.19
+- Fixed issue in queue actions ownership with entities granted.
+
 # v0.11.18
 - Added new method in EntityDependsOne to get parent parameter name.
 
