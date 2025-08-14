@@ -9,6 +9,7 @@ namespace AppTank\Horus\Core\Auth;
  * This includes the ID of the user who is being acted as.
  *
  * @author John Ospina
+ * @deprecated This class is deprecated and will be removed in a future version. Its unnecessary to validate owner entities.
  * Year: 2024
  */
 readonly class UserActingAs

@@ -13,6 +13,7 @@ use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase;
 use Tests\_Stubs\AdjacentFakeWritableEntity;
 use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\NestedChildFakeWritableEntity;
 use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\ParentFakeWritableEntity;
 
@@ -31,7 +32,9 @@ class ApiTestCase extends TestCase
 
         Horus::initialize([
             ParentFakeWritableEntity::class => [
-                ChildFakeWritableEntity::class,
+                ChildFakeWritableEntity::class => [
+                    NestedChildFakeWritableEntity::class
+                ],
                 AdjacentFakeWritableEntity::class
             ],
             ReadableFakeEntity::class

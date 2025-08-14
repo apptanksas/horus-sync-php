@@ -14,6 +14,7 @@ use Orchestra\Testbench\Concerns\WithLaravelMigrations;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Tests\_Stubs\AdjacentFakeWritableEntity;
 use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\NestedChildFakeWritableEntity;
 use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\ParentFakeWritableEntity;
 
@@ -32,7 +33,9 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
         Horus::initialize([
             ParentFakeWritableEntity::class => [
-                ChildFakeWritableEntity::class,
+                ChildFakeWritableEntity::class => [
+                    NestedChildFakeWritableEntity::class
+                ],
                 AdjacentFakeWritableEntity::class
             ],
             ReadableFakeEntity::class
