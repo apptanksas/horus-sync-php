@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.11.20
+- Fixed cache search entities.
+- Added group entities by owner and sync queue actions.
+
 # v0.11.19
 - Fixed issue in queue actions ownership with entities granted.
 

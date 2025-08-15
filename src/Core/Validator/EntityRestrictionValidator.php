@@ -79,7 +79,7 @@ readonly class EntityRestrictionValidator
         $currentCount = $this->entityRepository->getCount($userOwnerId, $entity);
 
         if (($currentCount + $countToInsert) > $restriction->maxCount) {
-            throw new RestrictionException("Max count entity [$entity] restriction exceeded");
+            throw new RestrictionException("Max count entity [$entity] restriction exceeded. [UserId: $userOwnerId]");
         }
     }
 }

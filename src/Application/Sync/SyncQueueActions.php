@@ -15,6 +15,7 @@ use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
+use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Model\QueueAction;
@@ -104,8 +105,12 @@ class SyncQueueActions
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
             $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
+            $insertEntitiesGroupedByUserOwnerId = $this->groupInsertEntitiesByUserOwnerId($insertEntities);
 
-            $this->entityRestrictionValidator->validateInsertEntityRestrictions($userAuth->getEffectiveUserId(), $insertEntities);
+            // Validate insert entity restrictions for each user owner ID
+            foreach ($insertEntitiesGroupedByUserOwnerId as $userOwnerId => $insertOperations) {
+                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations);
+            }
 
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
@@ -318,5 +323,27 @@ class SyncQueueActions
         }
 
         return null;
+    }
+
+
+    /**
+     * Groups insert operations by their user owner ID.
+     *
+     * @param EntityOperation[] $insertOperations
+     * @return array
+     */
+    private function groupInsertEntitiesByUserOwnerId(array $insertOperations): array
+    {
+        $groupedOperations = [];
+
+        foreach ($insertOperations as $operation) {
+            $ownerId = $operation->ownerId;
+            if (!isset($groupedOperations[$ownerId])) {
+                $groupedOperations[$ownerId] = [];
+            }
+            $groupedOperations[$ownerId][] = $operation;
+        }
+
+        return $groupedOperations;
     }
 }

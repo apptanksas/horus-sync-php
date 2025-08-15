@@ -41,10 +41,8 @@ readonly class FilePathGenerator
      *
      * @return string The path for the file upload.
      */
-    function create(UserAuth        $userAuth,
-                    EntityReference $entityReference): string
+    function create(UserAuth $userAuth, EntityReference $entityReference): string
     {
-
         $path = "{$this->config->getPathFilesUploads()}/{$userAuth->getEffectiveUserId()}/";
         $entityHierarchy = $this->entityRepository->getEntityPathHierarchy($entityReference);
 
