@@ -383,14 +383,6 @@ class EloquentEntityRepository implements EntityRepository
                             array      $ids = [],
                             ?int       $afterTimestamp = null): array
     {
-
-        $cacheKey = "readable_entity_$entityName";
-
-        // Check if the entity is cacheable and if the cache exists
-        if (empty($ids) && is_null($afterTimestamp) && $this->cacheRepository->exists($cacheKey)) {
-            return $this->cacheRepository->get($cacheKey);
-        }
-
         /**
          * @var $entityClass EntitySynchronizable
          */
@@ -415,16 +407,34 @@ class EloquentEntityRepository implements EntityRepository
         // APPLY RESTRICTIONS
         //-------------------------------------
 
+        $cacheKey = "readable_entity_$entityName" . "_";
+
         if ($this->config->hasRestrictions($entityName)) {
             $restrictions = $this->config->getRestrictionsByEntity($entityName);
             foreach ($restrictions as $restriction) {
                 if ($restriction instanceof FilterEntityRestriction) {
                     foreach ($restriction->parametersFilter as $filter) {
                         $queryBuilder = $queryBuilder->where($filter->parameterName, $filter->parameterValue);
+                        $cacheKey .= "{$filter->parameterName}_{$filter->parameterValue}_";
                     }
                 }
             }
         }
+
+        //-------------------------------------
+        // VALIDATE CACHE
+        //-------------------------------------
+
+
+        // Check if the entity is cacheable and if the cache exists
+        if (empty($ids) && is_null($afterTimestamp) && $this->cacheRepository->exists($cacheKey)) {
+            return $this->cacheRepository->get($cacheKey);
+        }
+
+        //-------------------------------------
+        // APPLY TIMESTAMP FILTER
+        //-------------------------------------
+
 
         if (!is_null($afterTimestamp) && $instanceClass instanceof WritableEntitySynchronizable) {
             $queryBuilder = $queryBuilder->where(WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT,
