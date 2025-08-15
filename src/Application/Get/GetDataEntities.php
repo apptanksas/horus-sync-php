@@ -48,7 +48,7 @@ readonly class GetDataEntities extends BaseGetEntities implements IGetDataEntiti
     {
 
         $result = array_merge(
-            $this->searchOwnEntities($userAuth->getEffectiveUserId(), $afterTimestamp),
+            $this->searchOwnEntities($userAuth->userId, $afterTimestamp),
             $this->searchEntitiesGranted($userAuth, $afterTimestamp)
         );
 
