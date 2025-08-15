@@ -89,17 +89,6 @@ readonly class UserAuth
         return $this->userActingAs?->userId ?? $this->userId;
     }
 
-    /**
-     * Check if the user is acting as another user.
-     *
-     * @return bool True if acting as another user, otherwise false.
-     */
-    function isActingAs(): bool
-    {
-        return !is_null($this->userActingAs);
-    }
-
-
     function toArray(): array
     {
         return [

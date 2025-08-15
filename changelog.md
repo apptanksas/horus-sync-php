@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.20
+- Added group entities by owner and sync queue actions.
+
 # v0.11.19
 - Fixed issue in queue actions ownership with entities granted.
 
