@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.21
+- Fix sort entities generate data sync job.
+
 # v0.11.20
 - Fixed cache search entities.
 - Added group entities by owner and sync queue actions.

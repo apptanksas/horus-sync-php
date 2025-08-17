@@ -5,6 +5,7 @@ namespace AppTank\Horus\Illuminate\Job;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\SyncJob;
 use AppTank\Horus\Core\Repository\IGetDataEntitiesUseCase;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
@@ -31,8 +32,9 @@ class GenerateDataSyncJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     function __construct(
-        private readonly UserAuth $userAuth,
-        private readonly SyncJob  $syncJob
+        private readonly UserAuth     $userAuth,
+        private readonly SyncJob      $syncJob,
+        private readonly EntityMapper $entityMapper,
     )
     {
     }
@@ -64,7 +66,8 @@ class GenerateDataSyncJob implements ShouldQueue
             $pathFile = $config->getPathFilesSync() . "/{$this->syncJob->id}.ndjson";
 
             $content = $this->createContentNdJson($data);
-            $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $content, "application/x-ndjson");
+            $contentSorted = $this->sortContentByEntityLevel($content);
+            $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $contentSorted, "application/x-ndjson");
 
             // Update the job with the download URL and result timestamp
             $jobCompleted = new SyncJob(
@@ -142,5 +145,17 @@ class GenerateDataSyncJob implements ShouldQueue
         }
 
         return $output;
+    }
+
+    private function sortContentByEntityLevel(string $contentNdJson): string
+    {
+        $lines = explode(PHP_EOL, $contentNdJson);
+        usort($lines, function ($a, $b) {
+            $entityALevel = $this->entityMapper->getHierarchicalLevel(json_decode($a, true)["entity"]);
+            $entityBLevel = $this->entityMapper->getHierarchicalLevel(json_decode($b, true)["entity"]);
+
+            return $entityALevel <=> $entityBLevel;
+        });
+        return implode(PHP_EOL, $lines);
     }
 }
