@@ -98,13 +98,32 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
 
         // Mocks
 
+        // PENDING
+        $this->syncJobRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->status === SyncJobStatus::PENDING;
+            });
+
+        // IN PROGRESS
         $this->syncJobRepository->shouldReceive('save')
             ->once()
             ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
                 return $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
-                    $syncJob->status === SyncJobStatus::PENDING;
+                    $syncJob->status === SyncJobStatus::IN_PROGRESS &&
+                    $syncJob->resultAt === null &&
+                    $syncJob->downloadUrl === null;
             });
+
+        // PENDING
+        $this->syncJobRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->status === SyncJobStatus::SUCCESS;
+            });
+
+        $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->andReturn($this->faker->url);
 
         // When
         $response = $this->postJson(route(RouteName::POST_START_SYNC_DATA_JOB->value), [
