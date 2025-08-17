@@ -22,7 +22,7 @@ class ApiTestCase extends TestCase
     use WithWorkbench;
 
     protected Generator $faker;
-    private IFileHandler|Mock $fileHandler;
+    protected IFileHandler|Mock $fileHandler;
 
     protected array $middlewares = [];
 

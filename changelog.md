@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.22
+- Fix generate data sync job.
+
 # v0.11.21
 - Fix sort entities generate data sync job.
 

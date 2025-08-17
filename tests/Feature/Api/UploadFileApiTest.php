@@ -4,13 +4,11 @@ namespace Api;
 
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
-use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\MimeType;
 use AppTank\Horus\Horus;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Mockery\Mock;
 use Tests\_Stubs\FileUploadedFactory;
 use Tests\Feature\Api\ApiTestCase;
 
@@ -18,7 +16,6 @@ class UploadFileApiTest extends ApiTestCase
 {
     use RefreshDatabase;
 
-    private IFileHandler|Mock $fileHandler;
 
     private const array JSON_SCHEME = [
         'id',
@@ -26,14 +23,6 @@ class UploadFileApiTest extends ApiTestCase
         'mime_type',
         "status"
     ];
-
-    function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fileHandler = $this->mock(IFileHandler::class);
-        $this->app->bind(IFileHandler::class, fn() => $this->fileHandler);
-    }
 
     function testUploadFileIsSuccess()
     {

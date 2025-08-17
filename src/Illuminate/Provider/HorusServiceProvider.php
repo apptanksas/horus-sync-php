@@ -7,6 +7,7 @@ use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
 use AppTank\Horus\Core\File\FilePathGenerator;
+use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -147,6 +148,10 @@ class HorusServiceProvider extends ServiceProvider
 
         $this->app->singleton(CacheRepository::class, function () {
             return new DefaultCacheRepository();
+        });
+
+        $this->app->singleton(IFileHandler::class, function () {
+            return Horus::getInstance()->getFileHandler();
         });
 
         $this->app->bind(IGetDataEntitiesUseCase::class, function () {

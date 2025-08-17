@@ -3,20 +3,16 @@
 namespace Api;
 
 use AppTank\Horus\Core\Auth\UserAuth;
-use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery\Mock;
 use Tests\_Stubs\SyncFileUploadedModelFactory;
 use Tests\Feature\Api\ApiTestCase;
 
 class GetFilesUploadedInfoApiTest extends ApiTestCase
 {
     use RefreshDatabase;
-
-    private IFileHandler|Mock $fileHandler;
 
     private const array JSON_SCHEME = [
         '*' => [
@@ -26,15 +22,6 @@ class GetFilesUploadedInfoApiTest extends ApiTestCase
             "status"
         ]
     ];
-
-
-    function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fileHandler = $this->mock(IFileHandler::class);
-        $this->app->bind(IFileHandler::class, fn() => $this->fileHandler);
-    }
 
     function testGetFilesUploadedIsSuccess()
     {

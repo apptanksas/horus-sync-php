@@ -10,6 +10,7 @@ use AppTank\Horus\Core\Model\SyncJob;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\SyncJobStatus;
 use AppTank\Horus\Horus;
+use AppTank\Horus\Illuminate\Bus\JobDispatcher;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\Mock;
@@ -18,8 +19,6 @@ use Tests\Feature\Api\ApiTestCase;
 class PostStartSyncDataJobApiTest extends ApiTestCase
 {
     use RefreshDatabase;
-
-    private IJobDispatcher|Mock $jobDispatcher;
     private SyncJobRepository|Mock $syncJobRepository;
 
     private const array JSON_SCHEME = [
@@ -31,10 +30,8 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
     {
         parent::setUp();
 
-        $this->jobDispatcher = $this->mock(IJobDispatcher::class);
         $this->syncJobRepository = $this->mock(SyncJobRepository::class);
 
-        $this->app->bind(IJobDispatcher::class, fn() => $this->jobDispatcher);
         $this->app->bind(SyncJobRepository::class, fn() => $this->syncJobRepository);
     }
 
@@ -48,27 +45,32 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
 
         Horus::getInstance()->setUserAuthenticated($userAuth)->setConfig(new Config(true));
 
-        // Mocks
-        $this->jobDispatcher->shouldReceive('dispatch')
+        // PENDING
+        $this->syncJobRepository->shouldReceive('save')
             ->once()
-            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
-                return $type === JobType::GENERATE_SYNC_DATA &&
-                    $syncJob->id === $syncId &&
-                    $syncJob->userId === $userId &&
-                    $syncJob->status === SyncJobStatus::PENDING &&
-                    $syncJob->resultAt === null &&
-                    $syncJob->downloadUrl === null;
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->status === SyncJobStatus::PENDING;
             });
 
+        // IN PROGRESS
         $this->syncJobRepository->shouldReceive('save')
             ->once()
             ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
                 return $syncJob->id === $syncId &&
                     $syncJob->userId === $userId &&
-                    $syncJob->status === SyncJobStatus::PENDING &&
+                    $syncJob->status === SyncJobStatus::IN_PROGRESS &&
                     $syncJob->resultAt === null &&
                     $syncJob->downloadUrl === null;
             });
+
+        // PENDING
+        $this->syncJobRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function (SyncJob $syncJob) use ($syncId, $userId) {
+                return $syncJob->status === SyncJobStatus::SUCCESS;
+            });
+
+        $this->fileHandler->shouldReceive("createDownloadableTemporaryFile")->andReturn($this->faker->url);
 
         // When
         $response = $this->postJson(route(RouteName::POST_START_SYNC_DATA_JOB->value), [
@@ -95,14 +97,6 @@ class PostStartSyncDataJobApiTest extends ApiTestCase
         Horus::getInstance()->setUserAuthenticated($userAuth)->setConfig(new Config(true));
 
         // Mocks
-        $this->jobDispatcher->shouldReceive('dispatch')
-            ->once()
-            ->withArgs(function (JobType $type, UserAuth $userAuth, SyncJob $syncJob) use ($syncId, $userId) {
-                return $type === JobType::GENERATE_SYNC_DATA &&
-                    $syncJob->id === $syncId &&
-                    $syncJob->userId === $userId &&
-                    $syncJob->status === SyncJobStatus::PENDING;
-            });
 
         $this->syncJobRepository->shouldReceive('save')
             ->once()

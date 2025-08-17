@@ -115,13 +115,14 @@ class GenerateDataSyncJobTest extends TestCase
         // When
         $this->generateDataSyncJob = new GenerateDataSyncJob(
             $userAuth,
-            $syncJob,
-            Horus::getInstance()->getEntityMapper()
+            $syncJob
         );
+
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
             $this->fileHandler,
-            $this->config
+            $this->config,
+            Horus::getInstance()->getEntityMapper()
         );
     }
 
@@ -169,13 +170,13 @@ class GenerateDataSyncJobTest extends TestCase
         // When
         $this->generateDataSyncJob = new GenerateDataSyncJob(
             $userAuth,
-            $syncJob,
-            Horus::getInstance()->getEntityMapper()
+            $syncJob
         );
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
             $this->fileHandler,
-            $this->config
+            $this->config,
+            Horus::getInstance()->getEntityMapper()
         );
 
         $entities = explode(PHP_EOL, $dataFileSaved);
@@ -223,7 +224,8 @@ class GenerateDataSyncJobTest extends TestCase
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
             $this->fileHandler,
-            $this->config
+            $this->config,
+            Horus::getInstance()->getEntityMapper()
         );
     }
 

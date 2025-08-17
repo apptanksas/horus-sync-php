@@ -32,9 +32,8 @@ class GenerateDataSyncJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     function __construct(
-        private readonly UserAuth     $userAuth,
-        private readonly SyncJob      $syncJob,
-        private readonly EntityMapper $entityMapper,
+        private readonly UserAuth $userAuth,
+        private readonly SyncJob  $syncJob
     )
     {
     }
@@ -53,7 +52,8 @@ class GenerateDataSyncJob implements ShouldQueue
         IGetDataEntitiesUseCase $getDataEntitiesUseCase,
         SyncJobRepository       $syncJobRepository,
         IFileHandler            $fileHandler,
-        Config                  $config
+        Config                  $config,
+        EntityMapper            $entityMapper
     ): void
     {
         // Update the job status to IN_PROGRESS
@@ -66,7 +66,7 @@ class GenerateDataSyncJob implements ShouldQueue
             $pathFile = $config->getPathFilesSync() . "/{$this->syncJob->id}.ndjson";
 
             $content = $this->createContentNdJson($data);
-            $contentSorted = $this->sortContentByEntityLevel($content);
+            $contentSorted = $this->sortContentByEntityLevel($content, $entityMapper);
             $fileUrl = $fileHandler->createDownloadableTemporaryFile($pathFile, $contentSorted, "application/x-ndjson");
 
             // Update the job with the download URL and result timestamp
@@ -147,12 +147,12 @@ class GenerateDataSyncJob implements ShouldQueue
         return $output;
     }
 
-    private function sortContentByEntityLevel(string $contentNdJson): string
+    private function sortContentByEntityLevel(string $contentNdJson, EntityMapper $entityMapper): string
     {
         $lines = explode(PHP_EOL, $contentNdJson);
-        usort($lines, function ($a, $b) {
-            $entityALevel = $this->entityMapper->getHierarchicalLevel(json_decode($a, true)["entity"]);
-            $entityBLevel = $this->entityMapper->getHierarchicalLevel(json_decode($b, true)["entity"]);
+        usort($lines, function ($a, $b) use ($entityMapper) {
+            $entityALevel = $entityMapper->getHierarchicalLevel(json_decode($a, true)["entity"]);
+            $entityBLevel = $entityMapper->getHierarchicalLevel(json_decode($b, true)["entity"]);
 
             return $entityALevel <=> $entityBLevel;
         });
