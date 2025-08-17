@@ -3,6 +3,7 @@
 namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Validate\ValidateEntitiesData;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityHash;
 use AppTank\Horus\Core\Model\EntityHashValidation;
@@ -32,9 +33,10 @@ class ValidateEntitiesDataController extends Controller
      */
     function __construct(EntityRepository                $repository,
                          EntityAccessValidatorRepository $accessValidatorRepository,
-                         EntityMapper                    $entityMapper)
+                         EntityMapper                    $entityMapper,
+                         Config                          $config)
     {
-        $this->useCase = new ValidateEntitiesData($repository, $accessValidatorRepository, $entityMapper);
+        $this->useCase = new ValidateEntitiesData($repository, $accessValidatorRepository, $entityMapper, $config);
     }
 
     /**
