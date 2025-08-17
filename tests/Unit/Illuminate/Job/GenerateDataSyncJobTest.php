@@ -10,6 +10,7 @@ use AppTank\Horus\Core\Model\SyncJob;
 use AppTank\Horus\Core\Repository\IGetDataEntitiesUseCase;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\SyncJobStatus;
+use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Job\GenerateDataSyncJob;
 use AppTank\Horus\Illuminate\Util\EntitiesDataParser;
 use Mockery\Mock;
@@ -67,9 +68,24 @@ class GenerateDataSyncJobTest extends TestCase
 
             $entities = explode(PHP_EOL, $data);
             $this->assertCount($countEntitiesExpected, $entities);
+            $parentIndex = -1;
+            $childIndex = -1;
 
-            foreach ($entities as $entity) {
+            foreach ($entities as $index => $entity) {
                 $this->assertJson($entity);
+
+                if (json_decode($entity, true)["entity"] == ParentFakeWritableEntity::getEntityName()) {
+                    $parentIndex = $index;
+                }
+
+                if (json_decode($entity, true)["entity"] == ChildFakeWritableEntity::getEntityName()) {
+                    $childIndex = $index;
+                }
+
+                // Validate parent appears before child
+                if ($parentIndex != -1 && $childIndex != -1) {
+                    $this->assertTrue($parentIndex < $childIndex, "Parent entity must appear before child entity in the file");
+                }
             }
 
             $this->assertEquals("application/x-ndjson", $contentType);
@@ -100,6 +116,7 @@ class GenerateDataSyncJobTest extends TestCase
         $this->generateDataSyncJob = new GenerateDataSyncJob(
             $userAuth,
             $syncJob,
+            Horus::getInstance()->getEntityMapper()
         );
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
@@ -153,6 +170,7 @@ class GenerateDataSyncJobTest extends TestCase
         $this->generateDataSyncJob = new GenerateDataSyncJob(
             $userAuth,
             $syncJob,
+            Horus::getInstance()->getEntityMapper()
         );
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
@@ -164,7 +182,7 @@ class GenerateDataSyncJobTest extends TestCase
         $this->assertCount($countEntitiesExpected, $entities);
         $this->assertCount($countEntitiesExpected, array_unique($entities)); // Validate no duplicated
 
-        foreach ($entities as $entity) {
+        foreach ($entities as $index => $entity) {
             $this->assertJson($entity);
         }
     }
@@ -200,6 +218,7 @@ class GenerateDataSyncJobTest extends TestCase
         $this->generateDataSyncJob = new GenerateDataSyncJob(
             $userAuth,
             $syncJob,
+            Horus::getInstance()->getEntityMapper()
         );
         $this->generateDataSyncJob->handle($this->getDataEntitiesUseCase,
             $this->syncJobRepository,
