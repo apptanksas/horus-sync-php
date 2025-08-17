@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Auth\EntityGranted;
 use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Hasher;
 use AppTank\Horus\Horus;
@@ -206,6 +207,34 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
         $response->assertJsonStructure(self::JSON_SCHEME);
         $this->assertFalse($response->json("0.hash.matched"));
         $this->assertNotEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
+    }
+
+    function testValidateEntitiesDataIsMatchedWithHashIsInCorrectBuFeatureIsDisabled()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+        Horus::getInstance()->setConfig(new Config(disabledFeatures: [FeatureName::VALIDATE_DATA]));
+
+        $this->generateArray(fn() => ParentFakeEntityFactory::create($userId));
+
+        $hashExpected = Hasher::hash(["id" => $this->faker->uuid]);
+
+
+        $data = [[
+            'entity' => ParentFakeWritableEntity::getEntityName(),
+            'hash' => $hashExpected
+        ]];
+
+        // When
+        $response = $this->post(route(RouteName::POST_VALIDATE_DATA->value), $data);
+
+        // Given
+        $response->assertOk();
+        $response->assertJsonStructure(self::JSON_SCHEME);
+        $this->assertTrue($response->json("0.hash.matched"));
+        $this->assertEquals($response->json("0.hash.obtained"), $response->json("0.hash.expected"));
     }
 
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.0
+- Added configuration to disabled features.
+
 # v0.11.22
 - Fix generate data sync job dependency with entity mapper.
 

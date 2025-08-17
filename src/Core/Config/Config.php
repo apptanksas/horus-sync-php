@@ -42,7 +42,12 @@ class Config
      * @param bool $validateAccess Indicates whether access validation is enabled.
      * @param string|null $connectionName The name of the database connection, or null if not specified.
      * @param bool $usesUUIDs Indicates whether UUIDs are used as primary keys.
+     * @param string|null $prefixTables The prefix for the tables, or null if not specified.
+     * @param string $basePathFiles The base path for files, defaults to "horus".
      * @param EntityRestriction[] $entityRestrictions An array of entity restrictions.
+     * @param EntityReference[] $sharedEntities An array of shared entities.
+     * @param FeatureName[] $disabledFeatures An array of disabled features.
+     *
      */
     function __construct(
         public readonly bool    $validateAccess = false,
@@ -51,7 +56,8 @@ class Config
         public readonly ?string $prefixTables = "sync",
         string                  $basePathFiles = "horus",
         array                   $entityRestrictions = [],
-        array                   $sharedEntities = []
+        array                   $sharedEntities = [],
+        public readonly array   $disabledFeatures = []
     )
     {
         // Validate if ends with a slash

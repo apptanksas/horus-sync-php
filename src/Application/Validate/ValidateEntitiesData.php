@@ -4,6 +4,8 @@ namespace AppTank\Horus\Application\Validate;
 
 use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
+use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\UserNotAuthorizedException;
 use AppTank\Horus\Core\Hasher;
@@ -35,6 +37,7 @@ readonly class ValidateEntitiesData
         private EntityRepository                $entityRepository,
         private EntityAccessValidatorRepository $accessValidatorRepository,
         private EntityMapper                    $entityMapper,
+        private Config                          $config
     )
     {
     }
@@ -62,22 +65,31 @@ readonly class ValidateEntitiesData
         }
 
         foreach ($entitiesHashes as $entityHash) {
-
-            $result = $this->filterValidateAccessEntity($userAuth, $entityHash->entityName, $this->entityRepository->getEntityHashes($userIds, $entityHash->entityName));
-            $hashes = [];
-
-            foreach ($result as $item) {
-                $hashes[] = $item["sync_hash"];
-            }
-
-            $currentHash = Hasher::hash($hashes);
-
+            $currentHash = $this->calculateEntityHash($userAuth, $userIds, $entityHash);
             $output[] = new EntityHashValidation($entityHash->entityName, new HashValidation($entityHash->hash, $currentHash));
         }
 
         return $output;
     }
 
+    private function calculateEntityHash(UserAuth $userAuth, array|string $userIds, EntityHash $entityHash): string
+    {
+        // Validate if the feature for validating data is disabled
+        if (in_array(FeatureName::VALIDATE_DATA, $this->config->disabledFeatures)) {
+            return $entityHash->hash;
+        }
+
+        $entityHashes = $this->entityRepository->getEntityHashes($userIds, $entityHash->entityName);
+
+        $result = $this->filterValidateAccessEntity($userAuth, $entityHash->entityName, $entityHashes);
+        $hashes = [];
+
+        foreach ($result as $item) {
+            $hashes[] = $item["sync_hash"];
+        }
+
+        return Hasher::hash($hashes);
+    }
 
     private function filterValidateAccessEntity(UserAuth $userAuth, string $entityName, array $result): array
     {

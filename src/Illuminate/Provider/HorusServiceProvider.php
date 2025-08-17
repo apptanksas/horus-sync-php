@@ -6,6 +6,7 @@ use AppTank\Horus\Client\HorusQueueActionClient;
 use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
+use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
@@ -98,6 +99,10 @@ class HorusServiceProvider extends ServiceProvider
 
         $this->app->singleton(ITransactionHandler::class, function () {
             return new EloquentTransactionHandler(Horus::getInstance()->getConnectionName());
+        });
+
+        $this->app->singleton(Config::class, function () {
+            return Horus::getInstance()->getConfig();
         });
 
         $this->app->bind(EntityRepository::class, function () {
