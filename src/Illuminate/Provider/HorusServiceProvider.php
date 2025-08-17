@@ -101,7 +101,7 @@ class HorusServiceProvider extends ServiceProvider
             return new EloquentTransactionHandler(Horus::getInstance()->getConnectionName());
         });
 
-        $this->app->singleton(Config::class, function () {
+        $this->app->bind(Config::class, function () {
             return Horus::getInstance()->getConfig();
         });
 
