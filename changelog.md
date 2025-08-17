@@ -1,7 +1,7 @@
 # Changelog
 
 # v0.11.22
-- Fix generate data sync job.
+- Fix generate data sync job dependency with entity mapper.
 
 # v0.11.21
 - Fix sort entities generate data sync job.
