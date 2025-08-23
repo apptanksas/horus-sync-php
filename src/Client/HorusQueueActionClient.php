@@ -74,16 +74,19 @@ class HorusQueueActionClient implements IHorusQueueActionClient
 
             // Extract entities for insert actions
             $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
+            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, $deleteActions);
+            $insertGrouped = $this->groupEntityByUserOwnerId(...$insertEntities);
+            $deleteGrouped = $this->groupEntityByUserOwnerId(...$deleteEntities);
 
             // Validate restrictions per user owner
-            foreach ($this->groupEntityByUserOwnerId(...$insertEntities) as $userOwnerId => $insertOperations) {
-                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations);
+            foreach ($insertGrouped as $userOwnerId => $insertOperations) {
+                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations, $deleteGrouped[$userOwnerId] ?? []);
             }
 
             // Apply CRUD operations to entities
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
-            $this->entityRepository->delete(...array_map(fn(QueueAction $action) => $action->operation, $deleteActions));
+            $this->entityRepository->delete(...$deleteEntities);
 
             // Persist queue actions
             $this->queueActionRepository->save(...$actions);

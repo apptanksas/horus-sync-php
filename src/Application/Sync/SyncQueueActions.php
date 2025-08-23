@@ -105,16 +105,18 @@ class SyncQueueActions
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
             $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
-            $insertEntitiesGroupedByUserOwnerId = $this->groupInsertEntitiesByUserOwnerId($insertEntities);
+            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, $deleteActions);
+            $insertEntitiesGroupedByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($insertEntities);
+            $deleteEntitiesGroupsByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($deleteEntities);
 
             // Validate insert entity restrictions for each user owner ID
             foreach ($insertEntitiesGroupedByUserOwnerId as $userOwnerId => $insertOperations) {
-                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations);
+                $this->entityRestrictionValidator->validateInsertEntityRestrictions($userOwnerId, $insertOperations, $deleteEntitiesGroupsByUserOwnerId[$userOwnerId] ?? []);
             }
 
             $this->entityRepository->insert(...$insertEntities);
             $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
-            $this->entityRepository->delete(...array_map(fn(QueueAction $action) => $action->operation, $deleteActions));
+            $this->entityRepository->delete(...$deleteEntities);
             $this->queueActionRepository->save(...array_merge($insertActions, $updateActions, $deleteActions));
 
             $this->validateFilesUploaded($userAuth, $insertEntities);
@@ -329,14 +331,14 @@ class SyncQueueActions
     /**
      * Groups insert operations by their user owner ID.
      *
-     * @param EntityOperation[] $insertOperations
+     * @param EntityOperation[] $operations
      * @return array
      */
-    private function groupInsertEntitiesByUserOwnerId(array $insertOperations): array
+    private function groupEntityOperationsByUserOwnerId(array $operations): array
     {
         $groupedOperations = [];
 
-        foreach ($insertOperations as $operation) {
+        foreach ($operations as $operation) {
             $ownerId = $operation->ownerId;
             if (!isset($groupedOperations[$ownerId])) {
                 $groupedOperations[$ownerId] = [];

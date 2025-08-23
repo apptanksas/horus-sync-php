@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.1
+- Added validate to delete actions in restriction to queue actions.
+
 # v0.12.0
 - Added configuration to disabled features.
 
