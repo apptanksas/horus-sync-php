@@ -25,11 +25,12 @@ readonly class EntityRestrictionValidator
      * Validates the insert entity restrictions.
      *
      * @param EntityOperation[] $insertOperations
+     * @param EntityOperation[] $deleteOperations
      * @return void
      * @throws ClientException
      */
 
-    function validateInsertEntityRestrictions(string|int $userOwnerId, array $insertOperations): void
+    function validateInsertEntityRestrictions(string|int $userOwnerId, array $insertOperations, array $deleteOperations = []): void
     {
         $insertGrouped = array_reduce($insertOperations, function ($carry, EntityInsert $operation) {
             $carry[$operation->entity] = $carry[$operation->entity] ?? 0;
@@ -37,8 +38,16 @@ readonly class EntityRestrictionValidator
             return $carry;
         }, []);
 
+        $deleteGrouped = array_reduce($deleteOperations, function ($carry, EntityOperation $operation) {
+            $carry[$operation->entity] = $carry[$operation->entity] ?? 0;
+            $carry[$operation->entity] += 1;
+            return $carry;
+        }, []);
+
 
         foreach ($insertGrouped as $entity => $countToInsert) {
+
+            $countToDelete = $deleteGrouped[$entity] ?? 0;
 
             // Check if entity has restrictions
             if (!$this->config->hasRestrictions($entity)) {
@@ -50,7 +59,7 @@ readonly class EntityRestrictionValidator
             foreach ($restrictions as $restriction) {
                 // Validate max count entity restriction
                 if ($restriction instanceof MaxCountEntityRestriction) {
-                    $this->validateMaxCountEntityRestriction($userOwnerId, $restriction, $entity, $countToInsert);
+                    $this->validateMaxCountEntityRestriction($userOwnerId, $restriction, $entity, $countToInsert, $countToDelete);
                     continue;
                 }
 
@@ -67,6 +76,7 @@ readonly class EntityRestrictionValidator
      * @param MaxCountEntityRestriction $restriction
      * @param string $entity
      * @param int $countToInsert
+     * @param int $countToDelete
      * @return void
      * @throws ClientException
      */
@@ -74,12 +84,15 @@ readonly class EntityRestrictionValidator
         string|int                $userOwnerId,
         MaxCountEntityRestriction $restriction,
         string                    $entity,
-        int                       $countToInsert): void
+        int                       $countToInsert,
+        int                       $countToDelete
+    ): void
     {
         $currentCount = $this->entityRepository->getCount($userOwnerId, $entity);
+        $newCount = $currentCount - $countToDelete + $countToInsert;
 
-        if (($currentCount + $countToInsert) > $restriction->maxCount) {
-            throw new RestrictionException("Max count entity [$entity] restriction exceeded. [UserId: $userOwnerId]");
+        if ($newCount > $restriction->maxCount) {
+            throw new RestrictionException("Max count entity [$entity] restriction exceeded. [UserId: $userOwnerId, Current Count: $currentCount, Count to Insert: $countToInsert, Count to Delete:$countToDelete, Max Count: {$restriction->maxCount}]");
         }
     }
 }

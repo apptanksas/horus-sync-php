@@ -21,6 +21,14 @@ class QueueActionFactory
         $faker = \Faker\Factory::create();
         $action = SyncAction::random();
 
+        if ($entityOperation instanceof EntityInsert) {
+            $action = SyncAction::INSERT;
+        } elseif ($entityOperation instanceof EntityUpdate) {
+            $action = SyncAction::UPDATE;
+        } elseif ($entityOperation instanceof EntityDelete) {
+            $action = SyncAction::DELETE;
+        }
+
         $entity = $faker->userName;
         $operation = $entityOperation ?? self::createEntityOperation($entity, $action, $userId);
 
