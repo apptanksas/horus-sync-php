@@ -92,7 +92,17 @@ readonly class EntityRestrictionValidator
         $newCount = $currentCount - $countToDelete + $countToInsert;
 
         if ($newCount > $restriction->maxCount) {
-            throw new RestrictionException("Max count entity [$entity] restriction exceeded. [UserId: $userOwnerId, Current Count: $currentCount, Count to Insert: $countToInsert, Count to Delete:$countToDelete, Max Count: {$restriction->maxCount}]");
+            $message = "Max count entity [$entity] restriction exceeded.";
+            $codeError = "max_count_entity_restriction_exceeded";
+            $context = [
+                'user_id' => $userOwnerId,
+                'entity' => $entity,
+                'current_count' => $currentCount,
+                'count_to_insert' => $countToInsert,
+                'count_to_delete' => $countToDelete,
+                'max_count' => $restriction->maxCount
+            ];
+            throw new RestrictionException($message, $codeError, $context);
         }
     }
 }

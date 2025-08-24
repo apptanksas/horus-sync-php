@@ -35,7 +35,7 @@ abstract class Controller
             $this->validateUserActingAs();
             return $callback();
         } catch (ClientException $e) {
-            return $this->responseBadRequest($e->getMessage());
+            return $this->responseBadRequest($e->getMessage(),$e->codeError, $e->context);
         } catch (\PDOException $e) {
             return $this->responseBadRequest($this->parseError($e, $e->getMessage()));
         } catch (\ErrorException $e) {
@@ -77,9 +77,19 @@ abstract class Controller
      * @param string $message Error message to include in the response.
      * @return JsonResponse Returns a JSON response with an error message and a 400 status code.
      */
-    function responseBadRequest(string $message): JsonResponse
+    function responseBadRequest(string $message, string|null $codeError = null, array $context = []): JsonResponse
     {
-        return $this->response(["message" => $message], 400);
+        $data = [
+            "message" => $message,
+            "code" => $codeError,
+            "context" => $context
+        ];
+
+        if (empty($context)) {
+            unset($data['context']);
+        }
+
+        return $this->response($data, 400);
     }
 
     /**
