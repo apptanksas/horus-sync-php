@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.3
+- Fixed exception when a file uploaded could not be copied to the storage disk.
+
 # v0.12.2
 - Fixed validate parent entity owner id in sync queue actions.
 - Added context info in bad request exception by entity max count exceeded.
