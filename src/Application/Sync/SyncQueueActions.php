@@ -26,6 +26,7 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Validator\EntityRestrictionValidator;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @internal Class SyncQueueActions
@@ -234,22 +235,35 @@ class SyncQueueActions
                         throw new \Exception("File not found");
                     }
 
+                    $pathFileFinal = $fileUploaded->path;
+                    $urlFinal = $fileUploaded->publicUrl;
+                    $status = $fileUploaded->status;
+
                     $pathFileDestination = $this->filePathGenerator->create($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
-                    $urlFile = $this->fileHandler->generateUrl($pathFileDestination);
 
                     if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
                         $this->fileHandler->delete($fileUploaded->path);
+                        $pathFileFinal = $pathFileDestination;
+                        $urlFinal = $this->fileHandler->generateUrl($pathFileDestination);
+                        $status = SyncFileStatus::LINKED;
                     } else {
-                        throw new \Exception("Error copying file");
+                        Log::error("[Horus:File]Error copying file", [
+                            'referenceFile' => $referenceFile,
+                            'file' => $fileUploaded->path,
+                            'destination' => $pathFileDestination,
+                            'userId' => $userAuth->userId,
+                            'entity' => $operation->entity,
+                            'entityId' => $operation->id
+                        ]);
                     }
 
                     $fileUploaded = new FileUploaded(
                         $fileUploaded->id,
                         $fileUploaded->mimeType,
-                        $pathFileDestination,
-                        $urlFile,
+                        $pathFileFinal,
+                        $urlFinal,
                         $fileUploaded->ownerId,
-                        SyncFileStatus::LINKED
+                        $status
                     );
 
                     $this->fileUploadedRepository->save($fileUploaded);
