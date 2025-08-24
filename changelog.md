@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.2
+- Fixed validate parent entity owner id in sync queue actions.
+
 # v0.12.1
 - Added validate to delete actions in restriction to queue actions.
 

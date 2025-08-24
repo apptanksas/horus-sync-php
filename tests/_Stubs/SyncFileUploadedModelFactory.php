@@ -10,13 +10,14 @@ class SyncFileUploadedModelFactory
     public static function create(?string             $userId = null,
                                   string              $fileUrl = null,
                                   ?SyncFileStatus     $status = null,
-                                  ?\DateTimeInterface $createdAt = null
+                                  ?\DateTimeInterface $createdAt = null,
+                                  ?string             $fileReference = null
     ): SyncFileUploadedModel
     {
         $faker = \Faker\Factory::create();
 
         $data = [
-            SyncFileUploadedModel::ATTR_ID => $faker->uuid,
+            SyncFileUploadedModel::ATTR_ID => $fileReference ?? $faker->uuid,
             SyncFileUploadedModel::ATTR_MIME_TYPE => $faker->mimeType(),
             SyncFileUploadedModel::ATTR_PATH => $faker->filePath(),
             SyncFileUploadedModel::ATTR_PUBLIC_URL => $fileUrl ?? $faker->imageUrl,

@@ -10,12 +10,16 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\SyncFileStatus;
+use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\NestedChildFakeEntityFactory;
@@ -24,6 +28,7 @@ use Tests\_Stubs\ReadableFakeEntity;
 use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
+use Tests\_Stubs\SyncFileUploadedModelFactory;
 use Tests\Feature\Api\ApiTestCase;
 
 class PostSyncQueueActionsApiTest extends ApiTestCase
@@ -1045,5 +1050,124 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             NestedChildFakeWritableEntity::FK_CHILD_ID => $childrenOwnerData2['id'],
             NestedChildFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userOwnerId2,
         ]);
+    }
+
+    function testPostActionWithNestedChildAndInsertUpdateAndDelete()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::newData($userOwnerId);
+        $parentId = $parentOwner['id'];
+        $fileReference = $parentOwner[ParentFakeWritableEntity::ATTR_IMAGE];
+
+        SyncFileUploadedModelFactory::create(
+            $userOwnerId,
+            null,
+            SyncFileStatus::PENDING,
+            null,
+            $fileReference
+        );
+
+        $childrenOwnerData = ChildFakeEntityFactory::newData($parentId);
+        $nestedChildrenOwnerData = NestedChildFakeEntityFactory::newData($childrenOwnerData['id']);
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userOwnerId)
+        )->setConfig(new Config(true));
+        Horus::setFileHandler(new TestFileHandler());
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => ParentFakeWritableEntity::getEntityName(),
+                "data" => $parentOwner,
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp()
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => ChildFakeWritableEntity::getEntityName(),
+                "data" => $childrenOwnerData,
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp()
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => NestedChildFakeWritableEntity::getEntityName(),
+                "data" => $nestedChildrenOwnerData,
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp()
+            ],
+            [
+                "action" => "UPDATE",
+                "entity" => NestedChildFakeWritableEntity::getEntityName(),
+                "data" => [
+                    "id" => $nestedChildrenOwnerData['id'],
+                    "attributes" => $nestedChildrenOwnerData,
+                ],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 5
+            ],
+            [
+                "action" => "DELETE",
+                "entity" => NestedChildFakeWritableEntity::getEntityName(),
+                "data" => ["id" => $nestedChildrenOwnerData['id']],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 10
+            ],
+            [
+                "action" => "DELETE",
+                "entity" => ChildFakeWritableEntity::getEntityName(),
+                "data" => ["id" => $childrenOwnerData['id']],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 20
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+    }
+}
+
+class TestFileHandler implements IFileHandler
+{
+
+    #[\Override] function upload(int|string $userOwnerId, string $fileId, string $path, UploadedFile $file): FileUploaded
+    {
+        return new FileUploaded(
+            id: $fileId,
+            mimeType: $file->getClientMimeType(),
+            path: $path . "/image.png",
+            publicUrl: "http://example.com/" . $path . "/image.png",
+            ownerId: $userOwnerId,
+        );
+    }
+
+    #[\Override] function createDownloadableTemporaryFile(string $pathFile, string $content, string $contentType, int $expiresInSeconds = 3600): string
+    {
+        return "http://example.com/image.png";
+    }
+
+    #[\Override] function delete(string $pathFile): bool
+    {
+        return true;
+    }
+
+    #[\Override] function getMimeTypesAllowed(): array
+    {
+        return [
+            'image/png',
+            'image/jpeg',
+            'image/gif',
+            'image/webp',
+            'image/svg+xml',
+        ];
+    }
+
+    #[\Override] function copy(string $pathFrom, string $pathTo): bool
+    {
+        return true;
+    }
+
+    #[\Override] function generateUrl(string $path): string
+    {
+        return "http://example.com/" . $path . "/image.png";
     }
 }
