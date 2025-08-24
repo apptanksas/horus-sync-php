@@ -48,6 +48,11 @@ class SyncQueueActions
     private array $entityOwnerIds = [];
 
     /**
+     * @var QueueAction[] List of actions to be processed.
+     */
+    private array $actions = [];
+
+    /**
      * SyncQueueActions constructor.
      *
      * @param ITransactionHandler $transactionHandler Handler for managing database transactions.
@@ -91,6 +96,8 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
+        $this->actions = $actions;
+
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
         usort($actions, function (QueueAction $a, QueueAction $b) {
             $levelComparison = $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
@@ -166,15 +173,14 @@ class SyncQueueActions
         $deleteActions = [];
 
         $userEffectiveUserId = $userAuth->getEffectiveUserId();
-        $allInsertIds = array_map(fn(QueueAction $action) => $action->operation->id, array_filter($actions, fn(QueueAction $action) => $action->operation instanceof EntityInsert));
+        $allInsertIds = array_map(fn(QueueAction $action) => $action->operation->id, array_values(array_filter($actions, fn(QueueAction $action) => $action->operation instanceof EntityInsert)));
 
         foreach ($actions as $action) {
 
             $entityReference = new EntityReference($action->entity, $action->operation->id);
 
             // Check if the update about entity is not on a new entity
-            $insertIds = array_map(fn(QueueAction $action) => $action->operation->id, $insertActions);
-            $isEntityIdInInsertActions = in_array($action->operation->id, $insertIds);
+            $isEntityIdInInsertActions = in_array($action->operation->id, $allInsertIds) || ($action->operation instanceof EntityInsert);
             $parentExistsInInsertActions = $this->parentExistsInInsertActions($action, $allInsertIds);
             $realUserOwnerId = $this->getRealUserOwnerId($action, $isEntityIdInInsertActions, $parentExistsInInsertActions);
 
@@ -318,7 +324,26 @@ class SyncQueueActions
     private function getParentIdFromQueueAction(QueueAction $action): string|null
     {
         $entityClass = $this->entityMapper->getEntityClass($action->entity);
-        $entity = new $entityClass($action->operation->toArray());
+        $entity = null;
+
+        if ($action->operation instanceof EntityInsert) {
+            $entity = new $entityClass($action->operation->toArray());
+        }
+
+        if ($action->operation instanceof EntityUpdate) {
+            $entity = new $entityClass($action->operation->attributes);
+        }
+
+        if ($action->operation instanceof EntityDelete) {
+            $insertActions = array_filter(array_filter($this->actions, fn(QueueAction $a) => $a->operation instanceof EntityInsert));
+            // Check if the insert action matches the current action's operation ID
+            foreach ($insertActions as $insertAction) {
+                if ($insertAction->operation->id === $action->operation->id) {
+                    $entity = new $entityClass($insertAction->operation->toArray());
+                    break;
+                }
+            }
+        }
 
         if ($entity instanceof EntityDependsOn) {
             return $entity->getEntityParentId();
