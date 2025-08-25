@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.4
+- Refactor setup Max entity count restriction.
+
 # v0.12.3
 - Fixed exception when a file uploaded could not be copied to the storage disk.
 

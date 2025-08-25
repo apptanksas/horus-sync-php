@@ -131,7 +131,7 @@ class AppServiceProvider extends ServiceProvider
             usesUUIDs: true,
             prefixTables: 'hs',
             entityRestrictions: [
-                new MaxCountEntityRestriction("entity_name", maxCount: 10)
+                new MaxCountEntityRestriction("user_id","entity_name", maxCount: 10)
             ],
         );
        
@@ -291,7 +291,7 @@ By default, the setup is set the Config class in the Horus initialization, but i
 
 ```php 
 Horus::getInstance()->setEntityRestrictions([
-    new MaxCountEntityRestriction("entity_name", maxCount: 10),
+    new MaxCountEntityRestriction("user_id","entity_name", maxCount: 10),
     new FilterEntityRestriction("entity_name", [
        new ParameterFilter("country", "CO")
     ])
