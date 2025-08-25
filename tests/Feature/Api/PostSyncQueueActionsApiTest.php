@@ -687,7 +687,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             ->setUserAuthenticated(new UserAuth($userId))
             ->setConfig(new Config(true))
             ->setEntityRestrictions([
-                new MaxCountEntityRestriction(ParentFakeWritableEntity::getEntityName(), count($entities))
+                new MaxCountEntityRestriction($userId, ParentFakeWritableEntity::getEntityName(), count($entities))
             ]);
 
         $entityId = $this->faker->uuid;
@@ -720,6 +720,57 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertBadRequest();
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($entities));
     }
+
+    function testPostSyncQueueIsSuccessWithRestrictions()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentGuest = ParentFakeEntityFactory::create($userGuestId);
+
+
+        $this->generateCountArray(fn() => ChildFakeEntityFactory::create($parentOwner->getId(), $userOwnerId), 9);
+
+        $childrenGuestData = ChildFakeEntityFactory::newData($parentGuest->getId());
+        $childrenOwnerData = ChildFakeEntityFactory::newData($parentOwner->getId());
+
+        $entityName = ChildFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true))
+            ->setEntityRestrictions([
+                new MaxCountEntityRestriction($userOwnerId, ChildFakeWritableEntity::getEntityName(), 999),
+                new MaxCountEntityRestriction($userGuestId, ChildFakeWritableEntity::getEntityName(), 1)
+            ]);
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenGuestData,
+                "actioned_at" => $actionedAt
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenOwnerData,
+                "actioned_at" => $actionedAt + 1000
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+    }
+
 
     function testPostSyncQueueInsertIsSuccessWithChildrenAsOwner()
     {

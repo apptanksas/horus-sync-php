@@ -15,6 +15,7 @@ namespace AppTank\Horus\Core\Config\Restriction;
 readonly class MaxCountEntityRestriction implements EntityRestriction
 {
     public function __construct(
+        public string $userOwnerId,
         public string $entityName,
         public int    $maxCount
     )

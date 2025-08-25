@@ -160,11 +160,12 @@ class SyncQueueActionsTest extends TestCase
 
     function testInvokeIsFailureByMaxCountEntityExceeded()
     {
+        $userId = $this->faker->uuid;
         $this->expectException(RestrictionException::class);
 
         $mapper = Horus::getInstance()->getEntityMapper();
         $config = new Config(true, entityRestrictions: [
-            new MaxCountEntityRestriction(ParentFakeWritableEntity::getEntityName(), 1)
+            new MaxCountEntityRestriction($userId, ParentFakeWritableEntity::getEntityName(), 1)
         ]);
 
         $syncQueueActions = new SyncQueueActions(
@@ -179,14 +180,14 @@ class SyncQueueActionsTest extends TestCase
             $config
         );
 
-        $userId = $this->faker->uuid;
-        $insertActions = $this->generateArray(function () {
+        $insertActions = $this->generateArray(function () use($userId) {
             $parentData = ParentFakeEntityFactory::newData();
             return QueueActionFactory::create(
                 EntityOperationFactory::createEntityInsert(
-                    $this->faker->uuid,
+                    $userId,
                     ParentFakeWritableEntity::getEntityName(), $parentData, now()->toDateTimeImmutable()
-                )
+                ),
+                $userId
             );
         });
 
@@ -201,10 +202,11 @@ class SyncQueueActionsTest extends TestCase
     {
         $mapper = Horus::getInstance()->getEntityMapper();
         $filesUploaded = array();
+        $userId = $this->faker->uuid;
 
         $maxCount = 5;
         $config = new Config(true, entityRestrictions: [
-            new MaxCountEntityRestriction(ParentFakeWritableEntity::getEntityName(), $maxCount)
+            new MaxCountEntityRestriction($userId, ParentFakeWritableEntity::getEntityName(), $maxCount)
         ]);
         $ownerId = $this->faker->uuid;
 
@@ -220,7 +222,6 @@ class SyncQueueActionsTest extends TestCase
             $config
         );
 
-        $userId = $this->faker->uuid;
         $insertActions = $this->generateCountArray(function () use ($ownerId, &$filesUploaded) {
             $parentData = ParentFakeEntityFactory::newData();
 

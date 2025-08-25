@@ -58,12 +58,9 @@ readonly class EntityRestrictionValidator
 
             foreach ($restrictions as $restriction) {
                 // Validate max count entity restriction
-                if ($restriction instanceof MaxCountEntityRestriction) {
+                if ($restriction instanceof MaxCountEntityRestriction && $restriction->userOwnerId == $userOwnerId) {
                     $this->validateMaxCountEntityRestriction($userOwnerId, $restriction, $entity, $countToInsert, $countToDelete);
-                    continue;
                 }
-
-                throw new OperationNotPermittedException("Restriction not supported");
             }
         }
     }
