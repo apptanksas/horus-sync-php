@@ -180,13 +180,14 @@ class SyncQueueActionsTest extends TestCase
             $config
         );
 
-        $insertActions = $this->generateArray(function () {
+        $insertActions = $this->generateArray(function () use($userId) {
             $parentData = ParentFakeEntityFactory::newData();
             return QueueActionFactory::create(
                 EntityOperationFactory::createEntityInsert(
-                    $this->faker->uuid,
+                    $userId,
                     ParentFakeWritableEntity::getEntityName(), $parentData, now()->toDateTimeImmutable()
-                )
+                ),
+                $userId
             );
         });
 
