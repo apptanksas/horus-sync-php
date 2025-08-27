@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.5
+- Fixed issue in insert entities with optional parameters.
+
 # v0.12.4
 - Refactor setup Max entity count restriction.
 

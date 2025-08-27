@@ -92,12 +92,26 @@ class EloquentEntityRepository implements EntityRepository
 
             $entityIdsCachePending[$operation->entity][$operation->id] = $operation->ownerId;
 
-            $groupOperationByEntity[$operation->entity][] = array_merge([
+            /**
+             * @var SyncParameter[] $nullableParameters
+             */
+            $nullableParameters = array_values(array_filter($this->getEntityParameters($operation->entity), fn(SyncParameter $parameter) => $parameter->type->isNotRelation() && $parameter->isNullable));
+
+            $entityDataWithNullables = [];
+
+            foreach ($nullableParameters as $parameter) {
+                $entityDataWithNullables[$parameter->name] = null;
+            }
+
+            $entityData = array_merge($entityDataWithNullables, [
                 WritableEntitySynchronizable::ATTR_SYNC_HASH => $operation->hash(),
                 WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID => $operation->ownerId,
                 WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT => $this->dateTimeUtil->getCurrent(),
                 WritableEntitySynchronizable::ATTR_SYNC_UPDATED_AT => $this->dateTimeUtil->getCurrent(),
             ], $this->parseData($operation->entity, $operation->toArray()));
+
+
+            $groupOperationByEntity[$operation->entity][] = $entityData;
         }
 
         // Reorder operations to respect the entity order defined in the map
@@ -306,7 +320,7 @@ class EloquentEntityRepository implements EntityRepository
              */
             $entityClass = $this->entityMapper->getEntityClass($entityName);
 
-            // Process deletes in batches to avoid large IN clauses  
+            // Process deletes in batches to avoid large IN clauses
             $idBatches = array_chunk($ids, self::BATCH_SIZE);
 
             foreach ($idBatches as $idBatch) {
@@ -932,7 +946,7 @@ class EloquentEntityRepository implements EntityRepository
 
             $parameter = $entityParameters[$key] ?? null;
 
-            match ($parameter) {
+            match ($parameter?->type) {
                 SyncParameterType::TIMESTAMP => $output[$key] = $this->dateTimeUtil->getFormatDate($value),
                 default => $output[$key] = $value
             };
@@ -945,7 +959,7 @@ class EloquentEntityRepository implements EntityRepository
      * Retrieves the parameters of an entity class.
      *
      * @param string $entity
-     * @return array
+     * @return SyncParameter[]
      * @throws ClientException
      */
     private function getEntityParameters(string $entity): array
@@ -963,7 +977,7 @@ class EloquentEntityRepository implements EntityRepository
         $output = [];
 
         foreach ($parameters as $parameter) {
-            $output[$parameter->name] = $parameter->type;
+            $output[$parameter->name] = $parameter;
         }
 
         $this->cacheEntityParameters[$entity] = $output;
