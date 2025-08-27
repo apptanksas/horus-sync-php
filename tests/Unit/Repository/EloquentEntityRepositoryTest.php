@@ -108,6 +108,39 @@ class EloquentEntityRepositoryTest extends TestCase
         }
     }
 
+    function testInsertWithOptionalsIsSuccess()
+    {
+        // Given
+        ParentFakeWritableEntity::query()->forceDelete();
+
+        $parentDataWithOutNullables = ParentFakeEntityFactory::newData();
+        unset($parentDataWithOutNullables[ParentFakeWritableEntity::ATTR_VALUE_NULLABLE]);
+        unset($parentDataWithOutNullables[ParentFakeWritableEntity::ATTR_IMAGE]);
+
+        /**
+         * @var EntityOperation[] $parentsEntities
+         */
+        $parentsEntities = [
+            EntityOperationFactory::createEntityInsert(
+                $this->faker->uuid,
+                ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
+            ),
+            EntityOperationFactory::createEntityInsert(
+                $this->faker->uuid,
+                ParentFakeWritableEntity::getEntityName(), $parentDataWithOutNullables, now()->toDateTimeImmutable()
+            )
+        ];
+
+
+        $this->cacheRepository->shouldReceive("set")->times(count($parentsEntities));
+
+        // When
+        $this->entityRepository->insert(...$parentsEntities);
+
+        // Then
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities));
+    }
+
     function testInsertWithoutNullableIsSuccess()
     {
         // Given
