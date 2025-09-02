@@ -144,9 +144,9 @@ interface EntityRepository
      * @param string $entityName The name of the entity.
      * @param string $entityId The ID of the entity.
      *
-     * @return string|int The ID of the user who owns the entity.
+     * @return string|int|null The ID of the user who owns the entity.
      */
-    function getEntityOwner(string $entityName, string $entityId): string|int;
+    function getEntityOwner(string $entityName, string $entityId): string|int|null;
 
     /**
      * Retrieves the parent owner of a child entity based on its reference and data.

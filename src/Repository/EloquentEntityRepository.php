@@ -615,10 +615,10 @@ class EloquentEntityRepository implements EntityRepository
      * @param string $entityName The name of the entity.
      * @param string $entityId The ID of the entity.
      *
-     * @return string|int The ID of the user who owns the entity.
+     * @return string|int|null The ID of the user who owns the entity.
      * @throws ClientException
      */
-    public function getEntityOwner(string $entityName, string $entityId): string|int
+    public function getEntityOwner(string $entityName, string $entityId): string|int|null
     {
         $cacheKey = $this->createEntityOwnerCacheKey($entityName, $entityId);
 
@@ -637,7 +637,7 @@ class EloquentEntityRepository implements EntityRepository
             ->value(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID);
 
         if (is_null($ownerId)) {
-            throw new ClientException("Entity with ID $entityId does not exist in entity $entityName.");
+            return null;
         }
 
         $this->cacheRepository->set($cacheKey, $ownerId, self::CACHE_TTL_ONE_YEAR);
