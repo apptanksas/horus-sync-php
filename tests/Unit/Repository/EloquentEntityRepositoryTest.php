@@ -6,7 +6,6 @@ namespace Tests\Unit\Repository;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
@@ -1102,17 +1101,18 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertEquals($ownerId, $result);
     }
 
-    function testGetEntityOwnerIsFailureByNotFound()
+    function testGetEntityOwnerThenReturnNullWhenNotFound()
     {
-        $this->expectException(ClientException::class);
-
         $this->cacheRepository->shouldReceive("exists")->andReturn(false);
 
         // Given
         $invalidEntityId = $this->faker->uuid;
 
         // When
-        $this->entityRepository->getEntityOwner(ParentFakeWritableEntity::getEntityName(), $invalidEntityId);
+        $result = $this->entityRepository->getEntityOwner(ParentFakeWritableEntity::getEntityName(), $invalidEntityId);
+
+        // Then
+        $this->assertNull($result);
     }
 
     function testGetEntityParenOwnerIsSuccess()

@@ -301,7 +301,7 @@ class SyncQueueActions
 
             return match (true) {
                 $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->userId,
-                $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId),
+                $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId) ?: $action->ownerId,
                 default => $action->ownerId
             };
         };

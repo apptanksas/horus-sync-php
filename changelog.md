@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.6
+- Fixed exception when an entity does not exist get entity owner.
+
 # v0.12.5
 - Fixed issue in insert entities with optional parameters.
 
