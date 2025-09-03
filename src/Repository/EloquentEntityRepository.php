@@ -90,6 +90,10 @@ class EloquentEntityRepository implements EntityRepository
 
         foreach ($operations as $operation) {
 
+            if (isset($entityIdsCachePending[$operation->entity][$operation->id])) {
+                continue;
+            }
+
             $entityIdsCachePending[$operation->entity][$operation->id] = $operation->ownerId;
 
             /**
