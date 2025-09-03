@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.7
+- Fixed filter duplicate entities in insert operations.
+
 # v0.12.6
 - Fixed exception when an entity does not exist get entity owner.
 

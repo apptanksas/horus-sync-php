@@ -207,6 +207,27 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($parentsEntities));
     }
 
+    function testInsertDuplicateEntitiesIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+
+        $entitiesDuplicated = array_fill(0, rand(2, 10), ParentFakeEntityFactory::create());
+        $insertsOperation = array_map(function (ParentFakeWritableEntity $entity) use ($ownerId, $entityName) {
+            $attributes = $entity->toArray();
+            return EntityOperationFactory::createEntityInsert($ownerId, $entityName, $attributes, now()->toDateTimeImmutable());
+        }, $entitiesDuplicated);
+
+        $this->cacheRepository->shouldReceive("set")->times(1);
+
+        // When
+        $this->entityRepository->insert(...$insertsOperation);
+
+        // Then
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(),1);
+    }
+
     function testUpdateMultiplesRowsIsSuccess()
     {
         $ownerId = $this->faker->uuid;
