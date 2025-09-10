@@ -779,6 +779,26 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertEquals($childEntity->getId(), $result[1]->getId());
     }
 
+    function testGetEntityPathHierarchyWithSoftDeleted()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+        $childEntity = ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+        $childEntity->delete();
+
+        $entityReference = new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId());
+
+        // When
+        $result = $this->entityRepository->getEntityPathHierarchy($entityReference);
+
+        // Then
+        $this->assertCount(2, $result);
+        $this->assertEquals($parentEntity->getId(), $result[0]->getId());
+        $this->assertEquals($childEntity->getId(), $result[1]->getId());
+    }
+
+
     function testGetCountIsSuccess()
     {
         // Given
