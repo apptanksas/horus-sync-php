@@ -554,7 +554,7 @@ class EloquentEntityRepository implements EntityRepository
         $foreignKeys = array_map(fn(SyncParameter $parameter) => $parameter->name,
             array_filter($entityClass::parameters(), fn(SyncParameter $parameter) => $parameter->linkedEntity != null));
 
-        $entity = $entityClass::query()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first(array_merge($foreignKeys, [EntitySynchronizable::ATTR_ID]));
+        $entity = $entityClass::withTrashed()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first(array_merge($foreignKeys, [EntitySynchronizable::ATTR_ID]));
 
         if ($entity instanceof EntityDependsOn) {
             /**

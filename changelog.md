@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.8
+- Fixed get entity path hierarchy with entities soft deleted.
+
 # v0.12.7
 - Fixed filter duplicate entities in insert operations.
 
