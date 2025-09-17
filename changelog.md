@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.9
+- Fixed issue when the owner user is setup as user acting as.
+
 # v0.12.8
 - Fixed get entity path hierarchy with entities soft deleted.
 

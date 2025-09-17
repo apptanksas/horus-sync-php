@@ -257,7 +257,6 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
 
         $data = [
-            // delete action
             [
                 "action" => "INSERT",
                 "entity" => ReadableFakeEntity::getEntityName(),
@@ -1171,6 +1170,34 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // When
         $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+    }
+
+    function testDeleteEntityUsingRareActingAs()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentId = $parentOwner['id'];
+
+        Horus::getInstance()
+            ->setUserAuthenticated(new UserAuth($userOwnerId, [], userActingAs: new UserActingAs($userOwnerId)))
+            ->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "DELETE",
+                "entity" => ParentFakeWritableEntity::getEntityName(),
+                "data" => ["id" => $parentId],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 10
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
 
         // Then
         $response->assertStatus(202);
