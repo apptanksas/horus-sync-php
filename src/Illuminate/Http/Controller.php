@@ -35,13 +35,13 @@ abstract class Controller
             $this->validateUserActingAs();
             return $callback();
         } catch (ClientException $e) {
-            return $this->responseBadRequest($e->getMessage(),$e->codeError, $e->context);
+            return $this->responseBadRequest($e->getMessage(), $e->codeError, $e->context);
         } catch (\PDOException $e) {
             return $this->responseBadRequest($this->parseError($e, $e->getMessage()));
         } catch (\ErrorException $e) {
             report($e);
             return $this->responseBadRequest("Error in request data");
-        } catch (NotAuthorizedException) {
+        } catch (NotAuthorizedException $e) {
             return $this->responseUnauthorized();
         } catch (\Throwable $e) {
             report($e);
@@ -164,6 +164,10 @@ abstract class Controller
         }
 
         if (is_null($userActingAs = $userAuth->userActingAs)) {
+            return;
+        }
+
+        if ($userAuth->userId === $userActingAs->userId) {
             return;
         }
 
