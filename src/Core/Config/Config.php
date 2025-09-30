@@ -47,7 +47,7 @@ class Config
      * @param EntityRestriction[] $entityRestrictions An array of entity restrictions.
      * @param EntityReference[] $sharedEntities An array of shared entities.
      * @param FeatureName[] $disabledFeatures An array of disabled features.
-     *
+     * @param array $extraParametersReferenceFile An array of extra parameters for the reference file, when not use parameter as file reference.
      */
     function __construct(
         public readonly bool    $validateAccess = false,
@@ -57,7 +57,8 @@ class Config
         string                  $basePathFiles = "horus",
         array                   $entityRestrictions = [],
         array                   $sharedEntities = [],
-        public readonly array   $disabledFeatures = []
+        public readonly array   $disabledFeatures = [],
+        public readonly array   $extraParametersReferenceFile = []
     )
     {
         // Validate if ends with a slash

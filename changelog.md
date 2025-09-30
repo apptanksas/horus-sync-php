@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.0
+- Improved prune upload files command to delete files, validating linking entities.
+
 # v0.12.9
 - Fixed issue when the owner user is setup as user acting as.
 

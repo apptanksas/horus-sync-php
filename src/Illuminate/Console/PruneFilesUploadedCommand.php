@@ -2,8 +2,11 @@
 
 namespace AppTank\Horus\Illuminate\Console;
 
+use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\SyncJobStatus;
@@ -11,7 +14,10 @@ use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\SyncFileUploadedModel;
 use AppTank\Horus\Illuminate\Database\SyncJobModel;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\JoinClause;
 use Symfony\Component\Console\Command\Command as CommandAlias;
 
 /**
@@ -36,6 +42,7 @@ class PruneFilesUploadedCommand extends Command
      */
     const string OUTPUT_FORMAT_MESSAGE_PENDING_FILES = 'Deleted %d pending files.';
     const string OUTPUT_FORMAT_MESSAGE_DELETED_FILES = 'Deleted %d files referenced in deleted data of entity %s.';
+    const string OUTPUT_FORMAT_MESSAGE_PENDING_FILE_VALIDATIONS = 'Validated %d file references in pending files.';
 
     /**
      * The signature of the command, which includes an optional expirationDays argument.
@@ -67,7 +74,9 @@ class PruneFilesUploadedCommand extends Command
     /**
      * Constructor initializes the command and assigns file handler and entity mapper instances.
      */
-    public function __construct()
+    public function __construct(
+        private readonly IFileReferenceValidator $fileReferenceValidator
+    )
     {
         parent::__construct();
         $this->fileHandler = Horus::getInstance()->getFileHandler();
@@ -86,6 +95,7 @@ class PruneFilesUploadedCommand extends Command
     {
         try {
             $expirationDays = intval($this->argument('expirationDays'));
+            $this->validateFilesPendingFileReferences();
             $this->deleteFilesPendingExpired($expirationDays);
             $this->deleteFilesReferencedInDataDeleted($expirationDays);
             $this->deleteFilesSyncExpired();
@@ -94,6 +104,80 @@ class PruneFilesUploadedCommand extends Command
             return CommandAlias::FAILURE;
         }
         return CommandAlias::SUCCESS;
+    }
+
+    /**
+     * Validates files that are in "PENDING" status and are referenced by entities in the system.
+     * It checks each entity for parameters that reference files and ensures that the referenced files exist and are valid.
+     * If a file reference is invalid, it will be handled by the FileReferenceValidator.
+     */
+    private function validateFilesPendingFileReferences(): void
+    {
+        $counter = 0;
+        $fileReferenceParameters = Horus::getInstance()->getConfig()->extraParametersReferenceFile;
+        $entities = $this->entityMapper->getEntities();
+
+        // Iterate over each entity type
+        foreach ($entities as $entityClass) {
+            $entityParameters = $this->entityMapper->getParametersReferenceFile($entityClass::getEntityName());
+            $extraEntityParameters = $fileReferenceParameters[$entityClass::getEntityName()] ?? [];
+            $parameters = (is_array($extraEntityParameters) ? $extraEntityParameters : [$extraEntityParameters]);
+            $parametersMerged = array_merge($parameters, $entityParameters);
+
+            if (empty($parametersMerged)) continue;
+            $fileReferenceParameters[$entityClass::getEntityName()] = $parametersMerged;
+        }
+
+        foreach ($fileReferenceParameters as $entityName => $parameters) {
+
+            if (!is_array($parameters)) {
+                $parameters = [$parameters];
+            }
+
+            /**
+             * @var EntitySynchronizable $entityClass The entity class that can be synchronized.
+             */
+            $entityClass = $this->entityMapper->getEntityClass($entityName);
+            $arraySelect = array_merge(array_map(fn($item) => $entityClass::getTableName() . ".$item", $parameters), [
+                $entityClass::getTableName() . "." . WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID,
+                $entityClass::getTableName() . "." . WritableEntitySynchronizable::ATTR_ID
+            ]);
+
+            $entityClass::query()->join(SyncFileUploadedModel::TABLE_NAME, function (JoinClause $join) use ($entityClass, $parameters) {
+
+                // ----- ARRAY PARAMETERS -----
+                foreach ($parameters as $index => $parameter) {
+                    $attributeReference = $entityClass::getTableName() . "." . $parameter;
+                    $fileReferenceId = SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID;
+                    if ($index === 0) {
+                        $join->on(function ($query) use ($attributeReference, $fileReferenceId) {
+                            $query->on($attributeReference, '=', $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        });
+                    } else {
+                        $join->orOn(function ($query) use ($attributeReference, $fileReferenceId) {
+                            $query->on($attributeReference, '=', $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        });
+                    }
+                }
+
+            })->select($arraySelect)->distinct()->chunk(5000, function (Collection $records) use ($parameters, $entityName, &$counter) {
+
+                foreach ($records->toArray() as $record) {
+
+                    $userAuth = new UserAuth($record[WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID]);
+                    $entityId = $record[WritableEntitySynchronizable::ATTR_ID];
+
+                    // Validate each file reference parameter
+                    foreach ($parameters as $parameter) {
+                        $fileReference = $record[$parameter];
+                        $this->fileReferenceValidator->validate($userAuth, $fileReference, new EntityReference($entityName, $entityId));
+                        $counter++;
+                    }
+                }
+            });
+        }
+
+        $this->info(sprintf(self::OUTPUT_FORMAT_MESSAGE_PENDING_FILE_VALIDATIONS, $counter));
     }
 
     /**

@@ -8,7 +8,9 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\File\FilePathGenerator;
+use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
@@ -163,6 +165,15 @@ class HorusServiceProvider extends ServiceProvider
             return new GetDataEntities(
                 $this->app->make(EntityRepository::class),
                 $this->app->make(EntityAccessValidatorRepository::class)
+            );
+        });
+
+        $this->app->bind(IFileReferenceValidator::class, function () {
+            return new FileReferenceValidator(
+                $this->app->make(EntityRepository::class),
+                $this->app->make(FileUploadedRepository::class),
+                $this->app->make(IFileHandler::class),
+                Horus::getInstance()->getConfig()
             );
         });
 
