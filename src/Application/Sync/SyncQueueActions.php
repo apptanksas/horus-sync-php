@@ -240,12 +240,13 @@ class SyncQueueActions
                     $status = $fileUploaded->status;
 
                     $pathFileDestination = $this->filePathGenerator->create($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
+                    $copiedSuccess = false;
 
                     if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
-                        $this->fileHandler->delete($fileUploaded->path);
                         $pathFileFinal = $pathFileDestination;
                         $urlFinal = $this->fileHandler->generateUrl($pathFileDestination);
                         $status = SyncFileStatus::LINKED;
+                        $copiedSuccess = true;
                     } else {
                         Log::error("[Horus:File]Error copying file", [
                             'referenceFile' => $referenceFile,
@@ -267,6 +268,11 @@ class SyncQueueActions
                     );
 
                     $this->fileUploadedRepository->save($fileUploaded);
+
+                    // If the file was successfully copied to the new location, delete the old file
+                    if ($copiedSuccess) {
+                       $this->fileHandler->delete($fileUploaded->path);
+                    }
                 }
 
             }

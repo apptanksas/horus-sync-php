@@ -1175,7 +1175,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response->assertStatus(202);
     }
 
-    function testDeleteEntityUsingRareActingAs()
+    function testDeleteEntityUsingRareActingAsWithDelete()
     {
         $userOwnerId = $this->faker->uuid;
 
@@ -1191,6 +1191,42 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                 "action" => "DELETE",
                 "entity" => ParentFakeWritableEntity::getEntityName(),
                 "data" => ["id" => $parentId],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 10
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+
+        // Then
+        $response->assertStatus(202);
+    }
+
+    function testDeleteEntityUsingRareActingAsWithUpdate()
+    {
+        $userOwnerId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentId = $parentOwner['id'];
+
+        Horus::getInstance()
+            ->setUserAuthenticated(new UserAuth($userOwnerId, [], userActingAs: null))
+            ->setConfig(new Config(true));
+
+        $data = [
+            [
+                "action" => "UPDATE",
+                "entity" => ParentFakeWritableEntity::getEntityName(),
+                "data" => [
+                    "id" => $parentId,
+                    "attributes" => [
+                        "name" => $this->faker->userName,
+                        "color" => $this->faker->colorName,
+                        "timestamp" => $this->faker->dateTimeBetween->getTimestamp(),
+                        "value_enum" => ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)]
+                    ],
+                ],
                 "actioned_at" => $this->faker->dateTimeBetween->getTimestamp() + 10
             ]
         ];
