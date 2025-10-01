@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.1
+- Add validate files linked in data deleted in prune upload files command.
+
 # v0.13.0
 - Improved prune upload files command to delete files, validating linking entities.
 

@@ -17,6 +17,7 @@ use AppTank\Horus\Illuminate\Database\SyncJobModel;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Symfony\Component\Console\Command\Command as CommandAlias;
 
@@ -130,15 +131,16 @@ class PruneFilesUploadedCommand extends Command
             $entityClass::query()->join(SyncFileUploadedModel::TABLE_NAME, function (JoinClause $join) use ($entityClass, $parameters) {
 
                 foreach ($parameters as $index => $parameter) {
-                    $attributeReference = $entityClass::getTableName() . "." . $parameter;
-                    $fileReferenceId = SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID;
+                    $attributeReference = "CAST(" . $entityClass::getTableName() . "." . $parameter . " AS uuid)";
+                    $fileReferenceId = "CAST(" . SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID . " AS uuid)";
+
                     if ($index === 0) {
-                        $join->on(function ($query) use ($attributeReference, $fileReferenceId) {
-                            $query->on($attributeReference, '=', $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        $join->on(function (Builder $query) use ($attributeReference, $fileReferenceId) {
+                            $query->whereRaw($attributeReference . "=" . $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
                         });
                     } else {
-                        $join->orOn(function ($query) use ($attributeReference, $fileReferenceId) {
-                            $query->on($attributeReference, '=', $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        $join->orOn(function (Builder $query) use ($attributeReference, $fileReferenceId) {
+                            $query->whereRaw($attributeReference . "=" . $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
                         });
                     }
                 }
@@ -217,30 +219,30 @@ class PruneFilesUploadedCommand extends Command
 
                 foreach ($parameters as $index => $parameter) {
 
-                    $columnEntityId = $entityClass::getTableName() . "." . $parameter;
+                    $columnEntityId = "CAST(" . $entityClass::getTableName() . "." . $parameter . " AS uuid)";
                     $columnEntityDeletedAt = $entityClass::getTableName() . "." . EntitySynchronizable::ATTR_SYNC_DELETED_AT;
-                    $fileReferenceId = SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID;
+                    $fileReferenceId = "CAST(" . SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID . " AS uuid)";
                     $columnFileStatus = SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_STATUS;
 
                     if ($index === 0) {
-                        $join->on(function ($query) use ($columnEntityId, $fileReferenceId, $columnFileStatus, $columnEntityDeletedAt, $expirationDays) {
-                            $query->on($columnEntityId, '=', $fileReferenceId)
+                        $join->on(function (Builder $query) use ($columnEntityId, $fileReferenceId, $columnFileStatus, $columnEntityDeletedAt, $expirationDays) {
+                            $query->whereRaw($columnEntityId . "=" . $fileReferenceId)
                                 ->where($columnEntityDeletedAt, '!=', null)
                                 ->where($columnEntityDeletedAt, '<', now()->subDays($expirationDays)->toDateTimeString())
-                                ->where($columnFileStatus, SyncFileStatus::PENDING);
+                                ->where($columnFileStatus, "!=", SyncFileStatus::DELETED);
 
                         });
                     } else {
                         $join->orOn(function ($query) use ($columnEntityId, $fileReferenceId, $columnFileStatus, $columnEntityDeletedAt, $expirationDays) {
-                            $query->on($columnEntityId, '=', $fileReferenceId)
+                            $query->whereRaw($columnEntityId . "=" . $fileReferenceId)
                                 ->where($columnEntityDeletedAt, '!=', null)
                                 ->where($columnEntityDeletedAt, '<', now()->subDays($expirationDays)->toDateTimeString())
-                                ->where($columnFileStatus, SyncFileStatus::PENDING);
+                                ->where($columnFileStatus, "!=", SyncFileStatus::DELETED);
                         });
                     }
                 }
 
-            })->select($arraySelect)->get();
+            })->select($arraySelect)->distinct()->get();
 
             // For each deleted record, remove associated files
             foreach ($recordsDeleted as $recordDeleted) {
