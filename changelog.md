@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.3
+- Fixed delete file pending in file reference validator.
+ 
 # v0.13.2
 - Fixed prune file command using pgsql database validating uuid columns.
 
