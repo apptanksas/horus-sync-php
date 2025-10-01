@@ -74,17 +74,24 @@ class PruneFilesUploadedCommandTest extends TestCase
 
     public function testHandleWitRecordDeletedAt()
     {
-        $createdAt = Carbon::now()->subDays(15);
+        $createdAt = Carbon::now()->subDays(50);
         $countExpected = rand(5, 15);
+
+        Horus::getInstance()->setConfig(new Config(
+            extraParametersReferenceFile: [ParentFakeWritableEntity::getEntityName() => ParentFakeWritableEntity::ATTR_CUSTOM]
+        ));
 
         $this->generateCountArray(function () use ($createdAt) {
 
             $imageFileIdReference = $this->faker->uuid;
+            $customReference = $this->faker->uuid;
 
             SyncFileUploadedModelFactory::create(status: SyncFileStatus::PENDING, createdAt: $createdAt, fileReference: $imageFileIdReference);
+            SyncFileUploadedModelFactory::create(status: SyncFileStatus::LINKED, createdAt: $createdAt, fileReference: $customReference);
 
             $entity = ParentFakeEntityFactory::create(data: [
-                ParentFakeWritableEntity::ATTR_IMAGE => $imageFileIdReference
+                ParentFakeWritableEntity::ATTR_IMAGE => $imageFileIdReference,
+                ParentFakeWritableEntity::ATTR_CUSTOM => $customReference
             ]);
 
             ParentFakeWritableEntity::query()->where(WritableEntitySynchronizable::ATTR_ID, $entity->getId())->update([ParentFakeWritableEntity::DELETED_AT => Carbon::now()->subDays(12)]);
@@ -93,13 +100,13 @@ class PruneFilesUploadedCommandTest extends TestCase
 
         }, $countExpected);
 
-        $this->fileHandler->shouldReceive("delete")->times($countExpected)->andReturn(true);
+        $this->fileHandler->shouldReceive("delete")->times($countExpected * 2)->andReturn(true);
 
         // When
         $this->artisan(PruneFilesUploadedCommand::COMMAND_NAME)->assertExitCode(Command::SUCCESS);
 
         // Then
-        $this->assertDatabaseCount(SyncFileUploadedModel::class, $countExpected);
+        $this->assertDatabaseCount(SyncFileUploadedModel::class, $countExpected * 2);
         $this->assertDatabaseHas(SyncFileUploadedModel::class, [
             SyncFileUploadedModel::ATTR_STATUS => SyncFileStatus::DELETED->value()
         ]);
