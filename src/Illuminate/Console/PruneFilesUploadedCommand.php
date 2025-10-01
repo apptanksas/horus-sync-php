@@ -19,6 +19,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Command\Command as CommandAlias;
 
 /**
@@ -37,6 +38,12 @@ class PruneFilesUploadedCommand extends Command
      * The name of the command.
      */
     const string COMMAND_NAME = 'horus:prune';
+
+
+    /**
+     * REGEXP pattern to validate UUID format.
+     */
+    const string UUID_PATTERN = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
     /**
      * The output message format for logging the number of deleted pending files.
@@ -116,6 +123,8 @@ class PruneFilesUploadedCommand extends Command
     {
         $counter = 0;
         $fileReferenceParameters = $this->getFileReferenceParameters();
+        $connectionName = Horus::getInstance()->getConnectionName();
+        $driver = (is_null($connectionName)) ? Schema::getConnection()->getDriverName() : Schema::connection($connectionName)->getConnection()->getDriverName();
 
         foreach ($fileReferenceParameters as $entityName => $parameters) {
 
@@ -123,28 +132,49 @@ class PruneFilesUploadedCommand extends Command
              * @var EntitySynchronizable $entityClass The entity class that can be synchronized.
              */
             $entityClass = $this->entityMapper->getEntityClass($entityName);
-            $arraySelect = array_merge(array_map(fn($item) => $entityClass::getTableName() . ".$item", $parameters), [
-                $entityClass::getTableName() . "." . WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID,
-                $entityClass::getTableName() . "." . WritableEntitySynchronizable::ATTR_ID
-            ]);
+            $entityTable = $entityClass::getTableName();
+            $fileTable = SyncFileUploadedModel::TABLE_NAME;
+            $fileIdColumn = $fileTable . '.' . SyncFileUploadedModel::ATTR_ID;
+            $fileStatusColumn = $fileTable . '.' . SyncFileUploadedModel::ATTR_STATUS;
 
-            $entityClass::query()->join(SyncFileUploadedModel::TABLE_NAME, function (JoinClause $join) use ($entityClass, $parameters) {
+            $arraySelect = array_merge(
+                array_map(fn($item) => $entityTable . ".$item", $parameters),
+                [
+                    $entityTable . "." . WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID,
+                    $entityTable . "." . WritableEntitySynchronizable::ATTR_ID
+                ]
+            );
 
+            // Build query with safe-cast logic in join
+            $entityClass::query()->join($fileTable, function (JoinClause $join) use (
+                $parameters,
+                $entityTable,
+                $fileTable,
+                $fileIdColumn,
+                $fileStatusColumn,
+                $driver
+            ) {
                 foreach ($parameters as $index => $parameter) {
-                    $attributeReference = "CAST(" . $entityClass::getTableName() . "." . $parameter . " AS uuid)";
-                    $fileReferenceId = "CAST(" . SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID . " AS uuid)";
+                    $entityColumn = $entityTable . '.' . $parameter;
+
+                    if ($driver === 'pgsql') {
+                        $condition = "({$entityColumn} IS NOT NULL AND {$entityColumn} ~* ? AND CAST({$entityColumn} AS uuid) = CAST({$fileIdColumn} AS uuid) AND {$fileStatusColumn} = ?)";
+                        $bindings = [self::UUID_PATTERN, SyncFileStatus::PENDING->value()];
+                    } else {
+                        $condition = "({$entityColumn} IS NOT NULL AND {$entityColumn} = {$fileIdColumn} AND {$fileStatusColumn} = ?)";
+                        $bindings = [SyncFileStatus::PENDING->value()];
+                    }
 
                     if ($index === 0) {
-                        $join->on(function (Builder $query) use ($attributeReference, $fileReferenceId) {
-                            $query->whereRaw($attributeReference . "=" . $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        $join->on(function (Builder $q) use ($condition, $bindings) {
+                            $q->whereRaw($condition, $bindings);
                         });
                     } else {
-                        $join->orOn(function (Builder $query) use ($attributeReference, $fileReferenceId) {
-                            $query->whereRaw($attributeReference . "=" . $fileReferenceId)->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING);
+                        $join->orOn(function (Builder $q) use ($condition, $bindings) {
+                            $q->whereRaw($condition, $bindings);
                         });
                     }
                 }
-
             })->select($arraySelect)->distinct()->chunk(5000, function (Collection $records) use ($parameters, $entityName, &$counter) {
 
                 foreach ($records->toArray() as $record) {
@@ -160,6 +190,7 @@ class PruneFilesUploadedCommand extends Command
                     }
                 }
             });
+
         }
 
         $this->info(sprintf(self::OUTPUT_FORMAT_MESSAGE_PENDING_FILE_VALIDATIONS, $counter));
@@ -202,6 +233,8 @@ class PruneFilesUploadedCommand extends Command
     private function deleteFilesReferencedInDataDeleted(int $expirationDays): void
     {
         $fileReferenceParameters = $this->getFileReferenceParameters();
+        $connectionName = Horus::getInstance()->getConnectionName();
+        $driver = (is_null($connectionName)) ? Schema::getConnection()->getDriverName() : Schema::connection($connectionName)->getConnection()->getDriverName();
 
         /**
          * @var EntitySynchronizable $entityClass The entity class that can be synchronized.
@@ -214,34 +247,47 @@ class PruneFilesUploadedCommand extends Command
                 $entityClass::getTableName() . "." . WritableEntitySynchronizable::ATTR_ID
             ]);
 
-            // Fetch soft-deleted records for the entity that are older than expiration days
-            $recordsDeleted = $entityClass::onlyTrashed()->join(SyncFileUploadedModel::TABLE_NAME, function (JoinClause $join) use ($entityClass, $parameters, $expirationDays) {
+            $entityTable = $entityClass::getTableName();
+            $fileTable = SyncFileUploadedModel::TABLE_NAME;
+            $fileIdColumn = $fileTable . "." . SyncFileUploadedModel::ATTR_ID;
+            $columnFileStatus = $fileTable . "." . SyncFileUploadedModel::ATTR_STATUS;
+            $columnEntityDeletedAt = $entityTable . "." . EntitySynchronizable::ATTR_SYNC_DELETED_AT;
+            $expirationDate = now()->subDays($expirationDays)->toDateTimeString();
 
+            // Fetch soft-deleted records for the entity that are older than expiration days
+            $recordsDeleted = $entityClass::onlyTrashed()->join($fileTable, function (JoinClause $join) use (
+                $parameters,
+                $entityTable,
+                $fileTable,
+                $fileIdColumn,
+                $columnFileStatus,
+                $columnEntityDeletedAt,
+                $expirationDate,
+                $driver
+            ) {
                 foreach ($parameters as $index => $parameter) {
 
-                    $columnEntityId = "CAST(" . $entityClass::getTableName() . "." . $parameter . " AS uuid)";
-                    $columnEntityDeletedAt = $entityClass::getTableName() . "." . EntitySynchronizable::ATTR_SYNC_DELETED_AT;
-                    $fileReferenceId = "CAST(" . SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_ID . " AS uuid)";
-                    $columnFileStatus = SyncFileUploadedModel::TABLE_NAME . "." . SyncFileUploadedModel::ATTR_STATUS;
+                    $entityColumn = $entityTable . "." . $parameter;
+
+                    if ($driver === 'pgsql') {
+                        $conditionSql = "({$entityColumn} IS NOT NULL AND {$entityColumn} ~* ? AND CAST({$entityColumn} AS uuid) = CAST({$fileIdColumn} AS uuid) AND {$columnEntityDeletedAt} IS NOT NULL AND {$columnEntityDeletedAt} < ? AND {$columnFileStatus} != ?)";
+                        $bindings = [self::UUID_PATTERN, $expirationDate, SyncFileStatus::DELETED->value()];
+                    } else {
+                        $conditionSql = "({$entityColumn} IS NOT NULL AND {$entityColumn} = {$fileIdColumn} AND {$columnEntityDeletedAt} IS NOT NULL AND {$columnEntityDeletedAt} < ? AND {$columnFileStatus} != ?)";
+                        $bindings = [$expirationDate, SyncFileStatus::DELETED->value()];
+                    }
 
                     if ($index === 0) {
-                        $join->on(function (Builder $query) use ($columnEntityId, $fileReferenceId, $columnFileStatus, $columnEntityDeletedAt, $expirationDays) {
-                            $query->whereRaw($columnEntityId . "=" . $fileReferenceId)
-                                ->where($columnEntityDeletedAt, '!=', null)
-                                ->where($columnEntityDeletedAt, '<', now()->subDays($expirationDays)->toDateTimeString())
-                                ->where($columnFileStatus, "!=", SyncFileStatus::DELETED);
-
+                        $join->on(function (Builder $query) use ($conditionSql, $bindings) {
+                            $query->whereRaw($conditionSql, $bindings);
                         });
                     } else {
-                        $join->orOn(function ($query) use ($columnEntityId, $fileReferenceId, $columnFileStatus, $columnEntityDeletedAt, $expirationDays) {
-                            $query->whereRaw($columnEntityId . "=" . $fileReferenceId)
-                                ->where($columnEntityDeletedAt, '!=', null)
-                                ->where($columnEntityDeletedAt, '<', now()->subDays($expirationDays)->toDateTimeString())
-                                ->where($columnFileStatus, "!=", SyncFileStatus::DELETED);
+                        $join->orOn(function (Builder $query) use ($conditionSql, $bindings) {
+                            $query->whereRaw($conditionSql, $bindings);
                         });
                     }
-                }
 
+                }
             })->select($arraySelect)->distinct()->get();
 
             // For each deleted record, remove associated files

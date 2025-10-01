@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.2
+- Fixed prune file command using pgsql database validating uuid columns.
+
 # v0.13.1
 - Add validate files linked in data deleted in prune upload files command.
 
