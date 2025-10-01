@@ -7,13 +7,17 @@ use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 
 class ParentFakeEntityFactory
 {
-    public static function create(string|int $userId = null, array $data = array()): ParentFakeWritableEntity
+    public static function create(string|int $userId = null, array $data = array(), ?\DateTimeImmutable $deletedAt = null): ParentFakeWritableEntity
     {
         $faker = \Faker\Factory::create();
         $data = array_replace(self::newData(), $data);
 
         $data[WritableEntitySynchronizable::ATTR_SYNC_HASH] = Hasher::hash($data);
         $data[WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID] = $userId ?? $faker->uuid;
+
+        if ($deletedAt !== null) {
+            $data[WritableEntitySynchronizable::ATTR_SYNC_DELETED_AT] = $deletedAt->format('Y-m-d H:i:s');
+        }
 
         $entity = new ParentFakeWritableEntity($data);
         $entity->setTable(ParentFakeWritableEntity::getTableName());
