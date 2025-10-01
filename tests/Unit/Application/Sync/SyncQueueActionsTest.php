@@ -11,6 +11,7 @@ use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Model\EntityOperation;
+use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
@@ -77,6 +78,9 @@ class SyncQueueActionsTest extends TestCase
     {
         // Given
         $userId = $this->faker->uuid;
+        /**
+         * @var FileUploaded[] $filesUploaded
+         */
         $filesUploaded = array();
 
         $insertActions = $this->generateArray(function () use (&$filesUploaded) {
@@ -140,7 +144,11 @@ class SyncQueueActionsTest extends TestCase
 
         $this->entityRepository->shouldReceive("getEntityOwner")->andReturn($this->faker->uuid);
         $this->fileHandler->shouldReceive("copy")->andReturn(true);
-        $this->fileHandler->shouldReceive("delete")->andReturn(true);
+
+        foreach ($filesUploaded as $fileId => $fileUploaded) {
+            $this->fileHandler->shouldReceive("delete")->with($fileUploaded->path)->andReturn(true);
+        }
+
         $this->entityRepository->shouldReceive("getEntityPathHierarchy")->andReturn([ParentFakeEntityFactory::create()]);
         $this->entityRepository->shouldReceive("getEntityParentOwner")->andReturn($this->faker->uuid);
 
@@ -180,7 +188,7 @@ class SyncQueueActionsTest extends TestCase
             $config
         );
 
-        $insertActions = $this->generateArray(function () use($userId) {
+        $insertActions = $this->generateArray(function () use ($userId) {
             $parentData = ParentFakeEntityFactory::newData();
             return QueueActionFactory::create(
                 EntityOperationFactory::createEntityInsert(

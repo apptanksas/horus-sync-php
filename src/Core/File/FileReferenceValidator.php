@@ -54,7 +54,9 @@ class FileReferenceValidator implements IFileReferenceValidator
         $pathFileDestination = $this->filePathGenerator->create($userAuth, $entityReference) . basename($fileUploaded->path);
         $copiedSuccess = false;
 
-        if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
+        $pathPending = $fileUploaded->path;
+
+        if ($this->fileHandler->copy($pathPending, $pathFileDestination)) {
             $pathFileFinal = $pathFileDestination;
             $urlFinal = $this->fileHandler->generateUrl($pathFileDestination);
             $status = SyncFileStatus::LINKED;
@@ -83,7 +85,7 @@ class FileReferenceValidator implements IFileReferenceValidator
 
         // If the file was successfully copied to the new location, delete the old file
         if ($copiedSuccess) {
-            $this->fileHandler->delete($fileUploaded->path);
+            $this->fileHandler->delete($pathPending);
         }
     }
 }
