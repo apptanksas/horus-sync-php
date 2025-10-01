@@ -38,6 +38,8 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
      */
     const string ATTR_SYNC_DELETED_AT = "sync_deleted_at";
 
+    const DELETED_AT = self::ATTR_SYNC_DELETED_AT;
+
     /**
      * The name of the entity.
      *

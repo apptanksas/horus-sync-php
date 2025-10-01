@@ -10,7 +10,9 @@ use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\File\FilePathGenerator;
+use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityDelete;
@@ -40,7 +42,7 @@ use Illuminate\Support\Facades\Log;
  */
 class SyncQueueActions
 {
-    private FilePathGenerator $filePathGenerator;
+    private IFileReferenceValidator $fileReferenceValidator;
     private EntityRestrictionValidator $entityRestrictionValidator;
 
     /**
@@ -77,9 +79,8 @@ class SyncQueueActions
         private readonly Config                          $config
     )
     {
-        $this->filePathGenerator = new FilePathGenerator($this->entityRepository, $this->config);
+        $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
         $this->entityRestrictionValidator = new EntityRestrictionValidator($this->entityRepository, $this->config);
-
     }
 
     /**
@@ -229,44 +230,7 @@ class SyncQueueActions
 
                 if (in_array($key, $parametersReferenceFile)) {
                     $referenceFile = $value;
-                    $fileUploaded = $this->fileUploadedRepository->search($referenceFile);
-
-                    if (is_null($fileUploaded)) {
-                        throw new \Exception("File not found");
-                    }
-
-                    $pathFileFinal = $fileUploaded->path;
-                    $urlFinal = $fileUploaded->publicUrl;
-                    $status = $fileUploaded->status;
-
-                    $pathFileDestination = $this->filePathGenerator->create($userAuth, new EntityReference($operation->entity, $operation->id)) . basename($fileUploaded->path);
-
-                    if ($this->fileHandler->copy($fileUploaded->path, $pathFileDestination)) {
-                        $this->fileHandler->delete($fileUploaded->path);
-                        $pathFileFinal = $pathFileDestination;
-                        $urlFinal = $this->fileHandler->generateUrl($pathFileDestination);
-                        $status = SyncFileStatus::LINKED;
-                    } else {
-                        Log::error("[Horus:File]Error copying file", [
-                            'referenceFile' => $referenceFile,
-                            'file' => $fileUploaded->path,
-                            'destination' => $pathFileDestination,
-                            'userId' => $userAuth->userId,
-                            'entity' => $operation->entity,
-                            'entityId' => $operation->id
-                        ]);
-                    }
-
-                    $fileUploaded = new FileUploaded(
-                        $fileUploaded->id,
-                        $fileUploaded->mimeType,
-                        $pathFileFinal,
-                        $urlFinal,
-                        $fileUploaded->ownerId,
-                        $status
-                    );
-
-                    $this->fileUploadedRepository->save($fileUploaded);
+                    $this->fileReferenceValidator->validate($userAuth, $referenceFile, new EntityReference($operation->entity, $operation->id));
                 }
 
             }
