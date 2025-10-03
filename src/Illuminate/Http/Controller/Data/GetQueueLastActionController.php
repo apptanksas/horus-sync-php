@@ -27,6 +27,7 @@ class GetQueueLastActionController extends Controller
      */
     function __construct(QueueActionRepository $repository)
     {
+        parent::__construct();
         $this->useCase = new GetQueueLastAction($repository);
     }
 

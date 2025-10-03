@@ -33,6 +33,7 @@ class SearchEntitiesController extends Controller
         EntityAccessValidatorRepository $accessValidatorRepository
     )
     {
+        parent::__construct();
         $this->useCase = new SearchDataEntities($entityRepository, $accessValidatorRepository);
     }
 

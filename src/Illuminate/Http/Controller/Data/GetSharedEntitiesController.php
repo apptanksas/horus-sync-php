@@ -26,6 +26,8 @@ class GetSharedEntitiesController extends Controller
         CacheRepository  $cacheRepository
     )
     {
+        parent::__construct();
+
         $this->useCase = new GetDataSharedEntities(
             $entityRepository,
             $cacheRepository,

@@ -29,6 +29,7 @@ class GetSyncDataJobStatusController extends Controller
      */
     function __construct(SyncJobRepository $syncJobRepository)
     {
+        parent::__construct();
         $this->useCase = new SearchSyncDataStatus($syncJobRepository);
     }
 

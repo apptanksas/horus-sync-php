@@ -30,6 +30,7 @@ class GetDataEntitiesController extends Controller
     function __construct(EntityRepository $entityRepository,
                          EntityAccessValidatorRepository $entityAccessValidatorRepository)
     {
+        parent::__construct();
         $this->useCase = new GetDataEntities($entityRepository, $entityAccessValidatorRepository);
     }
 
