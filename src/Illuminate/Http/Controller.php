@@ -7,8 +7,11 @@ use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\NotAuthorizedException;
 use AppTank\Horus\Core\Exception\UserNotAuthenticatedException;
 use AppTank\Horus\Core\Exception\UserNotAuthorizedException;
+use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Horus;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\App;
+use Illuminate\Http\Request;
 
 /**
  * @internal Abstract Controller Class
@@ -20,6 +23,14 @@ use Illuminate\Http\JsonResponse;
  */
 abstract class Controller
 {
+    private CacheRepository $cacheRepository;
+
+    const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
+
+    function __construct()
+    {
+        $this->cacheRepository = App::make(CacheRepository::class);
+    }
 
     const string ERROR_MESSAGE_ATTRIBUTE_INVALID = "Attribute <<%s>> is invalid.";
 
@@ -47,6 +58,19 @@ abstract class Controller
             report($e);
             return $this->responseServerError();
         }
+    }
+
+    protected function idempotency(string $key, Request $request, callable $callback, ?callable $onCache = null): mixed
+    {
+        $key = $this->generateIdempotencyKey($key, $request->all());
+
+        if ($this->cacheRepository->exists($key)) {
+            $responseInCache = $this->cacheRepository->get($key);
+            return $onCache ? $onCache($responseInCache) : $responseInCache;
+        }
+        $result = $callback();
+        $this->cacheRepository->set($key, $result, self::CACHE_TTL_ONE_DAY);
+        return $result;
     }
 
     /**
@@ -194,5 +218,13 @@ abstract class Controller
     protected function isNotUUID(string $fileId): bool
     {
         return !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $fileId);
+    }
+
+    private function generateIdempotencyKey(string $key, array $data): string
+    {
+        $search = ["-", "", "\"", "\\", "á", "é", "í", "ó", "ú", "ñ", "."];
+        $replace = ["_", "", "", "", "a", "e", "i", "o", "u", "ñ", ""];
+        $dataHash = hash('sha256', json_encode($data));
+        return basename(get_called_class()) . "_idempotency_" . str_replace($search, $replace, strtolower($key)) . "_" . $dataHash;
     }
 }

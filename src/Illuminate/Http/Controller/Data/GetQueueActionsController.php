@@ -36,6 +36,7 @@ class GetQueueActionsController extends Controller
         EntityMapper                    $entityMapper,
     )
     {
+        parent::__construct();
         $this->useCase = new GetQueueActions($queueActionRepository, $accessValidatorRepository, $entityMapper);
     }
 

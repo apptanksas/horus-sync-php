@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.4
+- Added idempotency validation in post sync queue actions endpoint.
+
 # v0.13.3
 - Fixed delete file pending in file reference validator.
  

@@ -26,6 +26,7 @@ class GetMigrationSchemaController extends Controller
         private readonly MigrationSchemaRepository $repository
     )
     {
+        parent::__construct();
     }
 
     /**

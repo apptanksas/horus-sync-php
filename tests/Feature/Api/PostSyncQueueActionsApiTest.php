@@ -1238,6 +1238,62 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         // Then
         $response->assertStatus(202);
     }
+
+    function testPostSyncQueueWithIdempotencyIsSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userId = $this->faker->uuid;
+
+        $parent = ParentFakeEntityFactory::create($userOwnerId);
+        $childrenData = ChildFakeEntityFactory::newData($parent->getId());
+
+        $entityId = $childrenData['id'];
+        $entityName = ChildFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $floatValueExpected = $this->faker->randomFloat();
+        $colorExpected = $this->faker->colorName;
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userId)
+        )->setConfig(new Config(true));
+
+
+        $data = [
+            // update action
+            [
+                "action" => "UPDATE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        ChildFakeWritableEntity::ATTR_FLOAT_VALUE => $floatValueExpected,
+                        ChildFakeWritableEntity::ATTR_STRING_VALUE => $colorExpected,
+                    ]
+                ],
+                "actioned_at" => $actionedAt - 1000
+            ],
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => $childrenData,
+                "actioned_at" => $actionedAt - 2000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+        $response2 = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+
+        $response->assertAccepted();
+        $response2->assertAccepted();
+
+        $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME,2);
+    }
 }
 
 class TestFileHandler implements IFileHandler

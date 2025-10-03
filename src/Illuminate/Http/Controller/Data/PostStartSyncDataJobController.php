@@ -35,6 +35,7 @@ class PostStartSyncDataJobController extends Controller
         IJobDispatcher    $jobDispatcher
     )
     {
+        parent::__construct();
         $this->useCase = new StartGenerateSyncDataJob($syncJobRepository, $jobDispatcher);
     }
 

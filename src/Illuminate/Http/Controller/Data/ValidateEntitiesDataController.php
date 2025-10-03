@@ -36,6 +36,7 @@ class ValidateEntitiesDataController extends Controller
                          EntityMapper                    $entityMapper,
                          Config                          $config)
     {
+        parent::__construct();
         $this->useCase = new ValidateEntitiesData($repository, $accessValidatorRepository, $entityMapper, $config);
     }
 

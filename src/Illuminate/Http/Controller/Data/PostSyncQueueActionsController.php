@@ -54,6 +54,8 @@ class PostSyncQueueActionsController extends Controller
         EntityMapper                    $entityMapper
     )
     {
+        parent::__construct();
+
         $this->useCase = new SyncQueueActions(
             $transactionHandler,
             $queueActionRepository,
@@ -76,11 +78,15 @@ class PostSyncQueueActionsController extends Controller
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
-            $this->useCase->__invoke(
-                $this->getUserAuthenticated(),
-                ...$this->parseRequestToQueueActions($request)
-            );
-            return $this->responseAccepted();
+            return $this->idempotency("post_sync_queue_actions", $request, function () use ($request) {
+                $this->useCase->__invoke(
+                    $this->getUserAuthenticated(),
+                    ...$this->parseRequestToQueueActions($request)
+                );
+                return $this->responseAccepted();
+            }, onCache: function () {
+                return $this->responseAccepted();
+            });
         });
     }
 
