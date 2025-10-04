@@ -15,18 +15,20 @@ class QueueActionFactory
 {
 
 
-    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false): QueueAction
+    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false, ?SyncAction $action = null): QueueAction
     {
 
         $faker = \Faker\Factory::create();
-        $action = SyncAction::random();
+        $action = $action ?? SyncAction::random();
 
-        if ($entityOperation instanceof EntityInsert) {
-            $action = SyncAction::INSERT;
-        } elseif ($entityOperation instanceof EntityUpdate) {
-            $action = SyncAction::UPDATE;
-        } elseif ($entityOperation instanceof EntityDelete) {
-            $action = SyncAction::DELETE;
+        if ($action != null) {
+            if ($entityOperation instanceof EntityInsert) {
+                $action = SyncAction::INSERT;
+            } elseif ($entityOperation instanceof EntityUpdate) {
+                $action = SyncAction::UPDATE;
+            } elseif ($entityOperation instanceof EntityDelete) {
+                $action = SyncAction::DELETE;
+            }
         }
 
         $entity = $faker->userName;
@@ -57,7 +59,7 @@ class QueueActionFactory
 
         return match ($action) {
             SyncAction::INSERT => new EntityInsert($userId ?? $faker->uuid, $entity, now()->toDateTimeImmutable(), $data),
-            SyncAction::UPDATE => new EntityUpdate($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
+            SyncAction::UPDATE, SyncAction::UPDELETE => new EntityUpdate($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
             SyncAction::DELETE => new EntityDelete($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable()),
         };
     }

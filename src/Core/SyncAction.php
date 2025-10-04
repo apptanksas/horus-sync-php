@@ -36,4 +36,11 @@ enum SyncAction: string
      * Represents the action of deleting an existing entity or record.
      */
     case DELETE = "D";
+
+    /**
+     * Update or delete action
+     *
+     * Represents the action of either updating or deleting an existing entity or record. (Only for client use)
+     */
+    case UPDELETE = "UD";
 }

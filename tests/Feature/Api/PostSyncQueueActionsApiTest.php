@@ -214,6 +214,21 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                 ],
                 "actioned_at" => $actionedAt - 1000
             ],
+            // updelete action
+            [
+                "action" => "UPDELETE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        "name" => $nameExpected,
+                        "color" => $colorExpected,
+                        "timestamp" => $timestampExpected,
+                        "value_enum" => $valueEnumExpected
+                    ]
+                ],
+                "actioned_at" => $actionedAt - 1000
+            ],
             // insert action
             [
                 "action" => "INSERT",
@@ -1292,14 +1307,15 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response2->assertAccepted();
 
         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
-        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME,2);
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 2);
     }
 }
 
 class TestFileHandler implements IFileHandler
 {
 
-    #[\Override] function upload(int|string $userOwnerId, string $fileId, string $path, UploadedFile $file): FileUploaded
+    #[\Override]
+    function upload(int|string $userOwnerId, string $fileId, string $path, UploadedFile $file): FileUploaded
     {
         return new FileUploaded(
             id: $fileId,
@@ -1310,17 +1326,20 @@ class TestFileHandler implements IFileHandler
         );
     }
 
-    #[\Override] function createDownloadableTemporaryFile(string $pathFile, string $content, string $contentType, int $expiresInSeconds = 3600): string
+    #[\Override]
+    function createDownloadableTemporaryFile(string $pathFile, string $content, string $contentType, int $expiresInSeconds = 3600): string
     {
         return "http://example.com/image.png";
     }
 
-    #[\Override] function delete(string $pathFile): bool
+    #[\Override]
+    function delete(string $pathFile): bool
     {
         return true;
     }
 
-    #[\Override] function getMimeTypesAllowed(): array
+    #[\Override]
+    function getMimeTypesAllowed(): array
     {
         return [
             'image/png',
@@ -1331,12 +1350,14 @@ class TestFileHandler implements IFileHandler
         ];
     }
 
-    #[\Override] function copy(string $pathFrom, string $pathTo): bool
+    #[\Override]
+    function copy(string $pathFrom, string $pathTo): bool
     {
         return true;
     }
 
-    #[\Override] function generateUrl(string $path): string
+    #[\Override]
+    function generateUrl(string $path): string
     {
         return "http://example.com/" . $path . "/image.png";
     }
