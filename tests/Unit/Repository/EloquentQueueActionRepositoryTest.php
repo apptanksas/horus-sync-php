@@ -4,6 +4,7 @@ namespace Tests\Unit\Repository;
 
 
 use AppTank\Horus\Core\Model\QueueAction;
+use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
@@ -205,6 +206,29 @@ class EloquentQueueActionRepositoryTest extends TestCase
 
         // Then
         $this->assertCount($countExpected, $result);
+    }
+
+    function testSaveWithUpDeleteActionIsSuccess()
+    {
+        // Given
+        /**
+         * @var QueueAction[] $actions
+         */
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(action: SyncAction::UPDELETE));
+        // When
+        $this->repository->save(...$actions);
+        // Then
+        foreach ($actions as $action) {
+            $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+                SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDELETE->value,
+                SyncQueueActionModel::ATTR_ENTITY => $action->entity,
+                SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
+                SyncQueueActionModel::ATTR_ACTIONED_AT => $action->actionedAt->format('Y-m-d H:i:s'),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $action->syncedAt->format('Y-m-d H:i:s'),
+                SyncQueueActionModel::ATTR_BY_SYSTEM => false
+            ]);
+        }
     }
 
 }

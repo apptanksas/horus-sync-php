@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.0
+- Added new sync action "UPDELETE" to update or delete an entity from client side.
+
 # v0.13.4
 - Added idempotency validation in post sync queue actions endpoint.
 

@@ -3,7 +3,6 @@
 use AppTank\Horus\Horus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Core\SyncAction;
 use Illuminate\Support\Str;
