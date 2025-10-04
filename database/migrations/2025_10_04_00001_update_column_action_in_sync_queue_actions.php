@@ -73,7 +73,6 @@ return new class extends Migration {
                 $schemaName = $srow->schema_name ?? 'public';
             }
 
-
             $typeRow = $conn->selectOne("
                 SELECT pg_type.typname AS enum_type
                 FROM pg_attribute a
@@ -92,7 +91,7 @@ return new class extends Migration {
                     try {
                         $conn->statement("ALTER TYPE \"{$typeName}\" ADD VALUE IF NOT EXISTS '{$safe}'");
                     } catch (\Throwable $e) {
-                        // Fallback: recrear tipo
+                        // Fallback: recreate type
                         $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, $typeName, $enumValues);
                         break;
                     }
@@ -118,22 +117,25 @@ return new class extends Migration {
      */
     private function recreatePgEnumType($conn, string $schemaName, string $table, string $column, ?string $oldTypeName, array $newValues, ?string $forceTypeName = null): void
     {
-        $tmpType = $forceTypeName ?? ('tmp_enum_' . Str::random(8));
+        $tmpType = 'tmp_enum_' . Str::random(8);
         $vals = implode("','", array_map(fn($v) => str_replace("'", "''", $v), $newValues));
 
-        $conn->statement("CREATE TYPE \"{$tmpType}\" AS ENUM('{$vals}')");
+        // Create temporary type
+        $conn->statement("CREATE TYPE \"{$schemaName}\".\"{$tmpType}\" AS ENUM('{$vals}')");
 
         $qualifiedTable = "\"{$schemaName}\".\"{$table}\"";
-        $conn->statement("ALTER TABLE {$qualifiedTable} ALTER COLUMN \"{$column}\" TYPE \"{$tmpType}\" USING {$column}::text::\"{$tmpType}\"");
+        $conn->statement("ALTER TABLE {$qualifiedTable} ALTER COLUMN \"{$column}\" TYPE \"{$schemaName}\".\"{$tmpType}\" USING {$column}::text::\"{$schemaName}\".\"{$tmpType}\"");
 
-        if ($oldTypeName) {
-            $conn->statement("DROP TYPE IF EXISTS \"{$oldTypeName}\"");
-            $conn->statement("ALTER TYPE \"{$tmpType}\" RENAME TO \"{$oldTypeName}\"");
-        } else {
-            if ($forceTypeName) {
-                $conn->statement("ALTER TYPE \"{$tmpType}\" RENAME TO \"{$forceTypeName}\"");
-            }
+        // Determine final type name
+        $finalTypeName = $oldTypeName ?: $forceTypeName;
+
+        if ($finalTypeName) {
+            // Drop existing type if exists (now safe because column uses temporary type)
+            $conn->statement("DROP TYPE IF EXISTS \"{$schemaName}\".\"{$finalTypeName}\"");
+            // Rename temporary type to final name
+            $conn->statement("ALTER TYPE \"{$schemaName}\".\"{$tmpType}\" RENAME TO \"{$finalTypeName}\"");
         }
+        // If no final name, leave temporary type as is
     }
 
     public function down(): void
@@ -161,17 +163,22 @@ return new class extends Migration {
                 $srow = $conn->selectOne('SELECT current_schema() AS schema_name');
                 $schemaName = $srow->schema_name ?? 'public';
             }
-            $tmpType = "tmp_enum_" . Str::random(8);
-            $vals = implode("','", array_map(fn($v) => str_replace("'", "''", $v), $enumValues));
-            $qualifiedTable = "\"{$schemaName}\".\"{$bareTable}\"";
 
-            $conn->statement("CREATE TYPE \"{$tmpType}\" AS ENUM('{$vals}')");
-            $conn->statement("ALTER TABLE {$qualifiedTable} ALTER COLUMN \"{$column}\" TYPE \"{$tmpType}\" USING {$column}::text::\"{$tmpType}\"");
+            // Find current type used by column
+            $typeRow = $conn->selectOne("
+                SELECT pg_type.typname AS enum_type
+                FROM pg_attribute a
+                JOIN pg_class c ON a.attrelid = c.oid
+                JOIN pg_type ON a.atttypid = pg_type.oid
+                JOIN pg_namespace n ON c.relnamespace = n.oid
+                WHERE c.relname = ? AND a.attname = ? AND pg_type.typtype = 'e' AND n.nspname = ?
+                LIMIT 1
+            ", [$bareTable, $column, $schemaName]);
 
-            // Intentamos dropear el viejo basándonos en el nombre convencional
-            $oldTypeGuess = "{$schemaName}_{$bareTable}_{$column}_enum";
-            $conn->statement("DROP TYPE IF EXISTS \"{$oldTypeGuess}\"");
-            $conn->statement("ALTER TYPE \"{$tmpType}\" RENAME TO \"{$oldTypeGuess}\"");
+            $currentTypeName = $typeRow ? $typeRow->enum_type : null;
+
+            // Recreate type with original values (without UPDELETE)
+            $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, $currentTypeName, $enumValues);
         }
     }
 };
