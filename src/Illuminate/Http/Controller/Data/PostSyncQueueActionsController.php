@@ -4,9 +4,7 @@ namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Bus\IEventBus;
-use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
-use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\QueueAction;
@@ -139,7 +137,7 @@ class PostSyncQueueActionsController extends Controller
                 $itemData['data'],
                 $actionedAt
             ),
-            'update' => EntityOperationFactory::createEntityUpdate(
+            'update', 'updelete' => EntityOperationFactory::createEntityUpdate(
                 $ownerId,
                 $itemData['entity'],
                 $itemData['data']["id"],

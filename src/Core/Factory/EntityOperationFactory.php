@@ -5,6 +5,7 @@ namespace AppTank\Horus\Core\Factory;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityUpdate;
+use AppTank\Horus\Core\Model\EntityUpdateOrDelete;
 
 /**
  * @internal Class EntityOperationFactory
@@ -36,7 +37,8 @@ class EntityOperationFactory
         string             $entity,
         array              $data,
         \DateTimeImmutable $actionedAt
-    ): EntityInsert {
+    ): EntityInsert
+    {
         return new EntityInsert($ownerId, $entity, $actionedAt, $data);
     }
 
@@ -57,7 +59,8 @@ class EntityOperationFactory
         string             $id,
         array              $attributes,
         \DateTimeImmutable $actionedAt
-    ): EntityUpdate {
+    ): EntityUpdate
+    {
         return new EntityUpdate($ownerId, $entity, $id, $actionedAt, $attributes);
     }
 
@@ -76,7 +79,8 @@ class EntityOperationFactory
         string             $entity,
         string             $id,
         \DateTimeImmutable $actionedAt
-    ): EntityDelete {
+    ): EntityDelete
+    {
         return new EntityDelete($ownerId, $entity, $id, $actionedAt);
     }
 }

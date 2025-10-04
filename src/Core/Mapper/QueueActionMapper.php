@@ -16,7 +16,7 @@ class QueueActionMapper
 
         match ($action) {
             SyncAction::INSERT => $operation = EntityOperationFactory::createEntityInsert($model->getOwnerId(), $model->getEntity(), $model->getData(), $actionedAt),
-            SyncAction::UPDATE => $operation = EntityOperationFactory::createEntityUpdate($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $model->getData()["attributes"], $actionedAt),
+            SyncAction::UPDATE, SyncAction::UPDELETE => $operation = EntityOperationFactory::createEntityUpdate($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $model->getData()["attributes"], $actionedAt),
             SyncAction::DELETE => $operation = EntityOperationFactory::createEntityDelete($model->getOwnerId(), $model->getEntity(), $model->getData()["id"], $actionedAt),
         };
 

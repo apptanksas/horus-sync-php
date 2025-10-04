@@ -14,7 +14,7 @@ class SyncQueueActionModelFactory
         $dataOperation = ["id" => $entityId, "name" => $faker->name];
         $action = SyncAction::random();
 
-        if ($action == SyncAction::UPDATE) {
+        if ($action == SyncAction::UPDATE || $action == SyncAction::UPDELETE) {
             $dataOperation["attributes"] = ["color" => "red", "size" => "large"];
         }
 
