@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.1
+- Added Entity Migrator to migrate entities data through the time.
+
 # v0.14.0
 - Added new sync action "UPDELETE" to update or delete an entity from client side.
 
