@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\_Stubs\Core;
+namespace Tests\Unit\Core;
 
 use AppTank\Horus\Core\Hasher;
 use PHPUnit\Framework\TestCase;
