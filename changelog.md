@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.14.2
+- Fixed migration to update column action in horus_queue_actions table.
+- Added filter attributes reserved in entity operation definition.
+
 # v0.14.1
 - Added Entity Migrator to migrate entities data through the time.
 

@@ -22,6 +22,9 @@ use AppTank\Horus\Core\Model\EntityUpdateOrDelete;
  */
 class EntityOperationFactory
 {
+
+    const array ATTRIBUTES_RESERVED = ["sync_owner_id", "sync_hash", "sync_created_at", "sync_updated_at", "sync_deleted_at"];
+
     /**
      * Creates an instance of `EntityInsert`.
      *
@@ -39,6 +42,8 @@ class EntityOperationFactory
         \DateTimeImmutable $actionedAt
     ): EntityInsert
     {
+        //Filter attributes reserved
+        $data = array_filter($data, function ($key) {return !in_array($key, self::ATTRIBUTES_RESERVED);}, ARRAY_FILTER_USE_KEY);
         return new EntityInsert($ownerId, $entity, $actionedAt, $data);
     }
 
@@ -61,6 +66,8 @@ class EntityOperationFactory
         \DateTimeImmutable $actionedAt
     ): EntityUpdate
     {
+        //Filter attributes reserved
+        $attributes = array_filter($attributes, function ($key) {return !in_array($key, self::ATTRIBUTES_RESERVED);}, ARRAY_FILTER_USE_KEY);
         return new EntityUpdate($ownerId, $entity, $id, $actionedAt, $attributes);
     }
 

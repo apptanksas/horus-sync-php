@@ -73,6 +73,9 @@ return new class extends Migration {
                 $schemaName = $srow->schema_name ?? 'public';
             }
 
+            // First, drop the check constraint if it exists
+            $this->dropCheckConstraint($conn, $schemaName, $bareTable, $column);
+
             $typeRow = $conn->selectOne("
                 SELECT pg_type.typname AS enum_type
                 FROM pg_attribute a
@@ -86,21 +89,35 @@ return new class extends Migration {
             if ($typeRow && isset($typeRow->enum_type)) {
                 $typeName = $typeRow->enum_type;
 
-                foreach ($enumValues as $val) {
-                    $safe = str_replace("'", "''", $val);
-                    try {
-                        $conn->statement("ALTER TYPE \"{$typeName}\" ADD VALUE IF NOT EXISTS '{$safe}'");
-                    } catch (\Throwable $e) {
-                        // Fallback: recreate type
-                        $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, $typeName, $enumValues);
-                        break;
+                try {
+                    foreach ($enumValues as $val) {
+                        $safe = str_replace("'", "''", $val);
+                        $conn->statement("ALTER TYPE \"{$schemaName}\".\"{$typeName}\" ADD VALUE IF NOT EXISTS '{$safe}'");
                     }
+                } catch (\Throwable $e) {
+                    $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, $typeName, $enumValues);
                 }
             } else {
                 $tentativeType = "{$schemaName}_{$bareTable}_{$column}_enum";
                 $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, null, $enumValues, $tentativeType);
             }
+
+            // Add new check constraint with all values
+            $this->addCheckConstraint($conn, $schemaName, $bareTable, $column, $enumValues);
         }
+    }
+
+    private function dropCheckConstraint($conn, string $schemaName, string $table, string $column): void
+    {
+        $constraintName = "{$table}_{$column}_check";
+        $conn->statement("ALTER TABLE \"{$schemaName}\".\"{$table}\" DROP CONSTRAINT IF EXISTS \"{$constraintName}\"");
+    }
+
+    private function addCheckConstraint($conn, string $schemaName, string $table, string $column, array $values): void
+    {
+        $constraintName = "{$table}_{$column}_check";
+        $valuesList = implode("','", array_map(fn($v) => str_replace("'", "''", $v), $values));
+        $conn->statement("ALTER TABLE \"{$schemaName}\".\"{$table}\" ADD CONSTRAINT \"{$constraintName}\" CHECK (\"{$column}\"::text = ANY (ARRAY['{$valuesList}']))");
     }
 
     /**
@@ -164,7 +181,9 @@ return new class extends Migration {
                 $schemaName = $srow->schema_name ?? 'public';
             }
 
-            // Find current type used by column
+            // Drop current check constraint
+            $this->dropCheckConstraint($conn, $schemaName, $bareTable, $column);
+
             $typeRow = $conn->selectOne("
                 SELECT pg_type.typname AS enum_type
                 FROM pg_attribute a
@@ -176,9 +195,10 @@ return new class extends Migration {
             ", [$bareTable, $column, $schemaName]);
 
             $currentTypeName = $typeRow ? $typeRow->enum_type : null;
-
-            // Recreate type with original values (without UPDELETE)
             $this->recreatePgEnumType($conn, $schemaName, $bareTable, $column, $currentTypeName, $enumValues);
+
+            // Add back original check constraint
+            $this->addCheckConstraint($conn, $schemaName, $bareTable, $column, $enumValues);
         }
     }
 };
