@@ -208,7 +208,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount($countExpected, $result);
     }
 
-    function testSaveWithUpDeleteActionIsSuccess()
+    function testSaveWithMoveActionIsSuccess()
     {
         // Given
         /**

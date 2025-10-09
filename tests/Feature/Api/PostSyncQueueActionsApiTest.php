@@ -214,9 +214,9 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                 ],
                 "actioned_at" => $actionedAt - 1000
             ],
-            // updelete action
+            // MOVE action
             [
-                "action" => "UPDELETE",
+                "action" => "MOVE",
                 "entity" => $entityName,
                 "data" => [
                     "id" => $entityId,
