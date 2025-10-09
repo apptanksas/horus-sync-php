@@ -9,7 +9,6 @@ use AppTank\Horus\Core\Model\EntityUpdate;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\SyncAction;
 use Carbon\Carbon;
-use Faker\Guesser\Name;
 
 class QueueActionFactory
 {
@@ -59,7 +58,7 @@ class QueueActionFactory
 
         return match ($action) {
             SyncAction::INSERT => new EntityInsert($userId ?? $faker->uuid, $entity, now()->toDateTimeImmutable(), $data),
-            SyncAction::UPDATE, SyncAction::UPDELETE => new EntityUpdate($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
+            SyncAction::UPDATE, SyncAction::MOVE => new EntityUpdate($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable(), $data),
             SyncAction::DELETE => new EntityDelete($userId ?? $faker->uuid, $entity, $faker->uuid, now()->toDateTimeImmutable()),
         };
     }
