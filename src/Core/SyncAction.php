@@ -38,9 +38,9 @@ enum SyncAction: string
     case DELETE = "D";
 
     /**
-     * Update or delete action
+     * Move action
      *
-     * Represents the action of either updating or deleting an existing entity or record. (Only for client use)
+     * Represents the action of moving an entity or record from one location to another.
      */
-    case UPDELETE = "UD";
+    case MOVE = "M";
 }

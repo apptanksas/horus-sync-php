@@ -19,7 +19,7 @@ return new class extends Migration {
             SyncAction::INSERT->value,
             SyncAction::UPDATE->value,
             SyncAction::DELETE->value,
-            SyncAction::UPDELETE->value,
+            SyncAction::MOVE->value,
         ];
 
         $connectionName = Horus::getInstance()->getConnectionName();

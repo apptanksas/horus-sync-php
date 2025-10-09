@@ -137,7 +137,7 @@ class PostSyncQueueActionsController extends Controller
                 $itemData['data'],
                 $actionedAt
             ),
-            'update', 'updelete' => EntityOperationFactory::createEntityUpdate(
+            'update', 'move' => EntityOperationFactory::createEntityUpdate(
                 $ownerId,
                 $itemData['entity'],
                 $itemData['data']["id"],

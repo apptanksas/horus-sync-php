@@ -208,19 +208,19 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount($countExpected, $result);
     }
 
-    function testSaveWithUpDeleteActionIsSuccess()
+    function testSaveWithMoveActionIsSuccess()
     {
         // Given
         /**
          * @var QueueAction[] $actions
          */
-        $actions = $this->generateArray(fn() => QueueActionFactory::create(action: SyncAction::UPDELETE));
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(action: SyncAction::MOVE));
         // When
         $this->repository->save(...$actions);
         // Then
         foreach ($actions as $action) {
             $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
-                SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDELETE->value,
+                SyncQueueActionModel::ATTR_ACTION => SyncAction::MOVE->value,
                 SyncQueueActionModel::ATTR_ENTITY => $action->entity,
                 SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
                 SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
