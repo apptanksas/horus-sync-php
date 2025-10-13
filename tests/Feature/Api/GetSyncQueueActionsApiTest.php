@@ -16,6 +16,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\_Stubs\AdjacentFakeWritableEntity;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
+use Tests\_Stubs\NestedChildFakeEntityFactory;
+use Tests\_Stubs\NestedChildFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\SyncQueueActionModelFactory;
@@ -144,7 +146,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         )->setConfig(new Config(true));
 
         // When
-        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value),);
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value));
 
         // Then
         $response->assertOk();
@@ -195,11 +197,72 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         )->setConfig(new Config(true));
 
         // When
-        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $syncedAtTarget]),);
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $syncedAtTarget]));
 
         // Then
         $response->assertOk();
         $response->assertJsonCount(count($guestsActions) + count($ownerActionsFromChild));
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+
+
+        $data = $response->json();
+        $this->assertTrue(array_values($data) === $data, "The JSON must be an array of objects");
+
+        foreach ($data as $item) {
+            $this->assertIsArray($item);
+            $this->assertArrayHasKey('action', $item);
+            $this->assertArrayHasKey('entity', $item);
+            $this->assertArrayHasKey('data', $item);
+            $this->assertArrayHasKey('actioned_at', $item);
+            $this->assertArrayHasKey('synced_at', $item);
+        }
+    }
+
+    function testGetActionsWithEntityMoved()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $parentOwner2 = ParentFakeEntityFactory::create($userOwnerId);
+        $childOwner = ChildFakeEntityFactory::create($parentOwner2->getId(), $userOwnerId);
+        $nestedChild = NestedChildFakeEntityFactory::create($childOwner->getId(), $userGuestId);
+
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        $syncedAtTarget = $syncedAt - 10;
+
+        $ownerActions = [
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => NestedChildFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $nestedChild->getId(),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-5)
+            ], action: SyncAction::INSERT),
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-4)
+            ], action: SyncAction::UPDATE),
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-2)
+            ], action: SyncAction::MOVE)
+        ];
+
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $syncedAtTarget]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($ownerActions));
         $response->assertExactJsonStructure(self::JSON_SCHEME);
 
 

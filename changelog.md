@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.5
+- Fixed validate entities moved in get queue actions.
+
 # 0.14.4
 - Fixed issue when using now() without UTC configuration.
 
