@@ -7,12 +7,12 @@ use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 
 class SyncQueueActionModelFactory
 {
-    public static function create(string|int $userId = null, array $data = array()): SyncQueueActionModel
+    public static function create(string|int $userId = null, array $data = array(), ?SyncAction $action = null): SyncQueueActionModel
     {
         $faker = \Faker\Factory::create();
         $entityId = $faker->uuid;
         $dataOperation = ["id" => $entityId, "name" => $faker->name];
-        $action = SyncAction::random();
+        $action = $action ?? $faker->randomElement([SyncAction::UPDATE, SyncAction::INSERT, SyncAction::DELETE]);
 
         if ($action == SyncAction::UPDATE || $action == SyncAction::MOVE) {
             $dataOperation["attributes"] = ["color" => "red", "size" => "large"];

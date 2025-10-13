@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
+use AppTank\Horus\Core\SyncAction;
 
 /**
  * @internal Class GetQueueActions
@@ -52,8 +53,11 @@ readonly class GetQueueActions
 
         $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
 
-        $actionsFiltered = array_values(
-            array_filter($actions, function ($action) use ($userAuth) {
+        $hasEntitiesMoved = !empty(array_filter($actions, function ($action) {
+            return $action->action == SyncAction::MOVE;
+        }));
+
+        $actionsFiltered = array_values(array_filter($actions, function ($action) use ($userAuth, $hasEntitiesMoved) {
 
                 // Validate is primary entity and has read permission
                 if ($this->entityMapper->isPrimaryEntity($action->entity) && $userAuth->hasGranted($action->entity, $action->entityId, Permission::READ)) {
@@ -62,6 +66,10 @@ readonly class GetQueueActions
 
                 // Validate if the user owner is user authenticated
                 if ($action->userId && $action->userId === $userAuth->userId) {
+                    return true;
+                }
+
+                if ($hasEntitiesMoved) {
                     return true;
                 }
 
