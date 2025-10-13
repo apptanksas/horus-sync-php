@@ -109,7 +109,7 @@ class PostSyncQueueActionsController extends Controller
                 $itemAction['data']["id"],
                 $this->createEntityOperation($ownerId, $itemAction),
                 \DateTimeImmutable::createFromMutable($dateUtil->parseDateTime($itemAction['actioned_at'])),
-                now()->toDateTimeImmutable(),
+                now("UTC")->toDateTimeImmutable(),
                 $userId,
                 $ownerId
             );

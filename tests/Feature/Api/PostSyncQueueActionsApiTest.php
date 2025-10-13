@@ -20,6 +20,7 @@ use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Src\Shared\Commons\Domain\ValueObject\DateTime;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\NestedChildFakeEntityFactory;
@@ -176,7 +177,11 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
     function testPostSyncQueueMultipleIsSuccess()
     {
+        date_default_timezone_set("America/Sao_Paulo");
+
         $userId = $this->faker->uuid;
+        $hourUTCExpected = now("UTC")->format('Y-m-d H:i');
+
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
         $entityId = $this->faker->uuid;
@@ -262,6 +267,11 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $entityId
         ], deletedAtColumn: ParentFakeWritableEntity::ATTR_SYNC_DELETED_AT);
+
+        $action = SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_ENTITY_ID, $entityId)->firstOrFail();
+        $syncDateAction = $action->getAttribute(SyncQueueActionModel::ATTR_SYNCED_AT);
+        $this->assertNotNull($syncDateAction);
+        $this->assertEquals($hourUTCExpected, (new \DateTime($syncDateAction))->format('Y-m-d H:i'));
     }
 
     function testPostSyncQueueLookupIsFailure()
