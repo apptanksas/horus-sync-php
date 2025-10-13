@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.4
+- Fixed issue when using now() without UTC configuration.
+
 # 0.14.3
 - Changed name sync queue action upDelete to MOVE. 
 

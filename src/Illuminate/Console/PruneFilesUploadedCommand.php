@@ -209,7 +209,7 @@ class PruneFilesUploadedCommand extends Command
         // Fetch files that are pending and created before the expiration date
         $filesUploaded = SyncFileUploadedModel::query()
             ->where(SyncFileUploadedModel::ATTR_STATUS, SyncFileStatus::PENDING->value())
-            ->where(SyncFileUploadedModel::CREATED_AT, '<', now()->subDays($expirationDays)->toDateTimeString())
+            ->where(SyncFileUploadedModel::CREATED_AT, '<', now("UTC")->subDays($expirationDays)->toDateTimeString())
             ->get([SyncFileUploadedModel::ATTR_ID, SyncFileUploadedModel::ATTR_PATH]);
 
         // Delete each file and remove it from the database
@@ -252,7 +252,7 @@ class PruneFilesUploadedCommand extends Command
             $fileIdColumn = $fileTable . "." . SyncFileUploadedModel::ATTR_ID;
             $columnFileStatus = $fileTable . "." . SyncFileUploadedModel::ATTR_STATUS;
             $columnEntityDeletedAt = $entityTable . "." . EntitySynchronizable::ATTR_SYNC_DELETED_AT;
-            $expirationDate = now()->subDays($expirationDays)->toDateTimeString();
+            $expirationDate = now("UTC")->subDays($expirationDays)->toDateTimeString();
 
             // Fetch soft-deleted records for the entity that are older than expiration days
             $recordsDeleted = $entityClass::onlyTrashed()->join($fileTable, function (JoinClause $join) use (
