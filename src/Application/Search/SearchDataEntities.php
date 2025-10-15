@@ -53,6 +53,8 @@ readonly class SearchDataEntities extends BaseGetEntities
      */
     function __invoke(UserAuth $userAuth, string $entityName, array $ids = [], ?int $afterTimestamp = null): array
     {
+        $userIds = array_merge([$userAuth->userId], $userAuth->getUserOwnersId());
+
         foreach ($ids as $id) {
             if ($this->accessValidatorRepository->canAccessEntity($userAuth,
                     new EntityReference($entityName, $id),
@@ -62,7 +64,7 @@ readonly class SearchDataEntities extends BaseGetEntities
         }
 
         return $this->parseData(
-            $this->entityRepository->searchEntities($userAuth->getEffectiveUserId(), $entityName, $ids, $afterTimestamp)
+            $this->entityRepository->searchEntities($userIds, $entityName, $ids, $afterTimestamp)
         );
     }
 }

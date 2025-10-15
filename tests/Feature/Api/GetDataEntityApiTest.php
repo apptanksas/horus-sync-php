@@ -141,8 +141,7 @@ class GetDataEntityApiTest extends TestCase
 
 
         // When
-        $response = $this->get(
-            route(RouteName::GET_ENTITY_DATA->value, [ParentFakeWritableEntity::getEntityName(), "after" => $updatedAtTarget]));
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, [ParentFakeWritableEntity::getEntityName(), "after" => $updatedAtTarget]));
 
         // Then
         $response->assertOk();
@@ -181,6 +180,34 @@ class GetDataEntityApiTest extends TestCase
             $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
         }
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants, new UserActingAs($userOwnerId)));
+
+        // When
+        $url = route(RouteName::GET_ENTITY_DATA->value, [ParentFakeWritableEntity::getEntityName(),
+            "ids" => implode(",", array_map(fn(ParentFakeWritableEntity $entity) => $entity->getId(), $parentsEntities))]);
+        $response = $this->get($url);
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($parentsEntities));
+        $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
+    }
+
+    function testGetEntitiesGrantedSuccessWithNoUserActingAs()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userInvitedId = $this->faker->uuid;
+        $grants = [];
+
+        $parentsEntities = $this->generateArray(function () use ($userOwnerId, &$grants) {
+            $entity = ParentFakeEntityFactory::create($userOwnerId);
+            $grants[] = new EntityGranted($userOwnerId, new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()), AccessLevel::all());
+            return $entity;
+        });
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId));
+        }
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userInvitedId, $grants));
 
         // When
         $url = route(RouteName::GET_ENTITY_DATA->value, [ParentFakeWritableEntity::getEntityName(),
