@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\DB;
 class EloquentEntityRepository implements EntityRepository
 {
 
-    const int BATCH_SIZE = 2500; // Maximum number of records to insert in a single batch
+    const int BATCH_SIZE = 1000; // Maximum number of records to insert in a single batch
     const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
     const int CACHE_TTL_ONE_YEAR = 31536000; // 365 days in seconds
 
@@ -342,16 +342,16 @@ class EloquentEntityRepository implements EntityRepository
      * OPTIMIZATION: Uses eager loading with Eloquent's with() method to prevent N+1 query problems
      * by pre-loading all related entities in a single query per entity type.
      *
-     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @param int|string|array $userOwnerIds The ID(s) of the user(s) whose entities are to be searched.
      * @return array An array of EntityData objects representing the entities associated with the user.
      */
-    function searchAllEntitiesByUserId(int|string $userId): array
+    function searchAllEntitiesByUserId(int|string|array $userOwnerIds): array
     {
         $entitiesMap = $this->entityMapper->getMap();
         $output = [];
 
         foreach ($entitiesMap as $entity) {
-            $dataEntity = $this->searchEntities($userId, $entity->name);
+            $dataEntity = $this->searchEntities($userOwnerIds, $entity->name);
             $output = array_merge($output, $dataEntity);
         }
 
@@ -364,17 +364,17 @@ class EloquentEntityRepository implements EntityRepository
      * This method retrieves all entity types from the repository and searches for entities
      * associated with the provided user ID that have been updated after the specified timestamp.
      *
-     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @param int|string|array $userOwnerIds The ID(s) of the user(s) whose entities are to be searched.
      * @param int $timestamp The timestamp after which entities should be retrieved.
      * @return EntityData[] An array of EntityData objects representing the entities updated after the timestamp.
      */
-    function searchEntitiesAfterUpdatedAt(string|int $userId, int $timestamp): array
+    function searchEntitiesAfterUpdatedAt(string|int|array $userOwnerIds, int $timestamp): array
     {
         $entities = $this->entityMapper->getEntities();
         $output = [];
 
         foreach ($entities as $entityName => $entityClass) {
-            $dataEntity = $this->searchEntities($userId, $entityName, [], $timestamp);
+            $dataEntity = $this->searchEntities($userOwnerIds, $entityName, [], $timestamp);
             $output = array_merge($output, $dataEntity);
         }
 
@@ -390,16 +390,16 @@ class EloquentEntityRepository implements EntityRepository
      * OPTIMIZATION: Automatically detects all relations for the entity and applies eager loading
      * to prevent N+1 queries when building EntityData objects with related entities.
      *
-     * @param int|string $userId The ID of the user whose entities are to be searched.
+     * @param int|string|array $userOwnerIds The ID of the user whose entities are to be searched.
      * @param string $entityName The name of the entity to search for.
      * @param array $ids Optional array of entity IDs to filter by.
      * @param int|null $afterTimestamp Optional timestamp to filter entities updated after this time.
      * @return EntityData[] An array of EntityData objects representing the matched entities.
      */
-    function searchEntities(string|int $userId,
-                            string     $entityName,
-                            array      $ids = [],
-                            ?int       $afterTimestamp = null): array
+    function searchEntities(string|int|array $userOwnerIds,
+                            string           $entityName,
+                            array            $ids = [],
+                            ?int             $afterTimestamp = null): array
     {
         /**
          * @var $entityClass EntitySynchronizable
@@ -413,7 +413,11 @@ class EloquentEntityRepository implements EntityRepository
         $queryBuilder = $entityClass::query();
 
         if ($instanceClass instanceof WritableEntitySynchronizable) {
-            $queryBuilder = $queryBuilder->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId);
+            if (is_array($userOwnerIds)) {
+                $queryBuilder = $queryBuilder->whereIn(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+            } else {
+                $queryBuilder = $queryBuilder->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+            }
         }
 
         if (count($ids) > 0) {
@@ -519,20 +523,26 @@ class EloquentEntityRepository implements EntityRepository
      * This method queries the database to determine if an entity with the specified ID and type
      * exists for the provided user ID.
      *
-     * @param int|string $userId The ID of the user to check for the entity's existence.
+     * @param int|string|array $userOwnerIds The ID(s) of the user(s) to check for the entity's existence.
      * @param string $entityName The name of the entity to check.
      * @param string $entityId The ID of the entity to check.
      * @return bool True if the entity exists, otherwise false.
      */
-    function entityExists(int|string $userId, string $entityName, string $entityId): bool
+    function entityExists(int|string|array $userOwnerIds, string $entityName, string $entityId): bool
     {
         /**
          * @var $entityClass WritableEntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
-        return $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)
-            ->where(WritableEntitySynchronizable::ATTR_ID, $entityId)
-            ->exists();
+        $query = $entityClass::query();
+
+        if (is_array($userOwnerIds)) {
+            $query = $query->whereIn(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+        } else {
+            $query = $query->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userOwnerIds);
+        }
+
+        return $query->where(WritableEntitySynchronizable::ATTR_ID, $entityId)->exists();
     }
 
     /**
@@ -1109,3 +1119,4 @@ class EloquentEntityRepository implements EntityRepository
         return [];
     }
 }
+

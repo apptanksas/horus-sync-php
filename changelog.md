@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.6
+- Fixed get entities data endpoint when using entity granted.
+
 # 0.14.5
 - Fixed validate entities moved in get queue actions.
 

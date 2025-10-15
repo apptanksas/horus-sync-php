@@ -54,36 +54,35 @@ interface EntityRepository
     /**
      * Searches all entities associated with a specific user ID.
      *
-     * @param string|int $userId The ID of the user whose entities are being searched.
-     *
+     * @param string|int|array $userOwnerIds The ID(s) of the user(s) who own the entities.
      * @return EntityData[] An array of entity data associated with the specified user ID.
      */
-    function searchAllEntitiesByUserId(string|int $userId): array;
+    function searchAllEntitiesByUserId(string|int|array $userOwnerIds): array;
 
     /**
      * Searches entities that have been updated after the given timestamp.
      *
-     * @param string|int $userId The ID of the user whose entities are being searched.
+     * @param string|int|array $userOwnerIds The ID(s) of the user(s) who own the entities.
      * @param int $timestamp The timestamp after which entities have been updated.
      *
      * @return EntityData[] An array of entity data that have been updated after the specified timestamp.
      */
-    function searchEntitiesAfterUpdatedAt(string|int $userId, int $timestamp): array;
+    function searchEntitiesAfterUpdatedAt(string|int|array $userOwnerIds, int $timestamp): array;
 
     /**
      * Searches entities based on user ID, entity name, and optionally entity IDs and a timestamp.
      *
-     * @param string|int $userId The ID of the user whose entities are being searched.
+     * @param string|int|array $userOwnerIds The ID(s) of the user(s) who own the entities.
      * @param string $entityName The name of the entity to search for.
      * @param array $ids Optional. The IDs of the entities to search for.
      * @param int|null $afterTimestamp Optional. The timestamp after which entities should be returned.
      *
      * @return EntityData[] An array of entity data matching the search criteria.
      */
-    function searchEntities(string|int $userId,
-                            string     $entityName,
-                            array      $ids = [],
-                            ?int       $afterTimestamp = null): array;
+    function searchEntities(string|int|array $userOwnerIds,
+                            string           $entityName,
+                            array            $ids = [],
+                            ?int             $afterTimestamp = null): array;
 
     /**
      * Retrieves all entity hashes by entity name.
@@ -98,13 +97,13 @@ interface EntityRepository
     /**
      * Checks if a specific entity exists.
      *
-     * @param string|int $userId The ID of the user who owns the entity.
+     * @param string|int|array $userOwnerIds
      * @param string $entityName The name of the entity.
      * @param string $entityId The ID of the entity.
      *
      * @return bool True if the entity exists; otherwise, false.
      */
-    function entityExists(string|int $userId, string $entityName, string $entityId): bool;
+    function entityExists(string|int|array $userOwnerIds, string $entityName, string $entityId): bool;
 
 
     /**
