@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\DB;
 class EloquentEntityRepository implements EntityRepository
 {
 
-    const int BATCH_SIZE = 2500; // Maximum number of records to insert in a single batch
+    const int BATCH_SIZE = 1000; // Maximum number of records to insert in a single batch
     const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
     const int CACHE_TTL_ONE_YEAR = 31536000; // 365 days in seconds
 
