@@ -53,11 +53,7 @@ readonly class GetQueueActions
 
         $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
 
-        $hasEntitiesMoved = !empty(array_filter($actions, function ($action) {
-            return $action->action == SyncAction::MOVE;
-        }));
-
-        $actionsFiltered = array_values(array_filter($actions, function ($action) use ($userAuth, $hasEntitiesMoved) {
+        $actionsFiltered = array_values(array_filter($actions, function ($action) use ($userAuth) {
 
                 // Validate is primary entity and has read permission
                 if ($this->entityMapper->isPrimaryEntity($action->entity) && $userAuth->hasGranted($action->entity, $action->entityId, Permission::READ)) {
@@ -66,10 +62,6 @@ readonly class GetQueueActions
 
                 // Validate if the user owner is user authenticated
                 if ($action->userId && $action->userId === $userAuth->userId) {
-                    return true;
-                }
-
-                if ($hasEntitiesMoved) {
                     return true;
                 }
 
