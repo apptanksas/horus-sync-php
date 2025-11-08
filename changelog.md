@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.7
+- Fixed issue in get queue actions with Move action and entity granted.
+
 # 0.14.6
 - Fixed get entities data endpoint when using entity granted.
 

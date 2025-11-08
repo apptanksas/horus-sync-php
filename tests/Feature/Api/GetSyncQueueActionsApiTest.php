@@ -224,8 +224,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $userGuestId = $this->faker->uuid;
 
         $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
-        $parentOwner2 = ParentFakeEntityFactory::create($userOwnerId);
-        $childOwner = ChildFakeEntityFactory::create($parentOwner2->getId(), $userOwnerId);
+        $childOwner = ChildFakeEntityFactory::create($parentOwner->getId(), $userOwnerId);
         $nestedChild = NestedChildFakeEntityFactory::create($childOwner->getId(), $userGuestId);
 
         $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
@@ -235,17 +234,22 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
             SyncQueueActionModelFactory::create($userOwnerId, [
                 SyncQueueActionModel::ATTR_ENTITY => NestedChildFakeWritableEntity::getEntityName(),
                 SyncQueueActionModel::ATTR_ENTITY_ID => $nestedChild->getId(),
-                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-5)
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 5)
             ], action: SyncAction::INSERT),
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => NestedChildFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $nestedChild->getId(),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 4)
+            ], action: SyncAction::MOVE),
             SyncQueueActionModelFactory::create($userOwnerId, [
                 SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
                 SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
-                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-4)
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 4)
             ], action: SyncAction::UPDATE),
             SyncQueueActionModelFactory::create($userOwnerId, [
                 SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
                 SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
-                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt-2)
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 2)
             ], action: SyncAction::MOVE)
         ];
 
@@ -277,5 +281,49 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
             $this->assertArrayHasKey('actioned_at', $item);
             $this->assertArrayHasKey('synced_at', $item);
         }
+    }
+
+    function testGetActionsWithEntityMovedAndMixedWithActionsOwner()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        // Another owner entity to mix actions
+        ParentFakeEntityFactory::create($userOwnerId);
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $childOwner = ChildFakeEntityFactory::create($parentOwner->getId(), $userOwnerId);
+
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        $syncedAtTarget = $syncedAt - 10;
+
+        $ownerActions = [
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => ParentFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $this->faker->uuid,
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 2)
+            ], action: SyncAction::INSERT),
+            SyncQueueActionModelFactory::create($userOwnerId, [
+                SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt - 2)
+            ], action: SyncAction::MOVE)
+        ];
+
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userGuestId,
+                [new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+                ], new UserActingAs($userOwnerId))
+        )->setConfig(new Config(true));
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $syncedAtTarget]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(1);
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
     }
 }
