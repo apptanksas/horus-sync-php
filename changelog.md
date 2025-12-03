@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.8
+- Fixed EntityMigrator validating if entity exists before migrate.
+
 # 0.14.7
 - Fixed issue in get queue actions with Move action and entity granted.
 
