@@ -59,7 +59,16 @@ class EntityMigrator
 
             // if connection name is null, use default connection
             if (is_null($connectionName)) {
-                Schema::create($tableName, $callbackCreateTable);
+                // Validate if the table already exists
+                if (!Schema::hasTable($tableName)) {
+                    Schema::create($tableName, $callbackCreateTable);
+                    $createTableConstraintsTable->__invoke();
+                }
+                continue;
+            }
+
+            // Validate if the table already exists
+            if (Schema::connection($connectionName)->hasTable($tableName)) {
                 continue;
             }
 
