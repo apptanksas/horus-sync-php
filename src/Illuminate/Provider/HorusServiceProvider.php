@@ -73,7 +73,7 @@ class HorusServiceProvider extends ServiceProvider
         parent::register();
 
         $this->app->singleton(MigrationSchemaRepository::class, function () {
-            return new StaticMigrationSchemaRepository();
+            return new StaticMigrationSchemaRepository($this->app->make(CacheRepository::class));
         });
 
         $this->app->singleton(IEventBus::class, function () {

@@ -2,6 +2,7 @@
 
 namespace AppTank\Horus\Repository;
 
+use AppTank\Horus\Core\Repository\CacheRepository;
 use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Horus;
 
@@ -10,8 +11,16 @@ use AppTank\Horus\Horus;
  * StaticMigrationSchemaRepository implements the MigrationSchemaRepository interface
  * and provides a method to retrieve the migration schema for all entities.
  */
-class StaticMigrationSchemaRepository implements MigrationSchemaRepository
+readonly class StaticMigrationSchemaRepository implements MigrationSchemaRepository
 {
+
+    function __construct(
+        private CacheRepository $cacheRepository
+    )
+    {
+
+    }
+
     /**
      * Retrieves the schema for all entities managed by the entity mapper.
      *
@@ -23,20 +32,25 @@ class StaticMigrationSchemaRepository implements MigrationSchemaRepository
      */
     function getSchema(): array
     {
-        $entityMapper = Horus::getInstance()->getEntityMapper();
-        $entities = $entityMapper->getMap();
-        $schema = [];
+        $ttlOneHour = 3600;
 
-        foreach ($entities as $entityMap) {
-            $entityClass = $entityMapper->getEntityClass($entityMap->name);
+        return $this->cacheRepository->remember("migration_scheme", $ttlOneHour, function () {
 
-            if (!class_exists($entityClass)) {
-                throw new \DomainException("Entity class not found");
+            $entityMapper = Horus::getInstance()->getEntityMapper();
+            $entities = $entityMapper->getMap();
+            $schema = [];
+
+            foreach ($entities as $entityMap) {
+                $entityClass = $entityMapper->getEntityClass($entityMap->name);
+
+                if (!class_exists($entityClass)) {
+                    throw new \DomainException("Entity class not found");
+                }
+
+                $schema[] = $entityClass::schema();
             }
 
-            $schema[] = $entityClass::schema();
-        }
-
-        return $schema;
+            return $schema;
+        });
     }
 }

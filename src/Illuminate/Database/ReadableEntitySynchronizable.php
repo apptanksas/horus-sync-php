@@ -26,13 +26,14 @@ abstract class ReadableEntitySynchronizable extends EntitySynchronizable impleme
     /**
      * Get the base synchronization parameters for lookup entities.
      *
+     * @param int $baseVersion The base version for synchronization.
      * @return SyncParameter[] List of base synchronization parameters.
      */
-    public static function baseParameters(): array
+    public static function baseParameters(int $baseVersion): array
     {
         return [
-            (static::$usesUuid) ? SyncParameter::createPrimaryKeyUUID(self::ATTR_ID, 1) : SyncParameter::createPrimaryKeyInteger(self::ATTR_ID, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, 1)
+            (static::$usesUuid) ? SyncParameter::createPrimaryKeyUUID(self::ATTR_ID, $baseVersion) : SyncParameter::createPrimaryKeyInteger(self::ATTR_ID, $baseVersion),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, $baseVersion)
         ];
     }
 

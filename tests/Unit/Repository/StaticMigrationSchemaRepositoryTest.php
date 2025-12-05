@@ -3,9 +3,10 @@
 namespace Tests\Unit\Repository;
 
 use AppTank\Horus\Horus;
+use AppTank\Horus\Repository\DefaultCacheRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
 use Tests\_Stubs\ParentFakeWritableEntity;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class StaticMigrationSchemaRepositoryTest extends TestCase
 {
@@ -16,7 +17,7 @@ class StaticMigrationSchemaRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->repository = new StaticMigrationSchemaRepository();
+        $this->repository = new StaticMigrationSchemaRepository(new DefaultCacheRepository());
 
         Horus::initialize([
             ParentFakeWritableEntity::class

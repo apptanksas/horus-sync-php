@@ -40,9 +40,10 @@ interface IEntitySynchronizable
     /**
      * Get the base synchronization parameters for the entity.
      *
+     * @param int $baseVersion The base version number.
      * @return array An array of base synchronization parameters.
      */
-    public static function baseParameters(): array;
+    public static function baseParameters(int $baseVersion): array;
 
     /**
      * Get the name of the table associated with the entity.
@@ -63,5 +64,5 @@ interface IEntitySynchronizable
      *
      * @return array An array of column indexes.
      */
-    public static function getColumnIndexes():array;
+    public static function getColumnIndexes(): array;
 }
