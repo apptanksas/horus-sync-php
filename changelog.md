@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.14.9
+- Fixed to define the version attribute to new entities.
+- Added cache implementation in endpoint to get migration schema.
+
 # 0.14.8
 - Fixed EntityMigrator validating if entity exists before migrate.
 

@@ -51,17 +51,18 @@ abstract class WritableEntitySynchronizable extends EntitySynchronizable impleme
     /**
      * Get the base synchronization parameters.
      *
+     * @param int $baseVersion Base version number.
      * @return SyncParameter[] List of base synchronization parameters.
      */
-    public static function baseParameters(): array
+    public static function baseParameters(int $baseVersion): array
     {
         return [
-            SyncParameter::createPrimaryKeyUUID(self::ATTR_ID, 1),
-            SyncParameter::createString(self::ATTR_SYNC_OWNER_ID, 1),
-            SyncParameter::createString(self::ATTR_SYNC_HASH, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_CREATED_AT, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_UPDATED_AT, 1),
-            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, 1),
+            SyncParameter::createPrimaryKeyUUID(self::ATTR_ID, $baseVersion),
+            SyncParameter::createString(self::ATTR_SYNC_OWNER_ID, $baseVersion),
+            SyncParameter::createString(self::ATTR_SYNC_HASH, $baseVersion),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_CREATED_AT, $baseVersion),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_UPDATED_AT, $baseVersion),
+            SyncParameter::createTimestamp(self::ATTR_SYNC_DELETED_AT, $baseVersion),
         ];
     }
 

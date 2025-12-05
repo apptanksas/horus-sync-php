@@ -118,10 +118,19 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
         $attributes = [];
         $class = get_called_class();
 
+        $entityParameters = $class::parameters();
+        $baseVersion = PHP_INT_MAX;
+
+        foreach ($entityParameters as $parameter) {
+            if ($baseVersion > $parameter->version) {
+                $baseVersion = $parameter->version;
+            }
+        }
+
         /**
          * @var SyncParameter[] $parameters
          */
-        $parameters = array_merge(static::baseParameters(), $class::parameters());
+        $parameters = array_merge(static::baseParameters($baseVersion), $entityParameters);
         $filterParameters = [self::ATTR_SYNC_DELETED_AT];
 
         foreach ($parameters as $parameter) {

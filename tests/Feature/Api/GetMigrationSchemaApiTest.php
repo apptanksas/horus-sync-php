@@ -42,6 +42,11 @@ class GetMigrationSchemaApiTest extends ApiTestCase
         $response->assertJsonPath("0.attributes.10.name", "relations_one_of_many");
         $response->assertJsonPath("0.attributes.10.related.0.entity", ChildFakeWritableEntity::getEntityName());
         $response->assertJsonPath("0.attributes.10.related.0.type", EntityType::WRITABLE->value);
+
+        for ($i = 1; $i <= 12; $i++) {
+            $response->assertJsonPath("0.attributes.10.related.0.attributes.$i.version", ChildFakeWritableEntity::VERSION_ATTRIBUTES);
+        }
+
         $response->assertJsonPath("0.attributes.10.related.0.attributes.12.linked_entity", ParentFakeWritableEntity::getEntityName());
         $response->assertJsonPath("0.attributes.10.related.0.attributes.12.delete_on_cascade", true);
 
