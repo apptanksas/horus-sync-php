@@ -32,7 +32,7 @@ class EntityMigrator
             $columnIndexes = $entityClass::getColumnIndexes();
 
             $callbackCreateTable = function (Blueprint $table) use ($entityClass, $tableName, $columnIndexes, $connectionName) {
-                $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
+                $parameters = array_merge($entityClass::baseParameters($this->getEntityBaseVersion($entityClass::parameters())), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (($connectionName != null && Schema::connection($connectionName)->hasColumn($tableName, $parameter->name)) ||
                         Schema::hasColumn($tableName, $parameter->name)) {
@@ -47,7 +47,7 @@ class EntityMigrator
             };
 
             $createTableConstraintsTable = function () use ($entityClass, $tableName, $connectionName) {
-                $parameters = array_merge($entityClass::baseParameters(), $entityClass::parameters());
+                $parameters = array_merge($entityClass::baseParameters($this->getEntityBaseVersion($entityClass::parameters())), $entityClass::parameters());
                 foreach ($parameters as $parameter) {
                     if (($connectionName != null && Schema::connection($connectionName)->hasColumn($tableName, $parameter->name)) ||
                         Schema::hasColumn($tableName, $parameter->name)) {
@@ -202,5 +202,25 @@ class EntityMigrator
             ADD CONSTRAINT {$parameter->name}_type_custom CHECK (
                 {$parameter->name} ~* '{$parameter->regex}'
             )");
+    }
+
+
+    /**
+     * Get the base version from the entity parameters.
+     *
+     * @param array $entityParameters
+     * @return int
+     */
+    private function getEntityBaseVersion(array $entityParameters): int
+    {
+        $baseVersion = PHP_INT_MAX;
+
+        foreach ($entityParameters as $parameter) {
+            if ($baseVersion > $parameter->version) {
+                $baseVersion = $parameter->version;
+            }
+        }
+
+        return $baseVersion;
     }
 }
