@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.15.0
+- Added support to validate entities granted previously to void sync issues.
+
 # 0.14.9
 - Fixed to define the version attribute to new entities.
 - Added cache implementation in endpoint to get migration schema.

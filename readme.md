@@ -278,6 +278,19 @@ Horus::getInstance()->setUserAuthenticated(
 );
 ```
 
+#### (Recommend) Setup entity granted on validate entity was granted to void sync issues.
+```php
+$config = new Config(true);
+$config->setupOnValidateEntityWasGranted(function () {
+    return [
+        new EntityGranted($userOwnerId,
+        new EntityReference($entityName, $entityId), AccessLevel::all())
+    ];
+});
+Horus::getInstance()->setConfig($config);
+```
+
+
 ### ⛔ Entity Restrictions
 
 If you want to apply a restriction to an entity, you can use the next restriction classes:

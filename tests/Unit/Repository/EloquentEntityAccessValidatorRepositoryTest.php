@@ -178,4 +178,96 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         // Then
         $this->assertTrue($canAccess);
     }
+
+    function test_when_get_callback_validate_entity_was_granted_is_null_return_false()
+    {
+        $userAuth = new UserAuth($this->faker->uuid);
+        $entityReference = new EntityReference(ParentFakeWritableEntity::getEntityName(), $this->faker->uuid);
+
+        // When
+        $result = $this->repository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::CREATE);
+
+        // Then
+        $this->assertFalse($result);
+    }
+
+    function test_when_get_callback_validate_entity_was_granted_is_empty_return_false()
+    {
+        $mapper = Horus::getInstance()->getEntityMapper();
+        $config = new Config(true);
+        $config->setupOnValidateEntityWasGranted(function () {
+            return [];
+        });
+        $entityRepository = new EloquentEntityRepository($mapper, new DefaultCacheRepository(), new DateTimeUtil(), $config);
+        $repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
+
+        $userAuth = new UserAuth($this->faker->uuid);
+        $entityReference = new EntityReference(ParentFakeWritableEntity::getEntityName(), $this->faker->uuid);
+
+        // When
+        $result = $repository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::CREATE);
+
+        // Then
+        $this->assertFalse($result);
+    }
+
+    function test_when_get_callback_validate_entity_was_granted_return_true()
+    {
+        $mapper = Horus::getInstance()->getEntityMapper();
+        $config = new Config(true);
+        $userInvitedId = $this->faker->uuid;
+        $userOwnerId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $entityId = $this->faker->uuid;
+
+        $config->setupOnValidateEntityWasGranted(function () use ($userOwnerId, $entityName, $entityId) {
+            return [
+                new EntityGranted($userOwnerId,
+                    new EntityReference($entityName, $entityId),
+                    AccessLevel::all())
+            ];
+        });
+
+        $userAuth = new UserAuth($userInvitedId);
+        $entityReference = new EntityReference($entityName, $entityId);
+        $entityRepository = new EloquentEntityRepository($mapper, new DefaultCacheRepository(), new DateTimeUtil(), $config);
+        $repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
+
+        // When
+        $result = $repository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::CREATE);
+
+        // Then
+        $this->assertTrue($result);
+    }
+
+    function test__when_get_callback_validate_entity_was_granted_can_access_an_entity_child_from_entity_parent()
+    {
+        $mapper = Horus::getInstance()->getEntityMapper();
+        $config = new Config(true);
+        $userInvitedId = $this->faker->uuid;
+        $userOwnerId = $this->faker->uuid;
+
+        $entity = ParentFakeEntityFactory::create($userOwnerId);
+        $childEntity = ChildFakeEntityFactory::create($entity->getId(), $userOwnerId);
+
+        $config->setupOnValidateEntityWasGranted(function () use ($userOwnerId, $entity) {
+            return [
+                new EntityGranted($userOwnerId,
+                    new EntityReference(ParentFakeWritableEntity::getEntityName(), $entity->getId()),
+                    AccessLevel::all())
+            ];
+        });
+
+        $userAuth = new UserAuth($userInvitedId);
+        $entityRepository = new EloquentEntityRepository($mapper, new DefaultCacheRepository(), new DateTimeUtil(), $config);
+        $repository = new EloquentEntityAccessValidatorRepository($mapper, $config, $entityRepository);
+
+        // When
+        $entityName = ChildFakeWritableEntity::getEntityName();
+        $entityId = $childEntity->getId();
+        $canAccess = $repository->thereWasAccessEntityPreviously($userAuth, new EntityReference($entityName, $entityId), Permission::READ);
+
+        // Then
+        $this->assertTrue($canAccess);
+    }
 }
