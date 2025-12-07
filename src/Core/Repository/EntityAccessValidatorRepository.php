@@ -30,4 +30,14 @@ interface EntityAccessValidatorRepository
      * @return bool True if the user has access to the entity with the given permission; otherwise, false.
      */
     public function canAccessEntity(UserAuth $userAuth, EntityReference $entityReference, Permission $permission): bool;
+
+    /**
+     * Checks if the user there was access to the entity previously.
+     *
+     * @param UserAuth $userAuth The user whose access history is being checked.
+     * @param EntityReference $entityReference The entity for which previous access is being validated.
+     *
+     * @return bool True if the user had access to the entity previously; otherwise, false.
+     */
+    public function thereWasAccessEntityPreviously(UserAuth $userAuth, EntityReference $entityReference, Permission $permission): bool;
 }

@@ -32,8 +32,8 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
      * @param EntityRepository $entityRepository Repository for entity operations.
      */
     public function __construct(
-        private EntityMapper $entityMapper,
-        private Config       $config,
+        private EntityMapper     $entityMapper,
+        private Config           $config,
         private EntityRepository $entityRepository
     )
     {
@@ -67,7 +67,7 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
         }
 
         // 4. Validate if user has access on cascade by entity granted
-        if ($this->canAccessOnCascade($userAuth, $entityReference, $permission)) {
+        if ($this->canAccessOnCascade($userAuth->entityGrants, $entityReference, $permission)) {
             return true;
         }
 
@@ -75,26 +75,57 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     }
 
     /**
-     * Checks if the user has access to the entity through a hierarchy of entities.
+     * Validates if a user had previous access to a specific entity with a given permission.
      *
      * @param UserAuth $userAuth User authentication.
+     * @param EntityReference $entityReference Reference to the entity to check.
+     * @return bool Returns `true` if the user had previous access; otherwise, `false`.
+     */
+    public function thereWasAccessEntityPreviously(UserAuth $userAuth, EntityReference $entityReference, Permission $permission): bool
+    {
+        $callbackValidateEntityWasGranted = $this->config->getCallbackValidateEntityWasGranted() ?? [];
+
+        if (empty($callbackValidateEntityWasGranted)) {
+            return false;
+        }
+
+        /**
+         * @var EntityGranted[] $entitiesGranted
+         */
+        $entitiesGranted = $callbackValidateEntityWasGranted($userAuth, $entityReference);
+
+        foreach ($entitiesGranted as $entityGrant) {
+            if ($entityGrant->entityReference->entityName === $entityReference->entityName &&
+                $entityGrant->entityReference->entityId === $entityReference->entityId &&
+                $entityGrant->accessLevel->can($permission)) {
+                return true;
+            }
+        }
+
+        return ($this->canAccessOnCascade($entitiesGranted, $entityReference, $permission));
+    }
+
+    /**
+     * Checks if the user has access to the entity through a hierarchy of entities.
+     *
+     * @param EntityGranted[] $userAuth User authentication.
      * @param EntityReference $entityReference Reference to the entity to access.
      * @param Permission $permissionRequested Permission to validate.
      * @return bool Returns `true` if the user has access through hierarchy; otherwise, `false`.
      */
-    private function canAccessOnCascade(UserAuth $userAuth, EntityReference $entityReference, Permission $permissionRequested): bool
+    private function canAccessOnCascade(array $entitiesGranted, EntityReference $entityReference, Permission $permissionRequested): bool
     {
-        if (empty($userAuth->entityGrants)) {
+        if (empty($entitiesGranted)) {
             return false;
         }
 
-        if (!$this->canAccessByParentHierarchyWithPath($userAuth, $entityReference)) {
+        if (!$this->canAccessByParentHierarchyWithPath($entitiesGranted, $entityReference)) {
             return false;
         }
 
         $entityHierarchy = $this->entityRepository->getEntityPathHierarchy($entityReference);
 
-        foreach ($userAuth->entityGrants as $entityGrant) {
+        foreach ($entitiesGranted as $entityGrant) {
             if ($this->entityGrantedIsInEntityHierarchy($entityGrant, $entityHierarchy) &&
                 $entityGrant->accessLevel->can($permissionRequested)) {
                 return true;
@@ -107,16 +138,16 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
     /**
      * Checks if the user has access to the entity through the hierarchy of parent entities.
      *
-     * @param UserAuth $userAuth User authentication.
+     * @param EntityGranted[] $entitiesGranted User authentication.
      * @param EntityReference $entityReference Reference to the entity to access.
      * @return bool Returns `true` if the user has access through parent hierarchy; otherwise, `false`.
      */
-    private function canAccessByParentHierarchyWithPath(UserAuth $userAuth, EntityReference $entityReference): bool
+    private function canAccessByParentHierarchyWithPath(array $entitiesGranted, EntityReference $entityReference): bool
     {
         $paths = $this->entityMapper->getPaths();
 
         foreach ($paths as $path) {
-            foreach ($userAuth->entityGrants as $entityGrant) {
+            foreach ($entitiesGranted as $entityGrant) {
                 $parentIndexPath = array_search($entityGrant->entityReference->entityName, $path);
                 $childIndexPath = array_search($entityReference->entityName, $path);
 

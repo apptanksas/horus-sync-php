@@ -56,6 +56,11 @@ class SyncQueueActions
     private array $actions = [];
 
     /**
+     * @var array List of actions that were skipped during processing by entities was granted previously.
+     */
+    private array $skippedActions = [];
+
+    /**
      * SyncQueueActions constructor.
      *
      * @param ITransactionHandler $transactionHandler Handler for managing database transactions.
@@ -195,14 +200,29 @@ class SyncQueueActions
 
                 // Check if user has permission to update entity
                 if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
+
+                    // Check if there was access to the entity previously
+                    if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::UPDATE)) {
+                        $this->skippedActions[] = $action;
+                        continue;
+                    }
+
                     throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
+
                 $updateActions[] = $action;
 
             } elseif ($action->operation instanceof EntityDelete) {
 
                 // Check if user has permission to delete entity
                 if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
+
+                    // Check if there was access to the entity previously
+                    if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::DELETE)) {
+                        $this->skippedActions[] = $action;
+                        continue;
+                    }
+
                     throw new OperationNotPermittedException("No have access to delete entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
 

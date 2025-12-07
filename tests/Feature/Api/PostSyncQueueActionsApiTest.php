@@ -1319,6 +1319,64 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $this->assertDatabaseCount(ChildFakeWritableEntity::getTableName(), 1);
         $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 2);
     }
+
+
+    function testTryUpdateEntityWithGrantedPreviously()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userId = $this->faker->uuid;
+
+        $entity = ParentFakeEntityFactory::create($userOwnerId);
+        $entityId = $entity->getId();
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $nameExpected = $this->faker->userName;
+        $colorExpected = $this->faker->colorName;
+        $valueEnumExpected = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+
+        $config = new Config(true);
+        $config->setupOnValidateEntityWasGranted(function () use ($userOwnerId, $entityName, $entityId) {
+            return [new EntityGranted($userOwnerId,
+                new EntityReference($entityName, $entityId), AccessLevel::all())
+            ];
+        });
+
+        Horus::getInstance()->setUserAuthenticated(
+            new UserAuth($userId)
+        )->setConfig($config);
+
+
+        $data = [
+            // update action
+            [
+                "action" => "UPDATE",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "attributes" => [
+                        "name" => $nameExpected,
+                        "color" => $colorExpected,
+                        "value_enum" => $valueEnumExpected
+                    ]
+                ],
+                "actioned_at" => $actionedAt - 1000
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $nameExpected,
+            'color' => $colorExpected,
+            'value_enum' => $valueEnumExpected
+        ]);
+    }
 }
 
 class TestFileHandler implements IFileHandler

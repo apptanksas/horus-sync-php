@@ -34,6 +34,11 @@ class Config
     private $onSetupSharedEntities;
 
     /**
+     * @var callable|null The callback function to be called when validating if an entity was granted previously.
+     */
+    private $onValidateEntityWasGranted = null;
+
+    /**
      * @var EntityRestriction[][]
      */
     private array $restrictionsByEntity = [];
@@ -106,6 +111,16 @@ class Config
     }
 
     /**
+     * Sets the callback function to be called when validating if an entity was granted previously.
+     *
+     * @param callable $onValidateEntityWasGranted The callback function.
+     */
+    function setupOnValidateEntityWasGranted(callable $onValidateEntityWasGranted): void
+    {
+        $this->onValidateEntityWasGranted = $onValidateEntityWasGranted;
+    }
+
+    /**
      * Gets the path for the files that are pending to be uploaded.
      *
      * @return string The path for the pending files.
@@ -166,6 +181,16 @@ class Config
     function getRestrictionsByEntity(string $entityName): array
     {
         return $this->restrictionsByEntity[$entityName];
+    }
+
+    /**
+     * Gets the callback function to be called when validating if an entity was granted previously.
+     *
+     * @return callable|null The callback function.
+     */
+    function getCallbackValidateEntityWasGranted(): callable|null
+    {
+        return $this->onValidateEntityWasGranted;
     }
 
     /**
