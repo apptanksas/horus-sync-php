@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
@@ -53,6 +54,9 @@ readonly class GetQueueActions
 
         $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
 
+        /**
+         * @var QueueAction[] $actionsFiltered
+         */
         $actionsFiltered = array_values(array_filter($actions, function ($action) use ($userAuth) {
 
                 // Validate is primary entity and has read permission
@@ -71,6 +75,7 @@ readonly class GetQueueActions
 
         return array_map(function ($action) {
             return [
+                'sequence' => $action->sequence,
                 'action' => $action->action->name,
                 'entity' => $action->entity,
                 'data' => $action->operation->toArray(),

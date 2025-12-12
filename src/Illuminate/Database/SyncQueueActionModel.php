@@ -78,6 +78,11 @@ final class SyncQueueActionModel extends Model
     // GETTERS
     // ----------------------------------------------
 
+    public function getId(): int
+    {
+        return $this->getAttribute($this->getKeyName());
+    }
+
     /**
      * Get the action attribute.
      *
