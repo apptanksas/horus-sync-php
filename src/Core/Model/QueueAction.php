@@ -39,6 +39,7 @@ readonly class QueueAction
         public int|string         $userId,
         public int|string         $ownerId,
         public bool               $bySystem = false,
+        public int|null           $sequence = null,
     )
     {
 
@@ -56,7 +57,8 @@ readonly class QueueAction
             $this->syncedAt,
             $userId,
             $ownerId,
-            $this->bySystem
+            $this->bySystem,
+            $this->sequence
         );
     }
 

@@ -29,6 +29,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
 
     private const array JSON_SCHEME = [
         '*' => [
+            'sequence',
             'action',
             'entity',
             'data',
@@ -210,11 +211,14 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
 
         foreach ($data as $item) {
             $this->assertIsArray($item);
+            $this->assertArrayHasKey("sequence", $item);
             $this->assertArrayHasKey('action', $item);
             $this->assertArrayHasKey('entity', $item);
             $this->assertArrayHasKey('data', $item);
             $this->assertArrayHasKey('actioned_at', $item);
             $this->assertArrayHasKey('synced_at', $item);
+            // Validate that sequence is not null
+            $this->assertNotNull($item['sequence'], "The sequence must not be null");
         }
     }
 
@@ -275,11 +279,14 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
 
         foreach ($data as $item) {
             $this->assertIsArray($item);
+            $this->assertArrayHasKey("sequence", $item);
             $this->assertArrayHasKey('action', $item);
             $this->assertArrayHasKey('entity', $item);
             $this->assertArrayHasKey('data', $item);
             $this->assertArrayHasKey('actioned_at', $item);
             $this->assertArrayHasKey('synced_at', $item);
+            // Validate that sequence is not null
+            $this->assertNotNull($item['sequence'], "The sequence must not be null");
         }
     }
 

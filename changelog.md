@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.15.1
+- Added new attribute response in queue action to have the sequence number of the action.
+
 # 0.15.0
 - Added support to validate entities granted previously to void sync issues.
 
