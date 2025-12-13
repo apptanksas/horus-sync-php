@@ -50,9 +50,9 @@ readonly class GetQueueActions
      */
     function __invoke(UserAuth $userAuth, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
     {
-        $userIds = array_merge([$userAuth->userId], $userAuth->getUserOwnersId());
-
-        $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes);
+        $userOwnersId = $userAuth->getUserOwnersId();
+        $userIds = array_merge([$userAuth->userId], $userOwnersId);
+        $actions = $this->queueActionRepository->getActions($userIds, $afterTimestamp, $excludeDateTimes, $userOwnersId);
 
         /**
          * @var QueueAction[] $actionsFiltered
