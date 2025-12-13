@@ -333,4 +333,82 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $response->assertJsonCount(1);
         $response->assertExactJsonStructure(self::JSON_SCHEME);
     }
+
+    function testGetActionsOnlyGuestWhenActionsAreSameTimestampFromUserOwnerSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $childOwner = ChildFakeEntityFactory::create($parentOwner->getId(), $userOwnerId);
+        $timestamp = now("UTC")->getTimestamp();
+
+        $guestActionsFromChild = [SyncQueueActionModelFactory::create($userOwnerId, [
+            SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
+            SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value(),
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+            SyncQueueActionModel::FK_USER_ID => $userGuestId,
+            SyncQueueActionModel::ATTR_DATA => json_encode([
+                "id" => $childOwner->getId(),
+                "attributes" => [
+                    ChildFakeWritableEntity::ATTR_INT_VALUE => $this->faker->randomNumber(),
+                    ChildFakeWritableEntity::ATTR_STRING_VALUE => $this->faker->word,
+                ]
+            ])
+        ])];
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userOwnerId))->setConfig(new Config(true));
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $timestamp - 1000, "exclude" => $timestamp]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($guestActionsFromChild));
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
+    function testGetActionsOnlyUserOwnerWhenActionsAreSameTimestampFromUserGuestSuccess()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $userGuestId = $this->faker->uuid;
+
+        $parentOwner = ParentFakeEntityFactory::create($userOwnerId);
+        $childOwner = ChildFakeEntityFactory::create($parentOwner->getId(), $userOwnerId);
+        $timestamp = now("UTC")->getTimestamp();
+
+        $ownerActionsFromChild = [SyncQueueActionModelFactory::create($userOwnerId, [
+            SyncQueueActionModel::ATTR_ENTITY => ChildFakeWritableEntity::getEntityName(),
+            SyncQueueActionModel::ATTR_ENTITY_ID => $childOwner->getId(),
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value(),
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+            SyncQueueActionModel::FK_USER_ID => $userOwnerId,
+            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
+            SyncQueueActionModel::ATTR_DATA => json_encode([
+                "id" => $childOwner->getId(),
+                "attributes" => [
+                    ChildFakeWritableEntity::ATTR_INT_VALUE => $this->faker->randomNumber(),
+                    ChildFakeWritableEntity::ATTR_STRING_VALUE => $this->faker->word,
+                ]
+            ])
+        ])];
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userGuestId,
+            [new EntityGranted($userOwnerId,
+                new EntityReference(ParentFakeWritableEntity::getEntityName(), $parentOwner->getId()), AccessLevel::all())
+            ], new UserActingAs($userOwnerId)
+        ))->setConfig(new Config(true));
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["after" => $timestamp - 1000, "exclude" => $timestamp]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($ownerActionsFromChild));
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
 }

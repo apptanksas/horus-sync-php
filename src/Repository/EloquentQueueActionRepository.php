@@ -100,34 +100,69 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     }
 
     /**
-     * Retrieves a list of queue actions for a specific user or owner ID,
-     * optionally filtering by timestamp and excluding specific action times.
+     * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
      *
-     * @param array|string|int $userOwnerIds The ID(s) of the user owner(s) whose actions are to be retrieved.
-     * @param int|null $afterTimestamp Optional timestamp to filter actions after this time.
-     * @param array $excludeDateTimes Optional list of timestamps to exclude from results.
-     * @return QueueAction[] An array of QueueAction objects.
+     * @param array|int|string $filteredOwnerIds     Owners subject to the date exclusion logic.
+     * @param int|null         $afterTimestamp       Global time filter (applies to everything).
+     * @param array            $excludeDateTimes     Dates to exclude for the filtered owners.
+     * @param array            $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
      */
-    function getActions(int|string|array $userOwnerIds, ?int $afterTimestamp = null, array $excludeDateTimes = []): array
-    {
+    public function getActions(
+        array|int|string $filteredOwnerIds,
+        ?int $afterTimestamp = null,
+        array $excludeDateTimes = [],
+        array $alwaysIncludeOwnerIds = []
+    ): array {
+
         $query = SyncQueueActionModel::query();
 
-        if (is_array($userOwnerIds)) {
-            $query = $query->whereIn(SyncQueueActionModel::FK_OWNER_ID, $userOwnerIds);
-        } else {
-            $query = $query->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerIds);
-        }
-
+        // 1. Global Time Filter (Applies to both groups)
         if ($afterTimestamp !== null) {
-            $query = $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=',
-                $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp()))->orderBy("id");
+            $formattedAfterDate = $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp());
+            $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=', $formattedAfterDate)->orderBy("id");
         }
 
+        // Prepare exclusion dates
+        $arrayDateExcludes = [];
         if (!empty($excludeDateTimes)) {
-            $query = $query->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT,
-                array_map(fn($timestamp) => $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($timestamp)->getTimestamp()), $excludeDateTimes));
+            $arrayDateExcludes = array_map(
+                fn($ts) => $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($ts)->getTimestamp()),
+                $excludeDateTimes
+            );
         }
 
-        return $query->get()->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))->toArray();
+        // Normalize inputs to arrays
+        $filteredIds = is_array($filteredOwnerIds) ? $filteredOwnerIds : [$filteredOwnerIds];
+        $unrestrictedIds = is_array($alwaysIncludeOwnerIds) ? $alwaysIncludeOwnerIds : [$alwaysIncludeOwnerIds];
+
+        // 2. Core Logic: (Group A: Filtered) OR (Group B: Unrestricted)
+        $query->where(function ($mainQuery) use ($filteredIds, $unrestrictedIds, $arrayDateExcludes) {
+
+            // GROUP A: The owners subject to date exclusion logic
+            if (!empty($filteredIds)) {
+                $mainQuery->where(function ($q) use ($filteredIds, $arrayDateExcludes) {
+                    $q->whereIn(SyncQueueActionModel::FK_OWNER_ID, $filteredIds);
+
+                    // Apply exclusion logic ONLY to this group
+                    if (!empty($arrayDateExcludes)) {
+                        $q->where(function ($subQ) use ($arrayDateExcludes) {
+                            // Keep if date is valid OR actor is not the owner
+                            $subQ->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT, $arrayDateExcludes)
+                                ->orWhereColumn(SyncQueueActionModel::FK_USER_ID, '!=', SyncQueueActionModel::FK_OWNER_ID);
+                        });
+                    }
+                });
+            }
+
+            // GROUP B: The owners that are ALWAYS included (e.g., Auth user)
+            if (!empty($unrestrictedIds)) {
+                // "OR include these owners unconditionally"
+                $mainQuery->orWhereIn(SyncQueueActionModel::FK_OWNER_ID, $unrestrictedIds);
+            }
+        });
+
+        return $query->get()
+            ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))
+            ->toArray();
     }
 }

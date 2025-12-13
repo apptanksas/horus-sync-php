@@ -208,6 +208,41 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount($countExpected, $result);
     }
 
+
+    function testGetActionsWithArrayUserOwnersIdsAfterTimestampUsingUserIdsAndExcludeIsSuccess()
+    {
+        $ownerId1 = $this->faker->uuid;
+        $userId = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween("-2 years")->getTimestamp();
+        $excludeTimestamps = [$syncedAt];
+
+        /**
+         * @var SyncQueueActionModel[] $actions
+         */
+        $ownerActions = $this->generateCountArray(fn() => SyncQueueActionModelFactory::create($ownerId1, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::FK_USER_ID => $ownerId1,
+            SyncQueueActionModel::FK_OWNER_ID => $ownerId1,
+        ]), rand(1, 5));
+
+        $userActions = $this->generateCountArray(fn() => SyncQueueActionModelFactory::create($ownerId1, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::FK_OWNER_ID => $ownerId1,
+        ]), rand(1, 5));
+
+        $syncedAtTarget = $syncedAt - 1;
+        $countExpected = count($userActions);
+
+        // When
+        $result = $this->repository->getActions([$ownerId1], afterTimestamp: $syncedAtTarget, excludeDateTimes: $excludeTimestamps);
+
+        // Then
+        $this->assertCount($countExpected, $result);
+    }
+
     function testSaveWithMoveActionIsSuccess()
     {
         // Given

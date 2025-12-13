@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.15.2
+- Fixed issue to get queue actions with entity granted, using exclude date filter.
+
 # 0.15.1
 - Added new attribute response in queue action to have the sequence number of the action.
 
