@@ -301,5 +301,8 @@ class SyncQueueActionsTest extends TestCase
 
         // When
         $syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
+
+        // Then
+        $this->assertTrue(true); // If no exception is thrown, the test is successful
     }
 }
