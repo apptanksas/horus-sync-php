@@ -16,6 +16,8 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
+use AppTank\Horus\Repository\EloquentEntityRepository;
+use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use DateTimeImmutable;
 use Mockery\Mock;
 use Tests\_Stubs\ParentFakeWritableEntity;
@@ -302,5 +304,25 @@ class HorusQueueActionClientTest extends TestCase
         }
 
         return $actions;
+    }
+
+    function testSerializeQueueActionClient()
+    {
+        $config = new Config(true);
+        $config->setupOnValidateEntityWasGranted(function () {
+            return true;
+        });
+
+        $horusQueueActionClient = new HorusQueueActionClient(
+            new EloquentTransactionHandler(),
+            $this->app->make(EloquentQueueActionRepository::class),
+            $this->app->make(EloquentEntityRepository::class),
+            $config
+        );
+
+        $serialized = serialize(clone $horusQueueActionClient);
+        $unserialized = unserialize($serialized);
+
+        $this->assertInstanceOf(HorusQueueActionClient::class, $unserialized);
     }
 }

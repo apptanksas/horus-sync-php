@@ -215,4 +215,49 @@ class Config
             $this->restrictionsByEntity[$restriction->getEntityName()][] = $restriction;
         }
     }
+
+    /**
+     * Serialize the Config object, excluding closures.
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        return [
+            'validateAccess' => $this->validateAccess,
+            'connectionName' => $this->connectionName,
+            'usesUUIDs' => $this->usesUUIDs,
+            'prefixTables' => $this->prefixTables,
+            'basePathFiles' => $this->basePathFiles,
+            'entityRestrictions' => $this->entityRestrictions,
+            'sharedEntities' => $this->sharedEntities,
+            'disabledFeatures' => $this->disabledFeatures,
+            'extraParametersReferenceFile' => $this->extraParametersReferenceFile,
+            'restrictionsByEntity' => $this->restrictionsByEntity,
+            // Closures are not serialized
+        ];
+    }
+
+    /**
+     * Unserialize the Config object.
+     *
+     * @param array $data
+     * @return void
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->validateAccess = $data['validateAccess'];
+        $this->connectionName = $data['connectionName'];
+        $this->usesUUIDs = $data['usesUUIDs'];
+        $this->prefixTables = $data['prefixTables'];
+        $this->basePathFiles = $data['basePathFiles'];
+        $this->entityRestrictions = $data['entityRestrictions'];
+        $this->sharedEntities = $data['sharedEntities'];
+        $this->disabledFeatures = $data['disabledFeatures'];
+        $this->extraParametersReferenceFile = $data['extraParametersReferenceFile'];
+        $this->restrictionsByEntity = $data['restrictionsByEntity'];
+        // Closures are initialized to null
+        $this->onSetupSharedEntities = null;
+        $this->onValidateEntityWasGranted = null;
+    }
 }

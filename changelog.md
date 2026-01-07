@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.15.3
+- Fixed issue when class HorusQueueActionClient is serialized.
+
 # 0.15.2
 - Fixed issue to get queue actions with entity granted, using exclude date filter.
 
