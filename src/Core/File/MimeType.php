@@ -28,7 +28,8 @@ class MimeType
         'image/x-xbitmap',
         'image/x-portable-bitmap',
         'image/x-pixmap',
-        'image/x-portable-graymap'
+        'image/x-portable-graymap',
+        'image/heic' // High Efficiency Image Format (APPLE)
     ];
 
     public const array AUDIOS = [

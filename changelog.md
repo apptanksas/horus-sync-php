@@ -1,6 +1,7 @@
 # Changelog
 
 # 0.15.4
+- Added Mime type image/heic to allowed upload file types.
 - Fixed upload file exception using client exception.
 
 # 0.15.3
