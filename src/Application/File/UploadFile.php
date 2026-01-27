@@ -65,7 +65,7 @@ readonly class UploadFile extends BaseUploadFileUseCase
             if (!is_null($fileUploaded)) {
                 $this->fileHandler->delete($fileUploaded->path);
             }
-            throw new UploadFileException('Failed to upload file: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new UploadFileException('Failed to upload file: ' . $e->getMessage(), $e->getCode());
         }
 
         return $this->parseFileUploaded($fileUploaded);

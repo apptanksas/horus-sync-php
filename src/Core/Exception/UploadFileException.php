@@ -12,7 +12,7 @@ namespace AppTank\Horus\Core\Exception;
  * @author John Ospina
  * Year: 2024
  */
-class UploadFileException extends \Exception
+class UploadFileException extends ClientException
 {
 
 }
