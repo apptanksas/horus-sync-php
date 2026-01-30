@@ -863,15 +863,11 @@ class EloquentEntityRepository implements EntityRepository
      * @param EntityData[] $collectionItemsRelated The collection of related items.
      * @param bool $applyRestriction Whether to apply restrictions when setting up related entities.
      */
-    private function setupEntitiesRelatedOneOfMany(EntityData &$entityData, string $relationMethod, array $collectionItemsRelated, bool $applyRestriction = false): void
+    private function setupEntitiesRelatedOneOfMany(EntityData $entityData, string $relationMethod, array $collectionItemsRelated, bool $applyRestriction = false): void
     {
         $entityItemsRelated = $collectionItemsRelated[0] ?? null;
 
-        if (is_null($entityItemsRelated)) {
-            return;
-        }
-
-        if (!$applyRestriction) {
+        if (is_null($entityItemsRelated) || !$applyRestriction) {
             $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
             return;
         }
