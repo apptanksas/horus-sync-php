@@ -4,6 +4,8 @@ namespace Tests\Unit\Repository;
 
 
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\LimitCountEntityChildrenRetrieveRestriction;
+use AppTank\Horus\Core\Config\Restriction\LimitCountEntityParentRetrieveRestriction;
 use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
@@ -225,7 +227,7 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->entityRepository->insert(...$insertsOperation);
 
         // Then
-        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(),1);
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
     }
 
     function testUpdateMultiplesRowsIsSuccess()
@@ -1201,5 +1203,114 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertNull($result);
     }
 
+    function testSearchEntitiesWithLimitCountEntityChildrenRetrieveRestrictionIsSuccess()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new LimitCountEntityChildrenRetrieveRestriction(ChildFakeWritableEntity::getEntityName(), 5)
+        ]);
+        $ownerId = $this->faker->uuid;
+
+        $this->generateCountArray(function () use ($ownerId) {
+            $parentEntity = ParentFakeEntityFactory::create($ownerId);
+            $this->generateCountArray(function () use ($parentEntity, $ownerId) {
+                $data[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT] = $this->faker->dateTimeBetween()->getTimestamp();
+                return ChildFakeEntityFactory::create($parentEntity->getId(), $ownerId, $data);
+            }, 10);
+        }, 10);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        $entityRepository = new EloquentEntityRepository(
+            $horus->getEntityMapper(),
+            $this->cacheRepository,
+            new DateTimeUtil(),
+            $horus->getConfig()
+        );
+
+        // When
+        $result = $entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName());
+
+        // Then
+        foreach ($result as $entity) {
+            $this->assertArrayHasKey("_children", $entity->getData());
+            $this->assertCount(5, $entity->getData()["_children"]);
+
+            // Validate order by created at desc
+            $previousCreatedAt = null;
+            foreach ($entity->getData()["_children"] as $entityData) {
+                $currentCreatedAt = $entityData->getData()[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT];
+                if ($previousCreatedAt !== null) {
+                    $this->assertTrue($previousCreatedAt > $currentCreatedAt);
+                }
+                $previousCreatedAt = $currentCreatedAt;
+            }
+        }
+    }
+
+    function testSearchEntitiesWithLimitCountEntityParentRetrieveRestrictionIsSuccess()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new LimitCountEntityParentRetrieveRestriction(ParentFakeWritableEntity::getEntityName(), 2)
+        ]);
+        $ownerId = $this->faker->uuid;
+
+        $parentEntities = $this->generateCountArray(function () use ($ownerId) {
+            return ParentFakeEntityFactory::create($ownerId);
+        }, 5);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        $entityRepository = new EloquentEntityRepository(
+            $horus->getEntityMapper(),
+            $this->cacheRepository,
+            new DateTimeUtil(),
+            $horus->getConfig()
+        );
+
+        // When
+        $result = $entityRepository->searchEntities($ownerId, ParentFakeWritableEntity::getEntityName());
+
+        // Then
+        $this->assertCount(2, $result);
+    }
+
+    function testSearchEntitiesWithLimitCountEntityParentRetrieveRestrictionWithDifferentOwnersIsSuccess()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new LimitCountEntityParentRetrieveRestriction(ParentFakeWritableEntity::getEntityName(), 2)
+        ]);
+
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+
+        $this->generateCountArray(function () use ($ownerId1) {
+            return ParentFakeEntityFactory::create($ownerId1);
+        }, 5);
+
+        $this->generateCountArray(function () use ($ownerId2) {
+            return ParentFakeEntityFactory::create($ownerId2);
+        }, 5);
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(false);
+
+        $entityRepository = new EloquentEntityRepository(
+            $horus->getEntityMapper(),
+            $this->cacheRepository,
+            new DateTimeUtil(),
+            $horus->getConfig()
+        );
+
+        // When
+        $result = $entityRepository->searchEntities([$ownerId1, $ownerId2], ParentFakeWritableEntity::getEntityName());
+
+        // Then
+        $this->assertCount(4, $result); // 2 for each owner
+    }
 
 }

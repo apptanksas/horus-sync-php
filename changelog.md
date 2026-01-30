@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.16.0
+- Added new entities restriction to limit the maximum number of entities a user can retrieve.
+
 # 0.15.4
 - Added Mime type image/heic to allowed upload file types.
 - Fixed upload file exception using client exception.

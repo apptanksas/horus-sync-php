@@ -180,7 +180,7 @@ class Config
      */
     function getRestrictionsByEntity(string $entityName): array
     {
-        return $this->restrictionsByEntity[$entityName];
+        return $this->restrictionsByEntity[$entityName] ?? [];
     }
 
     /**

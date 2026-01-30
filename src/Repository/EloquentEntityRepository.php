@@ -4,6 +4,8 @@ namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\LimitCountEntityChildrenRetrieveRestriction;
+use AppTank\Horus\Core\Config\Restriction\LimitCountEntityParentRetrieveRestriction;
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
@@ -426,7 +428,7 @@ class EloquentEntityRepository implements EntityRepository
 
 
         //-------------------------------------
-        // APPLY RESTRICTIONS
+        // APPLY RESTRICTIONS - FILTERS
         //-------------------------------------
 
         $cacheKey = "readable_entity_$entityName" . "_";
@@ -479,7 +481,32 @@ class EloquentEntityRepository implements EntityRepository
         $queryBuilder = $queryBuilder->get();
 
 
-        $result = $this->iterateItemsAndSearchRelated($queryBuilder);
+        $result = $this->iterateItemsAndSearchRelated($queryBuilder, applyRestriction: true);
+
+        //-------------------------------------
+        // APPLY RESTRICTIONS - LIMIT COUNT OF PARENTS
+        //-------------------------------------
+
+        if ($this->config->hasRestrictions($entityName)) {
+            $restrictions = $this->config->getRestrictionsByEntity($entityName);
+            foreach ($restrictions as $restriction) {
+
+                if ($restriction instanceof LimitCountEntityParentRetrieveRestriction) {
+                    $groupedResultByUserOwner = [];
+
+                    foreach ($result as $entityData) {
+                        $ownerId = $entityData->getData()[WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID];
+                        $groupedResultByUserOwner[$ownerId][] = $entityData;
+                    }
+
+                    $result = [];
+                    foreach ($groupedResultByUserOwner as $ownerId => $entitiesData) {
+                        $limitedEntities = array_slice($entitiesData, 0, $restriction->limit);
+                        $result = array_merge($result, $limitedEntities);
+                    }
+                }
+            }
+        }
 
         if (empty($ids) && is_null($afterTimestamp) && $instanceClass instanceof ReadableEntitySynchronizable) {
             $this->cacheRepository->set($cacheKey, $result, self::CACHE_TTL_ONE_DAY);
@@ -785,7 +812,7 @@ class EloquentEntityRepository implements EntityRepository
      * @param IEntitySynchronizable $parentEntity The parent entity to build the data from.
      * @return EntityData The built EntityData object containing the parent entity and its related entities.
      */
-    private function buildEntityData(IEntitySynchronizable $parentEntity): EntityData
+    private function buildEntityData(IEntitySynchronizable $parentEntity, bool $applyRestriction = false): EntityData
     {
         $entityData = new EntityData($parentEntity->getEntityName(), $this->prepareData($parentEntity->getEntityName(), $parentEntity->toArray()));
 
@@ -797,13 +824,13 @@ class EloquentEntityRepository implements EntityRepository
                 $loadedRelation = $parentEntity->getRelation($relationMethod);
                 if ($loadedRelation instanceof Collection) {
                     $collectionItemsRelated = $this->iterateItemsAndSearchRelated($loadedRelation);
-                    $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+                    $this->setupEntitiesRelatedOneOfMany($entityData, $relationMethod, $collectionItemsRelated, $applyRestriction);
                 }
             } else {
                 // Fallback to original behavior if relation not loaded
                 $itemsRelated = $parentEntity->{$relationMethod}();
                 $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
-                $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+                $this->setupEntitiesRelatedOneOfMany($entityData, $relationMethod, $collectionItemsRelated, $applyRestriction);
             }
         }
 
@@ -814,13 +841,13 @@ class EloquentEntityRepository implements EntityRepository
             if ($parentEntity->relationLoaded($relationMethod)) {
                 $loadedRelation = $parentEntity->getRelation($relationMethod);
                 if (!is_null($loadedRelation)) {
-                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($loadedRelation));
+                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($loadedRelation, $applyRestriction));
                 }
             } else {
                 // Fallback to original behavior if relation not loaded
                 $itemRelated = $parentEntity->{$relationMethod}();
                 if (!is_null($entityOne = $itemRelated->get()->first())) {
-                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($entityOne));
+                    $entityData->setEntitiesRelatedOneToOne($relationMethod, $this->buildEntityData($entityOne, $applyRestriction));
                 }
             }
         }
@@ -829,18 +856,59 @@ class EloquentEntityRepository implements EntityRepository
     }
 
     /**
+     * Sets up one-of-many related entities for a given EntityData object.
+     *
+     * @param EntityData $entityData The EntityData object to set up related entities for.
+     * @param string $relationMethod The method name of the relation.
+     * @param EntityData[] $collectionItemsRelated The collection of related items.
+     * @param bool $applyRestriction Whether to apply restrictions when setting up related entities.
+     */
+    private function setupEntitiesRelatedOneOfMany(EntityData &$entityData, string $relationMethod, array $collectionItemsRelated, bool $applyRestriction = false): void
+    {
+        $entityItemsRelated = $collectionItemsRelated[0] ?? null;
+
+        if (is_null($entityItemsRelated)) {
+            return;
+        }
+
+        if (!$applyRestriction) {
+            $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+            return;
+        }
+
+        // ----------------------------------------
+        // APPLY RESTRICTIONS
+        // ----------------------------------------
+
+        $entityRelatedRestrictions = $this->config->getRestrictionsByEntity($entityItemsRelated->name);
+
+        foreach ($entityRelatedRestrictions as $restriction) {
+            if ($restriction instanceof LimitCountEntityChildrenRetrieveRestriction) {
+                usort($collectionItemsRelated, function (EntityData $a, EntityData $b) {
+                    return $b->getData()[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT] <=> $a->getData()[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT];
+                });
+                $collectionItemsRelated = array_slice($collectionItemsRelated, 0, $restriction->limit);
+            }
+        }
+
+        $entityData->setEntitiesRelatedOneOfMany($relationMethod, $collectionItemsRelated);
+    }
+
+    /**
      * Iterates over a collection of items and builds EntityData objects for each item,
      * including related entities.
      *
      * @param Collection $collectionItems The collection of items to iterate over.
+     * @param bool $applyRestriction Whether to apply restrictions when building EntityData objects.
+     *
      * @return EntityData[] An array of EntityData objects for each item in the collection.
      */
-    private function iterateItemsAndSearchRelated(Collection $collectionItems): array
+    private function iterateItemsAndSearchRelated(Collection $collectionItems, bool $applyRestriction = false): array
     {
         $output = [];
 
         foreach ($collectionItems as $item) {
-            $output[] = $this->buildEntityData($item);
+            $output[] = $this->buildEntityData($item, $applyRestriction);
         }
 
         return $output;
