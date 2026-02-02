@@ -823,13 +823,13 @@ class EloquentEntityRepository implements EntityRepository
             if ($parentEntity->relationLoaded($relationMethod)) {
                 $loadedRelation = $parentEntity->getRelation($relationMethod);
                 if ($loadedRelation instanceof Collection) {
-                    $collectionItemsRelated = $this->iterateItemsAndSearchRelated($loadedRelation);
+                    $collectionItemsRelated = $this->iterateItemsAndSearchRelated($loadedRelation, $applyRestriction);
                     $this->setupEntitiesRelatedOneOfMany($entityData, $relationMethod, $collectionItemsRelated, $applyRestriction);
                 }
             } else {
                 // Fallback to original behavior if relation not loaded
                 $itemsRelated = $parentEntity->{$relationMethod}();
-                $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get());
+                $collectionItemsRelated = $this->iterateItemsAndSearchRelated($itemsRelated->get(), $applyRestriction);
                 $this->setupEntitiesRelatedOneOfMany($entityData, $relationMethod, $collectionItemsRelated, $applyRestriction);
             }
         }
