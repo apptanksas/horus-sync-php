@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.16.1
+- Fixed apply restrictions to limit the maximum number of entities a user can retrieve.
+
 # 0.16.0
 - Added new entities restriction to limit the maximum number of entities a user can retrieve.
 
