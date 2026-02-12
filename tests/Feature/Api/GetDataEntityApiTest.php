@@ -58,6 +58,7 @@ class GetDataEntityApiTest extends TestCase
                 'sync_updated_at',
                 'name',
                 'color',
+                'coordinates',
                 '_children' => self::JSON_SCHEME_CHILD
             ],
         ],

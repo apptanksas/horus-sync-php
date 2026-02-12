@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.17.0
+- Added new parameter type [Coordinates] to define a parameter with coordinates format.
+
 # 0.16.1
 - Fixed apply restrictions to limit the maximum number of entities a user can retrieve.
 
