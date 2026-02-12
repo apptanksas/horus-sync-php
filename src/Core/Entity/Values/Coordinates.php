@@ -4,7 +4,7 @@ namespace AppTank\Horus\Core\Entity\Values;
 
 use AppTank\Horus\Core\Exception\ClientException;
 
-readonly class Coordinate
+readonly class Coordinates
 {
     /**
      * Constructor for the Coordinate class.
@@ -28,11 +28,12 @@ readonly class Coordinate
      * Creates a Coordinate instance from a raw string in the format "latitude,longitude".
      *
      * @param string $raw The raw coordinate string.
-     * @return Coordinate The created Coordinate instance.
+     * @return Coordinates The created Coordinate instance.
      * @throws ClientException If the input format is invalid.
      */
-    public static function createFromRaw(string $raw): Coordinate
+    public static function createFromRaw(string $raw): Coordinates
     {
+
         if (preg_match("/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/", $raw) !== 1) {
             throw new ClientException("Invalid coordinate format. Expected 'latitude,longitude'.");
         }
@@ -43,7 +44,7 @@ readonly class Coordinate
             throw new ClientException("Invalid coordinate format. Expected 'latitude,longitude'.");
         }
 
-        return new Coordinate(floatval($parts[0]), floatval($parts[1]));
+        return new Coordinates(floatval($parts[0]), floatval($parts[1]));
     }
 
     /**

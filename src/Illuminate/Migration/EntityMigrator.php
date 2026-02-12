@@ -37,6 +37,9 @@ class EntityMigrator
      */
     function migrate(array $entityClasses, string|null $connectionName = null)
     {
+        // Register custom column types for spatial data
+        $this->registerSpatialColumnTypes($connectionName);
+
         /*
          * @var IEntitySynchronizable $entityClass
          */
@@ -399,6 +402,39 @@ class EntityMigrator
             $this->postgisEnabled = true;
         } catch (\Exception $e) {
             Log::error("Failed to enable PostGIS extension: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Register custom column types for spatial data support.
+     *
+     * @param string|null $connectionName
+     * @return void
+     */
+    private function registerSpatialColumnTypes(?string $connectionName = null): void
+    {
+        $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
+        $grammar = $connection->getSchemaGrammar();
+
+        // Register POINT type for PostgreSQL
+        if ($connection->getDriverName() === 'pgsql' && !method_exists($grammar, 'typePoint')) {
+            $grammar::macro('typePoint', function ($column) {
+                return 'POINT';
+            });
+        }
+
+        // Register POINT type for MySQL
+        if ($connection->getDriverName() === 'mysql' && !method_exists($grammar, 'typePoint')) {
+            $grammar::macro('typePoint', function ($column) {
+                return 'POINT';
+            });
+        }
+
+        // Register GEOGRAPHY type for SQL Server
+        if ($connection->getDriverName() === 'sqlsrv' && !method_exists($grammar, 'typeGeography')) {
+            $grammar::macro('typeGeography', function ($column) {
+                return 'GEOGRAPHY';
+            });
         }
     }
 }

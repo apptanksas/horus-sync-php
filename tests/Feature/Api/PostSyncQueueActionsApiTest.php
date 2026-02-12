@@ -10,7 +10,7 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
-use AppTank\Horus\Core\Entity\Values\Coordinate;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
@@ -118,7 +118,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestamp,
                     "value_enum" => strval(rand(1, 100)),
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]
@@ -157,7 +157,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestamp,
                     "value_enum" => $enumValue,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]
@@ -283,7 +283,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt - 2000
             ],
@@ -492,7 +492,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt - 2000
             ],
@@ -718,7 +718,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestampExpected,
                     "value_enum" => $valueEnum,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => 1725037000
             ],
@@ -774,7 +774,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestamp,
                     "value_enum" => $valueEnum,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => 1725037000
             ],
@@ -945,7 +945,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "color" => $color,
                     "timestamp" => $timestamp,
                     "value_enum" => $enumValue,
-                    "coordinates" => Coordinate::generateRaw()
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]
