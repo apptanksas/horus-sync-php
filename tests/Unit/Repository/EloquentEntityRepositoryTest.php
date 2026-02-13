@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Config\Restriction\LimitCountEntityChildrenRetrieveRestri
 use AppTank\Horus\Core\Config\Restriction\LimitCountEntityParentRetrieveRestriction;
 use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\Hasher;
@@ -256,7 +257,8 @@ class EloquentEntityRepositoryTest extends TestCase
                 ["id" => $operation->id,
                     ParentFakeWritableEntity::ATTR_NAME => $parentsEntities[$index]->name,
                     ParentFakeWritableEntity::ATTR_ENUM => $parentsEntities[$index]->value_enum,
-                    ParentFakeWritableEntity::ATTR_IMAGE => $parentsEntities[$index]->image
+                    ParentFakeWritableEntity::ATTR_IMAGE => $parentsEntities[$index]->image,
+                    ParentFakeWritableEntity::ATTR_COORDINATES => $parentsEntities[$index]->coordinates
                 ],
                 $operation->attributes
             );
@@ -299,7 +301,8 @@ class EloquentEntityRepositoryTest extends TestCase
             ["id" => $lastOperation->id,
                 ParentFakeWritableEntity::ATTR_NAME => $parentEntity->name,
                 ParentFakeWritableEntity::ATTR_ENUM => $parentEntity->value_enum,
-                ParentFakeWritableEntity::ATTR_IMAGE => $parentEntity->image
+                ParentFakeWritableEntity::ATTR_IMAGE => $parentEntity->image,
+                ParentFakeWritableEntity::ATTR_COORDINATES => $parentEntity->coordinates
             ],
             $lastOperation->attributes
         );
@@ -451,6 +454,8 @@ class EloquentEntityRepositoryTest extends TestCase
             $this->assertEquals($parentEntity->getId(), $parentEntityResult->getData()["id"]);
             $this->assertEquals($parentEntity->name, $parentEntityResult->getData()[ParentFakeWritableEntity::ATTR_NAME]);
             $this->assertEquals($parentEntity->color, $parentEntityResult->getData()[ParentFakeWritableEntity::ATTR_COLOR]);
+            // Validate format coordinates
+            $this->assertEquals(Coordinates::createFromRaw($parentEntity->coordinates)->__toString(), $parentEntityResult->getData()[ParentFakeWritableEntity::ATTR_COORDINATES]);
 
             $children = $parentEntityResult->getData()["_children"];
             /**
@@ -541,6 +546,10 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertCount($countExpected, $result);
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->assertInstanceOf(Coordinates::class, $parentEntity->getCoordinates());
+        }
     }
 
     function testSearchEntitiesDefaultIsSuccess()

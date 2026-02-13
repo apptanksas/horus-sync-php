@@ -10,6 +10,7 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
@@ -116,7 +117,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestamp,
-                    "value_enum" => strval(rand(1, 100))
+                    "value_enum" => strval(rand(1, 100)),
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]
@@ -154,7 +156,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestamp,
-                    "value_enum" => $enumValue
+                    "value_enum" => $enumValue,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]
@@ -173,6 +176,42 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'color' => $color,
             'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
         ]);
+    }
+
+    function testPostSyncQueueInsertIsFailureWhenCoordinatesInvalid()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+        $timestamp = 1674579600;
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestamp,
+                    "value_enum" => $enumValue,
+                    "coordinates" => $this->faker->randomFloat()
+                ],
+                "actioned_at" => $actionedAt
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertBadRequest();
     }
 
     function testPostSyncQueueMultipleIsSuccess()
@@ -243,7 +282,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestampExpected,
-                    "value_enum" => $valueEnum
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt - 2000
             ],
@@ -451,7 +491,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestampExpected,
-                    "value_enum" => $valueEnum
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt - 2000
             ],
@@ -676,7 +717,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestampExpected,
-                    "value_enum" => $valueEnum
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => 1725037000
             ],
@@ -731,7 +773,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestamp,
-                    "value_enum" => $valueEnum
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => 1725037000
             ],
@@ -901,7 +944,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
                     "name" => $name,
                     "color" => $color,
                     "timestamp" => $timestamp,
-                    "value_enum" => $enumValue
+                    "value_enum" => $enumValue,
+                    "coordinates" => Coordinates::generateRaw()
                 ],
                 "actioned_at" => $actionedAt
             ]

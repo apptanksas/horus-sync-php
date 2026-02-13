@@ -3,6 +3,7 @@
 namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -22,6 +23,8 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     const string ATTR_IMAGE = "image";
 
     const string ATTR_CUSTOM = "custom";
+
+    const string ATTR_COORDINATES = "coordinates";
 
     const int VERSION_DEFAULT = 1;
 
@@ -43,6 +46,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
             SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN),
             SyncParameter::createReferenceFile(self::ATTR_IMAGE, self::VERSION_DEFAULT, true),
             SyncParameter::createCustom(self::ATTR_CUSTOM, self::REGEX_CUSTOM, self::VERSION_DEFAULT, true),
+            SyncParameter::createCoordinates(self::ATTR_COORDINATES, self::VERSION_DEFAULT),
         ];
     }
 
@@ -69,7 +73,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
 
     public static function getColumnIndexes(): array
     {
-        return ["timestamp","color"];
+        return ["timestamp", "color"];
     }
 
     public function children(): HasMany
@@ -80,6 +84,15 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     public function adjacent(): HasOne
     {
         return $this->hasOne(AdjacentFakeWritableEntity::class, AdjacentFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
+    }
+
+    // -----------------------------
+    // GETTERS
+    // -----------------------------
+
+    function getCoordinates(): Coordinates
+    {
+        return $this->parseColumnCoordinates(self::ATTR_COORDINATES);
     }
 
 }

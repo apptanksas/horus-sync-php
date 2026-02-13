@@ -9,11 +9,25 @@ use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\ColumnDefinition;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class EntityMigrator
 {
+    /**
+     * Store parameters that need spatial indexes to be created after table creation.
+     * @var array
+     */
+    private array $pendingSpatialIndexes = [];
+
+    /**
+     * Track if PostGIS extension has been enabled for PostgreSQL.
+     * @var bool
+     */
+    private bool $postgisEnabled = false;
+
     /**
      * Migrate the given entity classes to the database.
      *
@@ -23,6 +37,9 @@ class EntityMigrator
      */
     function migrate(array $entityClasses, string|null $connectionName = null)
     {
+        // Register custom column types for spatial data
+        $this->registerSpatialColumnTypes($connectionName);
+
         /*
          * @var IEntitySynchronizable $entityClass
          */
@@ -38,7 +55,7 @@ class EntityMigrator
                         Schema::hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
-                    $this->createColumn($table, $parameter);
+                    $this->createColumn($table, $parameter, $tableName, $connectionName);
                 }
                 // Add indexes
                 if (!empty($columnIndexes)) {
@@ -114,7 +131,7 @@ class EntityMigrator
      * @param SyncParameter $parameter
      * @return void
      */
-    private function createColumn(Blueprint $table, SyncParameter $parameter): void
+    private function createColumn(Blueprint $table, SyncParameter $parameter, string $tableName, ?string $connectionName): void
     {
 
         if ($parameter->name == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
@@ -167,6 +184,7 @@ class EntityMigrator
             SyncParameterType::ENUM => $table->enum($parameter->name, $parameter->options),
             SyncParameterType::UUID => $table->uuid($parameter->name),
             SyncParameterType::REFERENCE_FILE => $table->string($parameter->name),
+            SyncParameterType::COORDINATES => $this->createCoordinatesColumn($table, $parameter),
             SyncParameterType::RELATION_ONE_OF_MANY, SyncParameterType::RELATION_ONE_OF_ONE => null,
             default => throw new \InvalidArgumentException("Parameter type not referenced: {$parameter->type}"),
         };
@@ -192,16 +210,63 @@ class EntityMigrator
     {
         $driver = (is_null($connectionName)) ? Schema::getConnection()->getDriverName() : Schema::connection($connectionName)->getConnection()->getDriverName();
 
-        if ($driver !== 'pgsql' || $parameter->type !== SyncParameterType::CUSTOM) {
-            return;
+        // Apply custom regex constraint for CUSTOM type in PostgreSQL
+        if ($driver === 'pgsql' && $parameter->type === SyncParameterType::CUSTOM) {
+            DB::connection($connectionName)->statement("ALTER TABLE $tableName
+                ADD CONSTRAINT {$parameter->name}_type_custom CHECK (
+                    {$parameter->name} ~* '{$parameter->regex}'
+                )");
         }
 
-        // ONLY FOR POSTGRESQL
-        // Add a custom constraint to the table
-        DB::connection($connectionName)->statement("ALTER TABLE $tableName
-            ADD CONSTRAINT {$parameter->name}_type_custom CHECK (
-                {$parameter->name} ~* '{$parameter->regex}'
-            )");
+        // Apply spatial indexes for COORDINATES type
+        $indexKey = $tableName . '.' . $parameter->name;
+        if ($parameter->type === SyncParameterType::COORDINATES && isset($this->pendingSpatialIndexes[$indexKey])) {
+            $this->createSpatialIndex($connectionName, $tableName, $parameter->name, $driver);
+            unset($this->pendingSpatialIndexes[$indexKey]);
+        }
+    }
+
+    /**
+     * Create a spatial index for coordinates column.
+     *
+     * @param string|null $connectionName
+     * @param string $tableName
+     * @param string $columnName
+     * @param string $driver
+     * @return void
+     */
+    private function createSpatialIndex(?string $connectionName, string $tableName, string $columnName, string $driver): void
+    {
+        $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
+
+        try {
+            switch ($driver) {
+                case 'pgsql':
+                    // PostgreSQL: Ensure PostGIS extension is enabled before creating GIST index
+                    $this->ensurePostGISExtension($connectionName);
+
+                    // PostgreSQL: Use GIST index for POINT type
+                    $connection->statement("CREATE INDEX IF NOT EXISTS idx_{$tableName}_{$columnName} ON {$tableName} USING GIST ({$columnName})");
+                    break;
+
+                case 'mysql':
+                    // MySQL: Use SPATIAL index
+                    $connection->statement("CREATE SPATIAL INDEX idx_{$tableName}_{$columnName} ON {$tableName}({$columnName})");
+                    break;
+
+                case 'sqlsrv':
+                    // SQL Server: Use spatial index on GEOGRAPHY type
+                    $connection->statement("CREATE SPATIAL INDEX idx_{$tableName}_{$columnName} ON {$tableName}({$columnName}) WITH (BOUNDING_BOX = (XMIN = -180, YMIN = -90, XMAX = 180, YMAX = 90))");
+                    break;
+
+                default:
+                    // No spatial index support for other drivers
+                    break;
+            }
+        } catch (\Exception $e) {
+            // Silently fail if spatial index creation fails
+            // This can happen if the extension is not installed or insufficient permissions
+        }
     }
 
 
@@ -222,5 +287,157 @@ class EntityMigrator
         }
 
         return $baseVersion;
+    }
+
+
+    /**
+     * Create a coordinates column based on the database driver.
+     *
+     * @param Blueprint $table
+     * @param SyncParameter $parameter
+     * @return ColumnDefinition|null
+     */
+    private function createCoordinatesColumn(Blueprint $table, SyncParameter $parameter): ?ColumnDefinition
+    {
+        $driver = Schema::getConnection()->getDriverName();
+        $tableName = $table->getTable();
+
+        switch ($driver) {
+            case 'pgsql':
+                // PostgreSQL: Ensure PostGIS extension is enabled
+                $this->ensurePostGISExtension();
+
+                // PostgreSQL: Use native POINT type
+                // Using addColumn for better Blueprint integration
+                $column = $table->addColumn('coordinate', $parameter->name);
+                if ($parameter->isNullable) {
+                    $column->nullable();
+                }
+
+                // Spatial index will be added after table creation if needed
+                if ($parameter->withIndex) {
+                    // Store for later index creation in applyCustomConstraints
+                    $this->pendingSpatialIndexes[$tableName . '.' . $parameter->name] = true;
+                }
+                return $column;
+
+            case 'mysql':
+                // MySQL: Use POINT type with spatial support
+                $column = $table->addColumn('coordinate', $parameter->name);
+                if ($parameter->isNullable) {
+                    $column->nullable();
+                }
+
+                // Spatial index will be added after table creation
+                if ($parameter->withIndex) {
+                    $this->pendingSpatialIndexes[$tableName . '.' . $parameter->name] = true;
+                }
+                return $column;
+
+            case 'sqlite':
+                // SQLite: No native spatial support, use TEXT to store WKT (Well-Known Text)
+                // Format: "POINT(longitude latitude)"
+                $column = $table->text($parameter->name);
+                if ($parameter->isNullable) {
+                    $column->nullable();
+                }
+
+                if ($parameter->withIndex) {
+                    $column->index();
+                }
+                return $column;
+
+            case 'sqlsrv':
+                // SQL Server: Use GEOGRAPHY type
+                // Need to use raw expression as Laravel doesn't have native support
+                $column = $table->addColumn('geography', $parameter->name);
+                if ($parameter->isNullable) {
+                    $column->nullable();
+                }
+
+                if ($parameter->withIndex) {
+                    $this->pendingSpatialIndexes[$tableName . '.' . $parameter->name] = true;
+                }
+                return $column;
+
+            default:
+                // Fallback: Use string to store coordinates as "lat,lon" or WKT format
+                $column = $table->string($parameter->name, 100);
+                if ($parameter->isNullable) {
+                    $column->nullable();
+                }
+                if ($parameter->withIndex) {
+                    $column->index();
+                }
+                return $column;
+        }
+    }
+
+    /**
+     * Ensure PostGIS extension is enabled for PostgreSQL.
+     * This method is called before creating POINT columns or spatial indexes.
+     *
+     * @param string|null $connectionName
+     * @return void
+     */
+    private function ensurePostGISExtension(?string $connectionName = null): void
+    {
+        // Only run once per migration instance
+        if ($this->postgisEnabled) {
+            return;
+        }
+
+        $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
+
+        try {
+            // Check if we're using PostgreSQL
+            if ($connection->getDriverName() !== 'pgsql') {
+                return;
+            }
+
+            // Try to create the PostGIS extension if it doesn't exist
+            // IF NOT EXISTS prevents errors if already installed
+            $connection->statement('CREATE EXTENSION IF NOT EXISTS postgis');
+
+            $this->postgisEnabled = true;
+        } catch (\Exception $e) {
+            Log::error("Failed to enable PostGIS extension: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Register custom column types for spatial data support.
+     *
+     * @param string|null $connectionName
+     * @return void
+     */
+    private function registerSpatialColumnTypes(?string $connectionName = null): void
+    {
+        $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
+        $grammar = $connection->getSchemaGrammar();
+
+        // Register POINT type for PostgreSQL with SRID 4326 (WGS84)
+        if ($connection->getDriverName() === 'pgsql' && !method_exists($grammar, 'typeCoordinate')) {
+            $grammar::macro('typeCoordinate', function ($column) {
+                // Note: SRID will be set via ALTER TABLE after column creation
+                return 'GEOGRAPHY(POINT, 4326)';
+            });
+        }
+
+        // Register POINT type for MySQL with SRID 4326 (WGS84)
+        if ($connection->getDriverName() === 'mysql' && !method_exists($grammar, 'typeCoordinate')) {
+            $grammar::macro('typeCoordinate', function ($column) {
+                // MySQL 8.0+ supports SRID in column definition
+                return 'POINT SRID 4326';
+            });
+        }
+
+        // Register GEOGRAPHY type for SQL Server (implicitly uses SRID 4326)
+        if ($connection->getDriverName() === 'sqlsrv' && !method_exists($grammar, 'typeGeography')) {
+            $grammar::macro('typeGeography', function ($column) {
+                // GEOGRAPHY in SQL Server uses SRID 4326 by default
+                return 'GEOGRAPHY';
+            });
+        }
     }
 }

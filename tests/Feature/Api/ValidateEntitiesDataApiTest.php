@@ -48,7 +48,8 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_TIMESTAMP => $entity->timestamp,
             ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
             ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
-            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image,
+            ParentFakeWritableEntity::ATTR_COORDINATES => $entity->coordinates,
         ]), $entities));
 
 
@@ -86,7 +87,8 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_TIMESTAMP => $entity->timestamp,
             ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
             ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
-            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image,
+            ParentFakeWritableEntity::ATTR_COORDINATES => $entity->coordinates,
         ]), $entities));
 
         $data = [[
@@ -128,7 +130,8 @@ class ValidateEntitiesDataApiTest extends ApiTestCase
             ParentFakeWritableEntity::ATTR_TIMESTAMP => $entity->timestamp,
             ParentFakeWritableEntity::ATTR_ENUM => $entity->value_enum,
             ParentFakeWritableEntity::ATTR_VALUE_NULLABLE => $entity->{ParentFakeWritableEntity::ATTR_VALUE_NULLABLE},
-            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image
+            ParentFakeWritableEntity::ATTR_IMAGE => $entity->image,
+            ParentFakeWritableEntity::ATTR_COORDINATES => $entity->coordinates
         ]), [$parentOwner]));
 
         $data = [[

@@ -11,6 +11,7 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
 use AppTank\Horus\Core\Hasher;
@@ -27,6 +28,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Carbon\Carbon;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -920,8 +922,27 @@ class EloquentEntityRepository implements EntityRepository
      */
     private function prepareData(string $entity, array $modelData): array
     {
-        $relations = $this->getEagerLoadRelations($this->entityMapper->getEntityClass($entity));
-        $output = $modelData;
+        /**
+         * @var WritableEntitySynchronizable $entityClass
+         */
+        $entityClass = $this->entityMapper->getEntityClass($entity);
+        $parameters = $entityClass::parameters();
+        $relations = $this->getEagerLoadRelations($entityClass);
+
+
+        $output = [];
+
+        foreach ($modelData as $key => $value) {
+            /**
+             * @var SyncParameter|null $parameter
+             */
+            $parameter = array_values(array_filter($parameters, fn(SyncParameter $parameter) => $parameter->name == $key))[0] ?? null;
+
+            match ($parameter?->type) {
+                SyncParameterType::COORDINATES => $output[$key] = Coordinates::createFromRaw($value)->__toString(),
+                default => $output[$key] = $value,
+            };
+        }
 
         if (isset($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))
             $output[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT] = Carbon::create($this->dateTimeUtil->parseDatetime($modelData[WritableEntitySynchronizable::ATTR_SYNC_CREATED_AT]))->timestamp;
@@ -1026,6 +1047,7 @@ class EloquentEntityRepository implements EntityRepository
 
             match ($parameter?->type) {
                 SyncParameterType::TIMESTAMP => $output[$key] = $this->dateTimeUtil->getFormatDate($value),
+                SyncParameterType::COORDINATES => $output[$key] = $this->preparateCoordinateToSQL(Coordinates::createFromRaw($value)),
                 default => $output[$key] = $value
             };
         }
@@ -1181,6 +1203,18 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         return [];
+    }
+
+    private function preparateCoordinateToSQL(Coordinates $coordinate): string|Expression
+    {
+        $connection = $this->connectionName ? DB::connection($this->connectionName) : DB::connection();
+        $driver = $connection->getDriverName();
+
+        return match ($driver) {
+            'mysql' => DB::raw("ST_GeomFromText('POINT({$coordinate->latitude} {$coordinate->longitude})', 4326)"),
+            'pgsql' => DB::raw("ST_SetSRID(ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})'),4326)::geography"),
+            default => $coordinate->__toString()
+        };
     }
 }
 

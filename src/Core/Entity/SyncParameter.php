@@ -218,6 +218,19 @@ class SyncParameter
     }
 
     /**
+     * Creates a coordinates parameter.
+     *
+     * @param string $name The name of the parameter.
+     * @param int $version The version of the parameter.
+     * @param bool $isNullable Indicates if the parameter is nullable.
+     * @return self A new instance of SyncParameter.
+     */
+    public static function createCoordinates(string $name, int $version, bool $isNullable = false): self
+    {
+        return new SyncParameter($name, SyncParameterType::COORDINATES, $version, $isNullable);
+    }
+
+    /**
      * Creates a reference file parameter.
      *
      * @param string $name The name of the parameter.

@@ -6,10 +6,14 @@ use AppTank\Horus\Core\Entity\EntityType;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Core\Entity\SyncParameterType;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
+use AppTank\Horus\Core\Exception\ClientException;
 use AppTank\Horus\Core\Util\StringUtil;
 use AppTank\Horus\Horus;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Src\Shared\Commons\Domain\Geo\GeoCoordinate;
 
 /**
  * @internal Class EntitySynchronizable
@@ -194,6 +198,70 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
     public function getId(): string
     {
         return $this->getAttribute(self::ATTR_ID);
+    }
+
+
+    /**
+     * Parse the column value as coordinates.
+     *
+     * This method attempts to parse the value of the specified column as coordinates. It supports both PostgreSQL
+     * and MySQL formats for storing geographic coordinates. If the value is an expression, it refreshes the model
+     * to get the raw original value before parsing.
+     *
+     * @param string $column The name of the column to parse.
+     * @return Coordinates The parsed coordinates.
+     * @throws \RuntimeException|ClientException If the value cannot be parsed as coordinates.
+     */
+    protected function parseColumnCoordinates(string $column): Coordinates
+    {
+        $value = $this->getRawOriginal($column);
+
+        if ($value instanceof Expression) {
+            $this->refresh();
+            $value = $this->getRawOriginal($column);
+        }
+
+        // sqlite format: "latitude,longitude"
+        if (is_string($value) && preg_match('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $value)) {
+            return Coordinates::createFromRaw($value);
+        }
+
+        // Check (Pgsql) format: (longitude,latitude)
+        if (is_string($value) && preg_match('/^\((-?\d+\.?\d*),(-?\d+\.?\d*)\)$/', $value, $matches)) {
+            return new Coordinates((float)$matches[2], (float)$matches[1]);
+        }
+
+        // Check (Pgsql) format: EWKB hexadecimal string
+        if (is_string($value) && ctype_xdigit($value) && strlen($value) >= 50) {
+            $binary = hex2bin($value);
+            // Offset 21 bytes: 1 (byte order) + 4 (type with SRID flag) + 4 (SRID) + 8 (X/longitude) = posición de latitude
+            // Los doubles están en little-endian después del SRID
+            $longitude = unpack('d', substr($binary, 9, 8))[1];
+            $latitude = unpack('d', substr($binary, 17, 8))[1];
+            return new Coordinates($latitude, $longitude);
+        }
+
+        // MySQL geometry devuelve WKB binario con 4 bytes de SRID al inicio
+        // Formato interno WKB: [4 bytes SRID] [1 byte order] [4 bytes type] [8 bytes X] [8 bytes Y]
+        // MySQL 8.0+ con SRID 4326 inserta como (lat, lon) pero almacena internamente como (lon, lat) en WKB
+        if (is_string($value) && !ctype_xdigit($value) && strlen($value) >= 25) {
+            $data = unpack('x4/corder/Vtype/dx/dy', $value);
+            if ($data !== false) {
+                // WKB almacena: x=longitude, y=latitude
+                return new Coordinates($data['y'], $data['x']);
+            }
+        }
+
+        // Check (MySQL) format: POINT(longitude latitude)
+        if (is_string($value) && !str_starts_with($value, 'POINT')) {
+            $data = unpack('x4/corder/Vtype/dlongitude/dlatitude', $value);
+            if ($data === false) {
+                throw new \RuntimeException("Failed to parse coordinates from value: " . $value);
+            }
+            return new Coordinates($data['latitude'], $data['longitude']);
+        }
+
+        return Coordinates::createFromRaw($value);
     }
 
 
