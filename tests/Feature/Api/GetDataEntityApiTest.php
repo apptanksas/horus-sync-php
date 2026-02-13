@@ -191,6 +191,7 @@ class GetDataEntityApiTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(count($parentsEntities));
         $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
+        $this->assertTrue(preg_match("/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/", $response->json()[0]["data"]["coordinates"]) === 1, "Coordinates format is invalid");
     }
 
     function testGetEntitiesGrantedSuccessWithNoUserActingAs()

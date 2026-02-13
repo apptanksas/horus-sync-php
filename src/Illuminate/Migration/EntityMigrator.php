@@ -309,7 +309,7 @@ class EntityMigrator
 
                 // PostgreSQL: Use native POINT type
                 // Using addColumn for better Blueprint integration
-                $column = $table->addColumn('point', $parameter->name);
+                $column = $table->addColumn('coordinate', $parameter->name);
                 if ($parameter->isNullable) {
                     $column->nullable();
                 }
@@ -323,7 +323,7 @@ class EntityMigrator
 
             case 'mysql':
                 // MySQL: Use POINT type with spatial support
-                $column = $table->addColumn('point', $parameter->name);
+                $column = $table->addColumn('coordinate', $parameter->name);
                 if ($parameter->isNullable) {
                     $column->nullable();
                 }
@@ -416,23 +416,26 @@ class EntityMigrator
         $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
         $grammar = $connection->getSchemaGrammar();
 
-        // Register POINT type for PostgreSQL
-        if ($connection->getDriverName() === 'pgsql' && !method_exists($grammar, 'typePoint')) {
-            $grammar::macro('typePoint', function ($column) {
-                return 'POINT';
+        // Register POINT type for PostgreSQL with SRID 4326 (WGS84)
+        if ($connection->getDriverName() === 'pgsql' && !method_exists($grammar, 'typeCoordinate')) {
+            $grammar::macro('typeCoordinate', function ($column) {
+                // Note: SRID will be set via ALTER TABLE after column creation
+                return 'GEOGRAPHY(POINT, 4326)';
             });
         }
 
-        // Register POINT type for MySQL
-        if ($connection->getDriverName() === 'mysql' && !method_exists($grammar, 'typePoint')) {
-            $grammar::macro('typePoint', function ($column) {
-                return 'POINT';
+        // Register POINT type for MySQL with SRID 4326 (WGS84)
+        if ($connection->getDriverName() === 'mysql' && !method_exists($grammar, 'typeCoordinate')) {
+            $grammar::macro('typeCoordinate', function ($column) {
+                // MySQL 8.0+ supports SRID in column definition
+                return 'POINT SRID 4326';
             });
         }
 
-        // Register GEOGRAPHY type for SQL Server
+        // Register GEOGRAPHY type for SQL Server (implicitly uses SRID 4326)
         if ($connection->getDriverName() === 'sqlsrv' && !method_exists($grammar, 'typeGeography')) {
             $grammar::macro('typeGeography', function ($column) {
+                // GEOGRAPHY in SQL Server uses SRID 4326 by default
                 return 'GEOGRAPHY';
             });
         }

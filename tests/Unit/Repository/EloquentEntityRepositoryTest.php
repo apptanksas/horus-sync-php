@@ -546,6 +546,10 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertCount($countExpected, $result);
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->assertInstanceOf(Coordinates::class, $parentEntity->getCoordinates());
+        }
     }
 
     function testSearchEntitiesDefaultIsSuccess()

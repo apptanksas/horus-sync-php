@@ -33,18 +33,21 @@ readonly class Coordinates
      */
     public static function createFromRaw(string $raw): Coordinates
     {
+        $raw = trim($raw);
 
-        if (preg_match("/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/", $raw) !== 1) {
-            throw new ClientException("Invalid coordinate format. Expected 'latitude,longitude'.");
+        if (preg_match('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $raw)) {
+            [$lat, $lng] = array_map('floatval', explode(',', $raw));
+            return new Coordinates($lat, $lng);
         }
 
-        $parts = explode(",", $raw);
+        if (preg_match('/^POINT\(\s*(-?\d+(\.\d+)?)\s+(-?\d+(\.\d+)?)\s*\)$/i', $raw, $matches)) {
+            $lng = (float)$matches[1];
+            $lat = (float)$matches[3];
 
-        if (count($parts) !== 2) {
-            throw new ClientException("Invalid coordinate format. Expected 'latitude,longitude'.");
+            return new Coordinates($lat, $lng);
         }
 
-        return new Coordinates(floatval($parts[0]), floatval($parts[1]));
+        throw new ClientException("Invalid coordinate format. Expected 'latitude,longitude' or 'POINT(longitude latitude)'.");
     }
 
     /**

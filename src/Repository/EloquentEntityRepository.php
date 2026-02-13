@@ -28,6 +28,7 @@ use AppTank\Horus\Illuminate\Database\EntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\ReadableEntitySynchronizable;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Carbon\Carbon;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -1204,15 +1205,14 @@ class EloquentEntityRepository implements EntityRepository
         return [];
     }
 
-    private function preparateCoordinateToSQL(Coordinates $coordinate): string
+    private function preparateCoordinateToSQL(Coordinates $coordinate): string|Expression
     {
         $connection = $this->connectionName ? DB::connection($this->connectionName) : DB::connection();
         $driver = $connection->getDriverName();
 
         return match ($driver) {
-            'mysql' => "ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})')",
-            'pgsql' => "ST_SetSRID(ST_MakePoint({$coordinate->longitude}, {$coordinate->latitude}), 4326)",
-            'sqlsrv' => "geometry::STGeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})', 4326)",
+            'mysql' => DB::raw("ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})', 4326)"),
+            'pgsql' => DB::raw("ST_SetSRID(ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})'),4326)::geography"),
             default => $coordinate->__toString()
         };
     }

@@ -3,6 +3,7 @@
 namespace Tests\_Stubs;
 
 use AppTank\Horus\Core\Entity\SyncParameter;
+use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -83,6 +84,15 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     public function adjacent(): HasOne
     {
         return $this->hasOne(AdjacentFakeWritableEntity::class, AdjacentFakeWritableEntity::FK_PARENT_ID, self::ATTR_ID);
+    }
+
+    // -----------------------------
+    // GETTERS
+    // -----------------------------
+
+    function getCoordinates(): Coordinates
+    {
+        return $this->parseColumnCoordinates(self::ATTR_COORDINATES);
     }
 
 }
