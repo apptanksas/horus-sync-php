@@ -231,6 +231,27 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
             return new Coordinates((float)$matches[2], (float)$matches[1]);
         }
 
+        // Check (Pgsql) format: EWKB hexadecimal string
+        if (is_string($value) && ctype_xdigit($value) && strlen($value) >= 50) {
+            $binary = hex2bin($value);
+            // Offset 21 bytes: 1 (byte order) + 4 (type with SRID flag) + 4 (SRID) + 8 (X/longitude) = posición de latitude
+            // Los doubles están en little-endian después del SRID
+            $longitude = unpack('d', substr($binary, 9, 8))[1];
+            $latitude = unpack('d', substr($binary, 17, 8))[1];
+            return new Coordinates($latitude, $longitude);
+        }
+
+        // MySQL geometry devuelve WKB binario con 4 bytes de SRID al inicio
+        // Formato interno WKB: [4 bytes SRID] [1 byte order] [4 bytes type] [8 bytes X] [8 bytes Y]
+        // MySQL 8.0+ con SRID 4326 inserta como (lat, lon) pero almacena internamente como (lon, lat) en WKB
+        if (is_string($value) && !ctype_xdigit($value) && strlen($value) >= 25) {
+            $data = unpack('x4/corder/Vtype/dx/dy', $value);
+            if ($data !== false) {
+                // WKB almacena: x=longitude, y=latitude
+                return new Coordinates($data['y'], $data['x']);
+            }
+        }
+
         // Check (MySQL) format: POINT(longitude latitude)
         if (is_string($value) && !str_starts_with($value, 'POINT')) {
             $data = unpack('x4/corder/Vtype/dlongitude/dlatitude', $value);

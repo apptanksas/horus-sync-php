@@ -1211,7 +1211,7 @@ class EloquentEntityRepository implements EntityRepository
         $driver = $connection->getDriverName();
 
         return match ($driver) {
-            'mysql' => DB::raw("ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})', 4326)"),
+            'mysql' => DB::raw("ST_GeomFromText('POINT({$coordinate->latitude} {$coordinate->longitude})', 4326)"),
             'pgsql' => DB::raw("ST_SetSRID(ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})'),4326)::geography"),
             default => $coordinate->__toString()
         };
