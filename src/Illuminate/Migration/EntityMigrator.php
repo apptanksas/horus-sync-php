@@ -55,7 +55,7 @@ class EntityMigrator
                         Schema::hasColumn($tableName, $parameter->name)) {
                         continue;
                     }
-                    $this->createColumn($table, $parameter, $tableName, $connectionName);
+                    $this->createColumn($table, $parameter);
                 }
                 // Add indexes
                 if (!empty($columnIndexes)) {
@@ -131,7 +131,7 @@ class EntityMigrator
      * @param SyncParameter $parameter
      * @return void
      */
-    private function createColumn(Blueprint $table, SyncParameter $parameter, string $tableName, ?string $connectionName): void
+    public function createColumn(Blueprint $table, SyncParameter $parameter): void
     {
 
         if ($parameter->name == EntitySynchronizable::ATTR_SYNC_DELETED_AT) {
@@ -299,6 +299,8 @@ class EntityMigrator
      */
     private function createCoordinatesColumn(Blueprint $table, SyncParameter $parameter): ?ColumnDefinition
     {
+        $this->registerSpatialColumnTypes(Schema::getConnection()->getName());
+
         $driver = Schema::getConnection()->getDriverName();
         $tableName = $table->getTable();
 

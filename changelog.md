@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.17.1
+- Update entity migrator class to add columns to migration from client.
+
 # 0.17.0
 - Added new parameter type [Coordinates] to define a parameter with geo coordinates format.
 
