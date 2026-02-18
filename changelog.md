@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.17.2
+# 0.17.2
 - Fixed parse coordinates parameter type value from binary format.
 
 # 0.17.1
