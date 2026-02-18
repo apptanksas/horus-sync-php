@@ -100,6 +100,28 @@ class GetDataEntityApiTest extends TestCase
         $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
     }
 
+    function testGetEntitiesUsingCoordinatesInPostgresIsSuccess()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
+            ParentFakeWritableEntity::ATTR_COORDINATES => "0101000020E6100000AA6BA3F08F8A52C0827170E9985B1240" // Simulate PostGIS point format
+        ]));
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userId));
+        }
+
+        // When
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ParentFakeWritableEntity::getEntityName()));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($parentsEntities));
+        $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
+    }
+
     function testGetEntitiesChildIsSuccess()
     {
 

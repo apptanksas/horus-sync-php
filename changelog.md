@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.17.2
+- Fixed parse coordinates parameter type value from binary format.
+
 # 0.17.1
 - Update entity migrator class to add columns to migration from client.
 
