@@ -209,10 +209,10 @@ abstract class EntitySynchronizable extends Model implements IEntitySynchronizab
      * to get the raw original value before parsing.
      *
      * @param string $column The name of the column to parse.
-     * @return Coordinates The parsed coordinates.
-     * @throws \RuntimeException|ClientException If the value cannot be parsed as coordinates.
+     * @return Coordinates|null The parsed coordinates.
+     * @throws ClientException If the value cannot be parsed as coordinates.
      */
-    protected function parseColumnCoordinates(string $column): Coordinates
+    protected function parseColumnCoordinates(string $column): ?Coordinates
     {
         $value = $this->getRawOriginal($column);
 

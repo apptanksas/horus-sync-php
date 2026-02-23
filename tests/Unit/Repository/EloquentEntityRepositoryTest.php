@@ -72,10 +72,15 @@ class EloquentEntityRepositoryTest extends TestCase
         /**
          * @var EntityOperation[] $parentsEntities
          */
-        $parentsEntities = $this->generateArray(fn() => EntityOperationFactory::createEntityInsert(
-            $this->faker->uuid,
-            ParentFakeWritableEntity::getEntityName(), ParentFakeEntityFactory::newData(), now()->toDateTimeImmutable()
-        ));
+        $parentsEntities = $this->generateArray(function (){
+            $data = ParentFakeEntityFactory::newData();
+            $data[ParentFakeWritableEntity::ATTR_COORDINATES] = null;
+
+            return EntityOperationFactory::createEntityInsert(
+                $this->faker->uuid,
+                ParentFakeWritableEntity::getEntityName(), $data, now()->toDateTimeImmutable()
+            );
+        });
         /**
          * @var EntityOperation[] $childEntities
          */

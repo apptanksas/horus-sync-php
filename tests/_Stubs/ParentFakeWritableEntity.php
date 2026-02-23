@@ -46,7 +46,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
             SyncParameter::createRelationOneOfOne([AdjacentFakeWritableEntity::class], self::VERSION_CHILDREN),
             SyncParameter::createReferenceFile(self::ATTR_IMAGE, self::VERSION_DEFAULT, true),
             SyncParameter::createCustom(self::ATTR_CUSTOM, self::REGEX_CUSTOM, self::VERSION_DEFAULT, true),
-            SyncParameter::createCoordinates(self::ATTR_COORDINATES, self::VERSION_DEFAULT),
+            SyncParameter::createCoordinates(self::ATTR_COORDINATES, self::VERSION_DEFAULT,isNullable: true),
         ];
     }
 
@@ -90,7 +90,7 @@ class ParentFakeWritableEntity extends WritableEntitySynchronizable
     // GETTERS
     // -----------------------------
 
-    function getCoordinates(): Coordinates
+    function getCoordinates(): ?Coordinates
     {
         return $this->parseColumnCoordinates(self::ATTR_COORDINATES);
     }
