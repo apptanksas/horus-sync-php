@@ -939,7 +939,7 @@ class EloquentEntityRepository implements EntityRepository
             $parameter = array_values(array_filter($parameters, fn(SyncParameter $parameter) => $parameter->name == $key))[0] ?? null;
 
             match ($parameter?->type) {
-                SyncParameterType::COORDINATES => $output[$key] = Coordinates::createFromRaw($value)->__toString(),
+                SyncParameterType::COORDINATES => $output[$key] = Coordinates::createFromRaw($value)?->__toString(),
                 default => $output[$key] = $value,
             };
         }

@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.17.3
+- Fixed when coordinates parameter type value is null in entity definition.
+
 # 0.17.2
 - Fixed parse coordinates parameter type value from binary format.
 

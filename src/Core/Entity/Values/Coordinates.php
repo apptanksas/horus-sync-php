@@ -31,8 +31,12 @@ readonly class Coordinates
      * @return Coordinates The created Coordinate instance.
      * @throws ClientException If the input format is invalid.
      */
-    public static function createFromRaw(string $raw): Coordinates
+    public static function createFromRaw(?string $raw): ?Coordinates
     {
+        if (is_null($raw)) {
+            return null;
+        }
+
         $value = trim($raw);
 
         // sqlite format: "latitude,longitude"

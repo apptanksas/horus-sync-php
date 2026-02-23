@@ -122,6 +122,31 @@ class GetDataEntityApiTest extends TestCase
         $response->assertJsonStructure(self::JSON_SCHEME_PARENT);
     }
 
+    function testGetEntitiesUsingCoordinatesNullInPostgresIsSuccess()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userId, [
+            ParentFakeWritableEntity::ATTR_COORDINATES => null
+        ]));
+
+        foreach ($parentsEntities as $parentEntity) {
+            $this->generateArray(fn() => ChildFakeEntityFactory::create($parentEntity->getId(), $userId));
+        }
+
+        // When
+        $response = $this->get(route(RouteName::GET_ENTITY_DATA->value, ParentFakeWritableEntity::getEntityName()));
+        $schemeParent = self::JSON_SCHEME_PARENT;// Remove coordinates from the expected JSON structure since it's null
+        unset($schemeParent['*']['data'][array_search('coordinates', $schemeParent['*']['data'])]);
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(count($parentsEntities));
+        $response->assertJsonStructure($schemeParent);
+    }
+
+
     function testGetEntitiesChildIsSuccess()
     {
 
