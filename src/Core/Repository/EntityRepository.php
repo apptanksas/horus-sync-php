@@ -119,11 +119,13 @@ interface EntityRepository
      * Retrieves the count of entities associated with a specific user ID.
      *
      * @param string|int $userId The ID of the user whose entities are being counted.
+     * @param string $entityName The name of the entity to count.
+     * @param array $idsToExclude Optional. An array of entity IDs to exclude from the count.
      *
      * @return int The count of entities associated with the specified user ID.
      * @throws ClientException
      */
-    function getCount(string|int $userId, string $entityName): int;
+    function getCount(string|int $userId, string $entityName, array $idsToExclude = []): int;
 
     /**
      * Searches for entities based on their references.

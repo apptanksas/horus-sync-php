@@ -194,7 +194,7 @@ class EloquentEntityRepositoryTest extends TestCase
     }
 
 
-    function testInsertEventExistsIsSuccess()
+    function testInsertEvenExistsIsSuccess()
     {
         // Given
         $ownerId = $this->faker->uuid;
@@ -826,6 +826,20 @@ class EloquentEntityRepositoryTest extends TestCase
 
         // Then
         $this->assertEquals(count($parentsEntities), $result);
+    }
+
+    function testGetCountWithIdsExcludedIsSuccess()
+    {
+        // Given
+        $userOwnerId = $this->faker->uuid;
+        $parentsEntities = $this->generateArray(fn() => ParentFakeEntityFactory::create($userOwnerId));
+        $idsExcluded = array_map(fn(ParentFakeWritableEntity $entity) => $entity->getId(), array_slice($parentsEntities, 0, 2));
+
+        // When
+        $result = $this->entityRepository->getCount($userOwnerId, ParentFakeWritableEntity::getEntityName(), $idsExcluded);
+
+        // Then
+        $this->assertEquals(count($parentsEntities) - count($idsExcluded), $result);
     }
 
     function testSearchEntitiesWithFilterRestriction()

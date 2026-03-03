@@ -692,17 +692,21 @@ class EloquentEntityRepository implements EntityRepository
      * Retrieves the count of entities associated with a specific user ID.
      *
      * @param string|int $userId The ID of the user whose entities are being counted.
+     * @param string $entityName The name of the entity to count.
+     * @param array $idsToExclude Optional. An array of entity IDs to exclude from the count.
      *
      * @return int The count of entities associated with the specified user ID.
      * @throws ClientException
      */
-    function getCount(int|string $userId, string $entityName): int
+    function getCount(int|string $userId, string $entityName, array $idsToExclude = []): int
     {
         /**
          * @var $entityClass EntitySynchronizable
          */
         $entityClass = $this->entityMapper->getEntityClass($entityName);
-        return $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)->count();
+        return $entityClass::query()->where(WritableEntitySynchronizable::ATTR_SYNC_OWNER_ID, $userId)->when(count($idsToExclude) > 0, function ($query) use ($idsToExclude) {
+            $query->whereNotIn(EntitySynchronizable::ATTR_ID, $idsToExclude);
+        })->count();
     }
 
     /**

@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.17.4
+- Fixed issue validation max entity count restriction when its trying to insert an entity with the same id.
+
 # 0.17.3
 - Fixed when coordinates parameter type value is null in entity definition.
 
