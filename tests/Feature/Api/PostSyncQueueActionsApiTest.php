@@ -788,6 +788,58 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), count($entities));
     }
 
+    function testPostSyncQueueIsSuccessWhenTryInsertEntityWithSameIdAndMaxEntityRestriction()
+    {
+        $userId = $this->faker->uuid;
+
+        $entity = ParentFakeEntityFactory::create($userId);
+
+        Horus::getInstance()
+            ->setUserAuthenticated(new UserAuth($userId))
+            ->setConfig(new Config(true))
+            ->setEntityRestrictions([
+                new MaxCountEntityRestriction($userId, ParentFakeWritableEntity::getEntityName(), 1)
+            ]);
+
+        $entityId = $entity->getId();
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $timestamp = $this->faker->dateTimeBetween->getTimestamp();
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+
+        $data = [
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestamp,
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
+                ],
+                "actioned_at" => 1725037000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 1);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $name,
+            'color' => $color,
+            'value_enum' => $valueEnum
+        ]);
+    }
+
     function testPostSyncQueueIsSuccessWithRestrictions()
     {
         $userOwnerId = $this->faker->uuid;
