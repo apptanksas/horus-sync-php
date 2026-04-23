@@ -300,6 +300,8 @@ If you want to apply a restriction to an entity, you can use the next restrictio
   parameters. This is useful when you want to limit the data that can be downloaded to client based on certain criteria.
 * **LimitCountEntityParentRetrieveRestriction**: This restriction allows you to limit the number of parent records that can be retrieved by user owner for a specific entity.
 * **LimitCountEntityChildrenRetrieveRestriction**: This restriction allows you to limit the number of children records that can be retrieved from a parent entity by user owner for a specific entity.
+* **ExternalEntityFilterRestriction**: This restriction allows you to apply complex filtering logic to entities after they are retrieved from the database. It supports filtering based on custom callable functions and transforming specific entity parameters using value transformers. This is useful when you need advanced filtering that cannot be expressed through simple parameter filters.
+
 #### Setup after initialization
 
 By default, the setup is set the Config class in the Horus initialization, but if you want to change the restrictions after you can use the next code:
@@ -309,6 +311,17 @@ Horus::getInstance()->setEntityRestrictions([
     new MaxCountEntityRestriction("user_id","entity_name", maxCount: 10),
     new FilterEntityRestriction("entity_name", [
        new ParameterFilter("country", "CO")
+    ]),
+    new ExternalEntityFilterRestriction("entity_name", filterFunction: function (EntityData $entityData) {
+        // Filter entities based on custom logic
+        return $entityData->getData()["active"] === false; // true to filter out, false to keep
+    }),
+    new ExternalEntityFilterRestriction("entity_name", filterFunction: function (EntityData $entityData) {
+        return false; // Don't filter any entity
+    }, parameterValueTransformers: [
+        new ParameterValueTransformer("name", function (EntityData $entityData, string $parameterName, mixed $value) {
+            return strtoupper($value); // Transform the name to uppercase
+        })
     ])
 ]);
 ```

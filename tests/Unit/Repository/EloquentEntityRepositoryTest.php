@@ -3,10 +3,12 @@
 namespace Tests\Unit\Repository;
 
 
+use AppTank\Horus\Core\Config\Restriction\ExternalEntityFilterRestriction;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\LimitCountEntityChildrenRetrieveRestriction;
 use AppTank\Horus\Core\Config\Restriction\LimitCountEntityParentRetrieveRestriction;
 use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
+use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterValueTransformer;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
@@ -72,7 +74,7 @@ class EloquentEntityRepositoryTest extends TestCase
         /**
          * @var EntityOperation[] $parentsEntities
          */
-        $parentsEntities = $this->generateArray(function (){
+        $parentsEntities = $this->generateArray(function () {
             $data = ParentFakeEntityFactory::newData();
             $data[ParentFakeWritableEntity::ATTR_COORDINATES] = null;
 
@@ -1341,4 +1343,64 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertCount(4, $result); // 2 for each owner
     }
 
+    function testSearchEntitiesWithExternalEntityFilterRestrictionFilterAllThenResultIsEmpty()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new ExternalEntityFilterRestriction(ReadableFakeEntity::getEntityName(), filterFunction: function (EntityData $entityData) {
+                return true; // Filter all entities
+            })
+        ]);
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+        $ids = array_map(fn(ReadableFakeEntity $entity) => $entity->getId(), $entities);
+        $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName(), $ids);
+
+        // Then
+        $this->assertEmpty($result, count($result) . " items");
+    }
+
+
+    function testSearchEntitiesWithExternalEntityFilterRestrictionWithValueTransformers()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new ExternalEntityFilterRestriction(ReadableFakeEntity::getEntityName(), filterFunction: function (EntityData $entityData) {
+                return false; // Don't filter any entity
+            }, parameterValueTransformers: [
+                new ParameterValueTransformer(ReadableFakeEntity::ATTR_NAME, function (EntityData $entityData, string $parameterName, mixed $value) {
+                    return strtoupper($value); // Transform the name to uppercase
+                })
+            ])
+        ]);
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+        $ids = array_map(fn(ReadableFakeEntity $entity) => $entity->getId(), $entities);
+        $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName(), $ids);
+
+        // Then
+        $this->assertCount(count($entities), $result);
+        foreach ($result as $entityData) {
+            foreach ($entityData->getData() as $parameter => $value) {
+
+                /// Validate value transformed
+                if ($parameter === ReadableFakeEntity::ATTR_NAME) {
+                    $this->assertEquals(strtoupper($value), $value);
+                }
+
+                // Validate original value
+                if ($parameter === ReadableFakeEntity::ATTR_TYPE) {
+                    $this->assertEquals($value, $value);
+                }
+            }
+        }
+    }
 }
