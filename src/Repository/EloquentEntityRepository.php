@@ -3,9 +3,12 @@
 namespace AppTank\Horus\Repository;
 
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\EntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\ExternalEntityFilterRestriction;
 use AppTank\Horus\Core\Config\Restriction\FilterEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\LimitCountEntityChildrenRetrieveRestriction;
 use AppTank\Horus\Core\Config\Restriction\LimitCountEntityParentRetrieveRestriction;
+use AppTank\Horus\Core\Config\Restriction\valueObject\ParameterFilter;
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
@@ -46,6 +49,7 @@ class EloquentEntityRepository implements EntityRepository
 {
 
     const int BATCH_SIZE = 1000; // Maximum number of records to insert in a single batch
+    const int CACHE_TTL_ONE_HOUR = 3600;
     const int CACHE_TTL_ONE_DAY = 86400; // 24 hours in seconds
     const int CACHE_TTL_ONE_YEAR = 31536000; // 365 days in seconds
 
@@ -511,10 +515,10 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         if (empty($ids) && is_null($afterTimestamp) && $instanceClass instanceof ReadableEntitySynchronizable) {
-            $this->cacheRepository->set($cacheKey, $result, self::CACHE_TTL_ONE_DAY);
+            $this->cacheRepository->set($cacheKey, $this->prepareEntitiesResult($result), self::CACHE_TTL_ONE_HOUR);
         }
 
-        return $result;
+        return $this->prepareEntitiesResult($result, $restrictions ?? []);
     }
 
     /**
@@ -1219,6 +1223,41 @@ class EloquentEntityRepository implements EntityRepository
             'pgsql' => DB::raw("ST_SetSRID(ST_GeomFromText('POINT({$coordinate->longitude} {$coordinate->latitude})'),4326)::geography"),
             default => $coordinate->__toString()
         };
+    }
+
+    /**
+     * Prepare entities result
+     *
+     * @param EntityRestriction[] $restrictions
+     * @param EntityData[] $entitiesData
+     * @return EntityData[]
+     */
+    private function prepareEntitiesResult(array $entitiesData, array $restrictions = []): array
+    {
+        $output = [];
+
+        foreach ($restrictions as $restriction) {
+
+            if ($restriction instanceof ExternalEntityFilterRestriction) {
+
+                foreach ($entitiesData as $entityData) {
+
+                    if ($restriction->getEntityName() != $entityData->name) {
+                        $output[] = $entityData;
+                        continue;
+                    }
+
+                    $entityData = $restriction->transformValues($entityData);
+                    $mustBeFilter = $restriction->mustBeFilter($entityData);
+
+                    if (!$mustBeFilter) {
+                        $output[] = $entityData;
+                    }
+                }
+            }
+        }
+
+        return $output;
     }
 }
 
