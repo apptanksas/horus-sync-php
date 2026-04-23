@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.18.0
+- Added new entity restriction [ExternalEntityFilterRestriction] to apply complex filtering logic to entities based on custom callable functions.
+- Added support for parameter value transformers in ExternalEntityFilterRestriction to transform specific entity parameters during filtering.
+- Fixed prepareEntitiesResult method to return entities correctly when no restrictions are applied.
+
 # 0.17.4
 - Fixed issue validation max entity count restriction when its trying to insert an entity with the same id.
 

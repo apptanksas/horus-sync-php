@@ -1234,16 +1234,17 @@ class EloquentEntityRepository implements EntityRepository
      */
     private function prepareEntitiesResult(array $entitiesData, array $restrictions = []): array
     {
-        $output = [];
+        $output = $entitiesData;
 
         foreach ($restrictions as $restriction) {
 
             if ($restriction instanceof ExternalEntityFilterRestriction) {
 
-                foreach ($entitiesData as $entityData) {
+                $filtered = [];
+                foreach ($output as $entityData) {
 
                     if ($restriction->getEntityName() != $entityData->name) {
-                        $output[] = $entityData;
+                        $filtered[] = $entityData;
                         continue;
                     }
 
@@ -1251,9 +1252,11 @@ class EloquentEntityRepository implements EntityRepository
                     $mustBeFilter = $restriction->mustBeFilter($entityData);
 
                     if (!$mustBeFilter) {
-                        $output[] = $entityData;
+                        $filtered[] = $entityData;
                     }
                 }
+
+                $output = $filtered;
             }
         }
 

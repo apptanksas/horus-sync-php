@@ -3,7 +3,7 @@
 namespace AppTank\Horus\Core\Config\Restriction;
 
 /**
- * @internal Class LimitCountEntityChildrenRestriction
+ * Class LimitCountEntityChildrenRestriction
  *
  *  * Represents a restriction that limits the number of parent entities that can be retrieved
  *
