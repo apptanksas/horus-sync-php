@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.18.1
+- Fixed issue in HorusQueueActionClient when the client is serialized with entity restriction with callable function.
+
 # 0.18.0
 - Added new entity restriction [ExternalEntityFilterRestriction] to apply complex filtering logic to entities based on custom callable functions.
 - Added support for parameter value transformers in ExternalEntityFilterRestriction to transform specific entity parameters during filtering.
