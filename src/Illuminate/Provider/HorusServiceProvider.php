@@ -7,6 +7,7 @@ use AppTank\Horus\Client\IHorusQueueActionClient;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\ExternalEntityFilterRestriction;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
@@ -141,7 +142,7 @@ class HorusServiceProvider extends ServiceProvider
                 $this->app->make(ITransactionHandler::class),
                 $this->app->make(QueueActionRepository::class),
                 $this->app->make(EntityRepository::class),
-                Horus::getInstance()->getConfig()
+                $this->filterEntityRestrictionsWithClosure(Horus::getInstance()->getConfig())
             );
         });
 
@@ -210,5 +211,21 @@ class HorusServiceProvider extends ServiceProvider
                 PruneFilesUploadedCommand::class
             ]);
         }
+    }
+
+    private function filterEntityRestrictionsWithClosure(Config $config): Config
+    {
+        $restrictions = [];
+        $limitedRestrictions = [ExternalEntityFilterRestriction::class];
+
+        foreach ($config->getEntityRestrictions() as $restriction) {
+            if (!in_array($restriction::class, $limitedRestrictions)) {
+                $restrictions[] = $restriction;
+            }
+        }
+
+        $config->setEntityRestrictions($restrictions);
+
+        return $config;
     }
 }

@@ -208,6 +208,8 @@ class Config
 
     private function populateRestrictionsByEntity(): void
     {
+        $this->restrictionsByEntity = [];
+
         foreach ($this->entityRestrictions as $restriction) {
             if (!isset($this->restrictionsByEntity[$restriction->getEntityName()])) {
                 $this->restrictionsByEntity[$restriction->getEntityName()] = [];
