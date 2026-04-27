@@ -1403,4 +1403,54 @@ class EloquentEntityRepositoryTest extends TestCase
             }
         }
     }
+
+    function testSearchEntitiesWithExternalEntityFilterRestrictionWithValueTransformersFromCache()
+    {
+        // Given
+        $horus = Horus::getInstance();
+        $horus->setEntityRestrictions([
+            new ExternalEntityFilterRestriction(ReadableFakeEntity::getEntityName(), filterFunction: function (EntityData $entityData) {
+                return false; // Don't filter any entity
+            }, parameterValueTransformers: [
+                new ParameterValueTransformer(ReadableFakeEntity::ATTR_NAME, function (EntityData $entityData, string $parameterName, mixed $value) {
+                    return strtoupper($value); // Transform the name to uppercase
+                })
+            ])
+        ]);
+
+        $ownerId = $this->faker->uuid;
+        $entities = $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+        $this->generateArray(fn() => ReadableFakeEntityFactory::create());
+
+        $this->cacheRepository->shouldReceive("exists")->andReturn(true);
+        $this->cacheRepository->shouldReceive("get")->andReturn(array_map(function (ReadableFakeEntity $entity) {
+            $entityData = new EntityData(ReadableFakeEntity::getEntityName(), [
+                ReadableFakeEntity::ATTR_ID => $entity->getId(),
+                ReadableFakeEntity::ATTR_NAME => $entity->name,
+                ReadableFakeEntity::ATTR_TYPE => $entity->type,
+            ]);
+            return $entityData;
+        }, $entities));
+
+        // When
+        $result = $this->entityRepository->searchEntities($ownerId, ReadableFakeEntity::getEntityName());
+
+        // Then
+        $this->assertCount(count($entities), $result);
+
+        foreach ($result as $entityData) {
+            foreach ($entityData->getData() as $parameter => $value) {
+
+                /// Validate value transformed
+                if ($parameter === ReadableFakeEntity::ATTR_NAME) {
+                    $this->assertEquals(strtoupper($value), $value);
+                }
+
+                // Validate original value
+                if ($parameter === ReadableFakeEntity::ATTR_TYPE) {
+                    $this->assertEquals($value, $value);
+                }
+            }
+        }
+    }
 }
