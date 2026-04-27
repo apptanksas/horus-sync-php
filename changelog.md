@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.18.2
+- Fixed prepareEntitiesResult method to return entities correctly when the restriction is applied with a callable function.
+
 # 0.18.1
 - Fixed issue in HorusQueueActionClient when the client is serialized with entity restriction with callable function.
 
