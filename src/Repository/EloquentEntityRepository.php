@@ -458,7 +458,7 @@ class EloquentEntityRepository implements EntityRepository
 
         // Check if the entity is cacheable and if the cache exists
         if (empty($ids) && is_null($afterTimestamp) && $this->cacheRepository->exists($cacheKey)) {
-            return $this->cacheRepository->get($cacheKey);
+            return $this->prepareEntitiesResult($this->cacheRepository->get($cacheKey), $restrictions ?? []);
         }
 
         //-------------------------------------
@@ -515,7 +515,7 @@ class EloquentEntityRepository implements EntityRepository
         }
 
         if (empty($ids) && is_null($afterTimestamp) && $instanceClass instanceof ReadableEntitySynchronizable) {
-            $this->cacheRepository->set($cacheKey, $this->prepareEntitiesResult($result), self::CACHE_TTL_ONE_HOUR);
+            $this->cacheRepository->set($cacheKey, $result, self::CACHE_TTL_ONE_HOUR);
         }
 
         return $this->prepareEntitiesResult($result, $restrictions ?? []);
