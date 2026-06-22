@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.18.3
+- Fixed EntityMigrator when try register spatial column types.
+
 # 0.18.2
 - Fixed prepareEntitiesResult method to return entities correctly when the restriction is applied with a callable function.
 

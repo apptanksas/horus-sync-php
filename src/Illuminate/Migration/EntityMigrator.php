@@ -418,6 +418,10 @@ class EntityMigrator
         $connection = $connectionName ? DB::connection($connectionName) : DB::connection();
         $grammar = $connection->getSchemaGrammar();
 
+        if ($grammar == null) {
+            return;
+        }
+
         // Register POINT type for PostgreSQL with SRID 4326 (WGS84)
         if ($connection->getDriverName() === 'pgsql' && !method_exists($grammar, 'typeCoordinate')) {
             $grammar::macro('typeCoordinate', function ($column) {
