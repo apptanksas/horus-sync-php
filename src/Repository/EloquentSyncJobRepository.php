@@ -26,16 +26,11 @@ class EloquentSyncJobRepository implements SyncJobRepository
     function save(SyncJob $syncJob): void
     {
         $data = $this->parseData($syncJob);
-        $query = SyncJobModel::query();
-        $query = $query->where(SyncJobModel::ATTR_ID, $syncJob->id);
 
-        if ($query->exists()) {
-            $query->first()->updateOrFail($data);
-            return;
-        }
-
-        $model = new SyncJobModel($data);
-        $model->saveOrFail();
+        SyncJobModel::updateOrCreate(
+            [SyncJobModel::ATTR_ID => $syncJob->id],
+            $data
+        );
     }
 
     /**
