@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.18.4
+- Fixed insert sync job process in its repository.
+
 # 0.18.3
 - Fixed EntityMigrator when try register spatial column types.
 
