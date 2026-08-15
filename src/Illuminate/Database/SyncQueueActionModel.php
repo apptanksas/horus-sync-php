@@ -27,6 +27,9 @@ final class SyncQueueActionModel extends Model
     const string ATTR_ACTIONED_AT = "actioned_at"; // UTC Datetime when the action was made.
     const string ATTR_SYNCED_AT = "synced_at"; // UTC Datetime when the action was synced.
     const string ATTR_BY_SYSTEM = "by_system"; // Flag to indicate if the action was made by the system.
+
+    const string ATTR_SKIPPED = "skipped"; // Flag to indicate if the action was skipped
+
     const string FK_USER_ID = "user_id"; // User Identifier responsible for the action made.
     const string FK_OWNER_ID = "owner_id"; // User Identifier owner of the entity.
 
@@ -41,6 +44,7 @@ final class SyncQueueActionModel extends Model
         self::ATTR_ENTITY,
         self::ATTR_ENTITY_ID,
         self::ATTR_DATA,
+        self::ATTR_SKIPPED,
         self::ATTR_ACTIONED_AT,
         self::ATTR_SYNCED_AT
     ];
