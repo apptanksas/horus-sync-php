@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
@@ -15,6 +16,7 @@ use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
@@ -54,11 +56,6 @@ class SyncQueueActions
      * @var QueueAction[] List of actions to be processed.
      */
     private array $actions = [];
-
-    /**
-     * @var array List of actions that were skipped during processing by entities was granted previously.
-     */
-    private array $skippedActions = [];
 
     /**
      * SyncQueueActions constructor.
@@ -103,7 +100,7 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
-        $this->actions = $actions;
+        $actions = $this->actions = $this->validateQueueActionSkipperRestriction(...$actions);
 
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
         usort($actions, function (QueueAction $a, QueueAction $b) {
@@ -118,8 +115,9 @@ class SyncQueueActions
 
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
-            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
-            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, $deleteActions);
+            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($insertActions, fn(QueueAction $action) => $action->skipped == false));
+            $updateEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($updateActions, fn(QueueAction $action) => $action->skipped == false));
+            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($deleteActions, fn(QueueAction $action) => $action->skipped == false));
             $insertEntitiesGroupedByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($insertEntities);
             $deleteEntitiesGroupsByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($deleteEntities);
 
@@ -129,7 +127,7 @@ class SyncQueueActions
             }
 
             $this->entityRepository->insert(...$insertEntities);
-            $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
+            $this->entityRepository->update(...$updateEntities);
             $this->entityRepository->delete(...$deleteEntities);
             $this->queueActionRepository->save(...array_merge($insertActions, $updateActions, $deleteActions));
 
@@ -148,6 +146,10 @@ class SyncQueueActions
     private function publishEvents(array $actions): void
     {
         foreach ($actions as $action) {
+
+            if ($action->skipped) {
+                continue;
+            }
 
             $eventData = [
                 $action->entity,
@@ -203,7 +205,6 @@ class SyncQueueActions
 
                     // Check if there was access to the entity previously
                     if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::UPDATE)) {
-                        $this->skippedActions[] = $action;
                         continue;
                     }
 
@@ -219,7 +220,6 @@ class SyncQueueActions
 
                     // Check if there was access to the entity previously
                     if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::DELETE)) {
-                        $this->skippedActions[] = $action;
                         continue;
                     }
 
@@ -233,6 +233,33 @@ class SyncQueueActions
         return [$insertActions, $updateActions, $deleteActions];
     }
 
+    /**
+     * Validate if the actions must be flagged as skipped
+     *
+     * @param QueueAction ...$actions
+     * @return array
+     */
+    public function validateQueueActionSkipperRestriction(QueueAction ...$actions): array
+    {
+        $output = [];
+
+        foreach ($actions as $action) {
+
+            $mustBeSkipped = false;
+            $restrictions = $this->config->getRestrictionsByEntity($action->entity);
+
+            foreach ($restrictions as $restriction) {
+                if ($restriction instanceof QueueActionSkipperValidatorEntityRestriction) {
+                    $mustBeSkipped = $restriction->mustBeSkipped($action->action, new EntityData($action->entity, $action->operation->toArray()));
+                }
+            }
+
+            // Apply skipped if is necessary
+            $output[] = ($mustBeSkipped) ? $action->cloneAsSkipped() : $action;
+        }
+
+        return $output;
+    }
 
     /**
      * Validates the files uploaded in the insert operations. Moves the files to the correct path and updates the file reference.

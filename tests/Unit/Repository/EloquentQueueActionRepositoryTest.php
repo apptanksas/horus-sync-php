@@ -44,7 +44,32 @@ class EloquentQueueActionRepositoryTest extends TestCase
                 SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
                 SyncQueueActionModel::ATTR_ACTIONED_AT => $action->actionedAt->format('Y-m-d H:i:s'),
                 SyncQueueActionModel::ATTR_SYNCED_AT => $action->syncedAt->format('Y-m-d H:i:s'),
-                SyncQueueActionModel::ATTR_BY_SYSTEM => false
+                SyncQueueActionModel::ATTR_BY_SYSTEM => false,
+                SyncQueueActionModel::ATTR_SKIPPED => false
+            ]);
+        }
+    }
+
+    function testSaveIsSuccessWithSkipped()
+    {
+        // Given
+        /**
+         * @var QueueAction[] $actions
+         */
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(skipped: true));
+        // When
+        $this->repository->save(...$actions);
+        // Then
+        foreach ($actions as $action) {
+            $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+                SyncQueueActionModel::ATTR_ACTION => $action->action->value,
+                SyncQueueActionModel::ATTR_ENTITY => $action->entity,
+                SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+                SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
+                SyncQueueActionModel::ATTR_ACTIONED_AT => $action->actionedAt->format('Y-m-d H:i:s'),
+                SyncQueueActionModel::ATTR_SYNCED_AT => $action->syncedAt->format('Y-m-d H:i:s'),
+                SyncQueueActionModel::ATTR_BY_SYSTEM => false,
+                SyncQueueActionModel::ATTR_SKIPPED => true
             ]);
         }
     }
@@ -264,6 +289,36 @@ class EloquentQueueActionRepositoryTest extends TestCase
                 SyncQueueActionModel::ATTR_BY_SYSTEM => false
             ]);
         }
+    }
+
+    function testGetActionsAfterTimestampIsSuccessWithSkipped()
+    {
+        $ownerId = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var SyncQueueActionModel[] $actions
+         */
+        $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::ATTR_SKIPPED => true
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(function () use ($ownerId, $syncedAt) {
+            $timestamp = $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp();
+            return SyncQueueActionModelFactory::create($ownerId, [
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+                SyncQueueActionModel::ATTR_SKIPPED => true
+            ]);
+        });
+
+        $syncedAtTarget = $syncedAt - 1;
+
+        // When
+        $result = $this->repository->getActions($ownerId, $syncedAtTarget);
+
+        // Then
+        $this->assertCount(0, $result);
     }
 
 }

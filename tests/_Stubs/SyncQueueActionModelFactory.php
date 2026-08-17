@@ -7,7 +7,7 @@ use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 
 class SyncQueueActionModelFactory
 {
-    public static function create(string|int $userId = null, array $data = array(), ?SyncAction $action = null): SyncQueueActionModel
+    public static function create(string|int $userId = null, array $data = array(), ?SyncAction $action = null, bool $skipped = false): SyncQueueActionModel
     {
         $faker = \Faker\Factory::create();
         $entityId = $faker->uuid;
@@ -25,6 +25,7 @@ class SyncQueueActionModelFactory
             SyncQueueActionModel::ATTR_DATA => json_encode($dataOperation),
             SyncQueueActionModel::ATTR_ACTIONED_AT => now()->format('Y-m-d H:i:s'),
             SyncQueueActionModel::ATTR_SYNCED_AT => $faker->dateTimeBetween()->format('Y-m-d H:i:s'),
+            SyncQueueActionModel::ATTR_SKIPPED => $skipped,
             SyncQueueActionModel::FK_USER_ID => $userId ?? $faker->uuid,
             SyncQueueActionModel::FK_OWNER_ID => $userId ?? $faker->uuid,
         ], $data);

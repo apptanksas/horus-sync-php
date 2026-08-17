@@ -29,7 +29,8 @@ class QueueActionMapper
             $model->getSyncedAt(),
             $model->getUserId(),
             $model->getOwnerId(),
-            bySystem: false,
+            bySystem: $model->getBySystem(),
+            skipped: $model->skipped(),
             sequence: $model->getId()
         );
     }

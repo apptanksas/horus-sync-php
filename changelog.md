@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.19.0
+- Added new entity restriction [QueueActionSkipperValidatorEntityRestriction] to validate if synchronization action must be skipped.
+
 # 0.18.4
 - Fixed insert sync job process in its repository.
 

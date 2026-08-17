@@ -8,6 +8,7 @@ use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Bus\IJobDispatcher;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\ExternalEntityFilterRestriction;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
@@ -216,7 +217,7 @@ class HorusServiceProvider extends ServiceProvider
     private function filterEntityRestrictionsWithClosure(Config $config): Config
     {
         $restrictions = [];
-        $limitedRestrictions = [ExternalEntityFilterRestriction::class];
+        $limitedRestrictions = [ExternalEntityFilterRestriction::class, QueueActionSkipperValidatorEntityRestriction::class];
 
         foreach ($config->getEntityRestrictions() as $restriction) {
             if (!in_array($restriction::class, $limitedRestrictions)) {

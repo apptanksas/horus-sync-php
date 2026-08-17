@@ -50,38 +50,6 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     }
 
     /**
-     * Converts a QueueAction object to an array format suitable for database insertion.
-     *
-     * @param QueueAction $queueAction The QueueAction object to convert.
-     * @return array The array representation of the queue action.
-     */
-    private function parseData(QueueAction $queueAction): array
-    {
-        return [
-            SyncQueueActionModel::ATTR_ACTION => $queueAction->action->value,
-            SyncQueueActionModel::ATTR_ENTITY => $queueAction->entity,
-            SyncQueueActionModel::ATTR_ENTITY_ID => $queueAction->operation->id,
-            SyncQueueActionModel::ATTR_DATA => json_encode($queueAction->operation->toArray()),
-            SyncQueueActionModel::ATTR_ACTIONED_AT => $queueAction->actionedAt,
-            SyncQueueActionModel::ATTR_SYNCED_AT => $queueAction->syncedAt,
-            SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
-            SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
-            SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
-        ];
-    }
-
-    /**
-     * Builds a QueueAction object from a SyncQueueActionModel instance.
-     *
-     * @param SyncQueueActionModel $model The model instance to build the QueueAction from.
-     * @return QueueAction The constructed QueueAction object.
-     */
-    private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
-    {
-        return QueueActionMapper::createFromEloquent($model);
-    }
-
-    /**
      * Retrieves the most recent queue action for a specific user or owner ID.
      *
      * @param int|string $userOwnerId The ID of the user or owner to retrieve the last action for.
@@ -89,7 +57,9 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      */
     function getLastAction(int|string $userOwnerId): ?QueueAction
     {
-        $result = SyncQueueActionModel::query()->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId)
+        $result = SyncQueueActionModel::query()
+            ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId)
+            ->where(SyncQueueActionModel::ATTR_SKIPPED, false)
             ->orderByDesc("id")->limit(1)->get()->first();
 
         if (is_null($result)) {
@@ -102,19 +72,20 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     /**
      * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
      *
-     * @param array|int|string $filteredOwnerIds     Owners subject to the date exclusion logic.
-     * @param int|null         $afterTimestamp       Global time filter (applies to everything).
-     * @param array            $excludeDateTimes     Dates to exclude for the filtered owners.
-     * @param array            $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
+     * @param array|int|string $filteredOwnerIds Owners subject to the date exclusion logic.
+     * @param int|null $afterTimestamp Global time filter (applies to everything).
+     * @param array $excludeDateTimes Dates to exclude for the filtered owners.
+     * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
-        ?int $afterTimestamp = null,
-        array $excludeDateTimes = [],
-        array $alwaysIncludeOwnerIds = []
-    ): array {
+        ?int             $afterTimestamp = null,
+        array            $excludeDateTimes = [],
+        array            $alwaysIncludeOwnerIds = []
+    ): array
+    {
 
-        $query = SyncQueueActionModel::query();
+        $query = SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_SKIPPED, false);
 
         // 1. Global Time Filter (Applies to both groups)
         if ($afterTimestamp !== null) {
@@ -165,4 +136,39 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))
             ->toArray();
     }
+
+
+    /**
+     * Converts a QueueAction object to an array format suitable for database insertion.
+     *
+     * @param QueueAction $queueAction The QueueAction object to convert.
+     * @return array The array representation of the queue action.
+     */
+    private function parseData(QueueAction $queueAction): array
+    {
+        return [
+            SyncQueueActionModel::ATTR_ACTION => $queueAction->action->value,
+            SyncQueueActionModel::ATTR_ENTITY => $queueAction->entity,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $queueAction->operation->id,
+            SyncQueueActionModel::ATTR_DATA => json_encode($queueAction->operation->toArray()),
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $queueAction->actionedAt,
+            SyncQueueActionModel::ATTR_SYNCED_AT => $queueAction->syncedAt,
+            SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
+            SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
+            SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
+            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped
+        ];
+    }
+
+    /**
+     * Builds a QueueAction object from a SyncQueueActionModel instance.
+     *
+     * @param SyncQueueActionModel $model The model instance to build the QueueAction from.
+     * @return QueueAction The constructed QueueAction object.
+     */
+    private function buildQueueActionByModel(SyncQueueActionModel $model): QueueAction
+    {
+        return QueueActionMapper::createFromEloquent($model);
+    }
+
 }

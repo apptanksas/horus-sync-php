@@ -3,7 +3,9 @@
 namespace AppTank\Horus\Client;
 
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Mapper\QueueActionMapper;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
@@ -62,6 +64,8 @@ class HorusQueueActionClient implements IHorusQueueActionClient
      */
     public function pushActions(QueueAction ...$actions): void
     {
+        $actions = $this->validateQueueActionSkipperRestriction(...$actions);
+
         // Sort actions by timestamp to ensure chronological processing
         usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt <=> $b->actionedAt);
 
@@ -73,8 +77,10 @@ class HorusQueueActionClient implements IHorusQueueActionClient
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions(...$actions);
 
             // Extract entities for insert actions
-            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, $insertActions);
-            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, $deleteActions);
+            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($insertActions, fn(QueueAction $action) => $action->skipped == false));
+            $updateEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($updateActions, fn(QueueAction $action) => $action->skipped == false));
+            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($deleteActions, fn(QueueAction $action) => $action->skipped == false));
+
             $insertGrouped = $this->groupEntityByUserOwnerId(...$insertEntities);
             $deleteGrouped = $this->groupEntityByUserOwnerId(...$deleteEntities);
 
@@ -85,7 +91,7 @@ class HorusQueueActionClient implements IHorusQueueActionClient
 
             // Apply CRUD operations to entities
             $this->entityRepository->insert(...$insertEntities);
-            $this->entityRepository->update(...array_map(fn(QueueAction $action) => $action->operation, $updateActions));
+            $this->entityRepository->update(...$updateEntities);
             $this->entityRepository->delete(...$deleteEntities);
 
             // Persist queue actions
@@ -167,5 +173,33 @@ class HorusQueueActionClient implements IHorusQueueActionClient
         }
 
         return $grouped;
+    }
+
+    /**
+     * Validate if the actions must be flagged as skipped
+     *
+     * @param QueueAction ...$actions
+     * @return array
+     */
+    public function validateQueueActionSkipperRestriction(QueueAction ...$actions): array
+    {
+        $output = [];
+
+        foreach ($actions as $action) {
+
+            $mustBeSkipped = false;
+            $restrictions = $this->config->getRestrictionsByEntity($action->entity);
+
+            foreach ($restrictions as $restriction) {
+                if ($restriction instanceof QueueActionSkipperValidatorEntityRestriction) {
+                    $mustBeSkipped = $restriction->mustBeSkipped($action->action, new EntityData($action->entity, $action->operation->toArray()));
+                }
+            }
+
+            // Apply skipped if is necessary
+            $output[] = ($mustBeSkipped) ? $action->cloneAsSkipped() : $action;
+        }
+
+        return $output;
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\_Stubs\Client;
 use AppTank\Horus\Client\HorusQueueActionClient;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
@@ -255,6 +256,70 @@ class HorusQueueActionClientTest extends TestCase
         $this->assertCount(1, $result[$userId2]);
     }
 
+    function testSerializeQueueActionClient()
+    {
+        $config = new Config(true);
+        $config->setupOnValidateEntityWasGranted(function () {
+            return true;
+        });
+
+        $horusQueueActionClient = new HorusQueueActionClient(
+            new EloquentTransactionHandler(),
+            $this->app->make(EloquentQueueActionRepository::class),
+            $this->app->make(EloquentEntityRepository::class),
+            $config
+        );
+
+        $serialized = serialize(clone $horusQueueActionClient);
+        $unserialized = unserialize($serialized);
+
+        $this->assertInstanceOf(HorusQueueActionClient::class, $unserialized);
+    }
+
+    function testInvokeIsSuccessWithSkippedActions()
+    {
+
+        $config = new Config(true, entityRestrictions: [
+            new QueueActionSkipperValidatorEntityRestriction(
+                ParentFakeWritableEntity::getEntityName(),
+                fn() => true
+            )
+        ]);
+
+        $horusQueueActionClient = new HorusQueueActionClient(
+            new EloquentTransactionHandler(),
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $config
+        );
+
+        $actions = array_merge(
+            $this->generateTestActions(EntityInsert::class, 2),
+            $this->generateTestActions(EntityUpdate::class, 2),
+            $this->generateTestActions(EntityDelete::class, 2)
+        );
+
+
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (...$args) {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(function (...$args) {
+            return empty($args);
+        });
+
+        // But the action SHOULD be saved (with skipped flag)
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (QueueAction $savedAction) {
+            return $savedAction->skipped === true;
+        });
+
+        // When
+        $horusQueueActionClient->pushActions(...$actions);
+    }
+
+
     private function generateTestActions(string $entityOperationClass, int $count, string|null $userId = null): array
     {
         $actions = [];
@@ -306,23 +371,4 @@ class HorusQueueActionClientTest extends TestCase
         return $actions;
     }
 
-    function testSerializeQueueActionClient()
-    {
-        $config = new Config(true);
-        $config->setupOnValidateEntityWasGranted(function () {
-            return true;
-        });
-
-        $horusQueueActionClient = new HorusQueueActionClient(
-            new EloquentTransactionHandler(),
-            $this->app->make(EloquentQueueActionRepository::class),
-            $this->app->make(EloquentEntityRepository::class),
-            $config
-        );
-
-        $serialized = serialize(clone $horusQueueActionClient);
-        $unserialized = unserialize($serialized);
-
-        $this->assertInstanceOf(HorusQueueActionClient::class, $unserialized);
-    }
 }

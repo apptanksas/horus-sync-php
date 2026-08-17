@@ -39,6 +39,7 @@ readonly class QueueAction
         public int|string         $userId,
         public int|string         $ownerId,
         public bool               $bySystem = false,
+        public bool               $skipped = false,
         public int|null           $sequence = null,
     )
     {
@@ -58,7 +59,26 @@ readonly class QueueAction
             $userId,
             $ownerId,
             $this->bySystem,
+            $this->skipped,
             $this->sequence
+        );
+    }
+
+
+    function cloneAsSkipped(): self
+    {
+        return new self(
+            $this->action,
+            $this->entity,
+            $this->entityId,
+            $this->operation,
+            $this->actionedAt,
+            $this->syncedAt,
+            $this->userId,
+            $this->ownerId,
+            $this->bySystem,
+            skipped: true,
+            sequence: $this->sequence
         );
     }
 
