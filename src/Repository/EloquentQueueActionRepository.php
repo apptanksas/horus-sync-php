@@ -67,6 +67,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
             SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
             SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
+            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped
         ];
     }
 
@@ -102,17 +103,18 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     /**
      * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
      *
-     * @param array|int|string $filteredOwnerIds     Owners subject to the date exclusion logic.
-     * @param int|null         $afterTimestamp       Global time filter (applies to everything).
-     * @param array            $excludeDateTimes     Dates to exclude for the filtered owners.
-     * @param array            $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
+     * @param array|int|string $filteredOwnerIds Owners subject to the date exclusion logic.
+     * @param int|null $afterTimestamp Global time filter (applies to everything).
+     * @param array $excludeDateTimes Dates to exclude for the filtered owners.
+     * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
-        ?int $afterTimestamp = null,
-        array $excludeDateTimes = [],
-        array $alwaysIncludeOwnerIds = []
-    ): array {
+        ?int             $afterTimestamp = null,
+        array            $excludeDateTimes = [],
+        array            $alwaysIncludeOwnerIds = []
+    ): array
+    {
 
         $query = SyncQueueActionModel::query();
 

@@ -166,4 +166,24 @@ final class SyncQueueActionModel extends Model
     {
         return $this->getAttribute(self::FK_OWNER_ID);
     }
+
+    /**
+     * Get if system makes the action
+     *
+     * @return bool
+     */
+    public function getBySystem(): bool
+    {
+        return $this->getAttribute(self::ATTR_BY_SYSTEM);
+    }
+
+    /**
+     * Get if the action was skipped
+     *
+     * @return bool
+     */
+    public function skipped(): bool
+    {
+        return $this->getAttribute(self::ATTR_SKIPPED);
+    }
 }

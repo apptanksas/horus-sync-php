@@ -7,9 +7,11 @@ use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Exception\RestrictionException;
 use AppTank\Horus\Core\Factory\EntityOperationFactory;
 use AppTank\Horus\Core\File\IFileHandler;
+use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Model\QueueAction;
@@ -17,6 +19,7 @@ use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
 use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
+use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
@@ -304,5 +307,210 @@ class SyncQueueActionsTest extends TestCase
 
         // Then
         $this->assertTrue(true); // If no exception is thrown, the test is successful
+    }
+
+    function testInvokeIsSuccessWithSkippedActions()
+    {
+        $userId = $this->faker->uuid;
+        $mapper = Horus::getInstance()->getEntityMapper();
+
+        // Restriction that skips all actions for ParentFakeWritableEntity
+        $config = new Config(true, entityRestrictions: [
+            new QueueActionSkipperValidatorEntityRestriction(
+                ParentFakeWritableEntity::getEntityName(),
+                fn() => true
+            )
+        ]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            $mapper,
+            $config
+        );
+
+        $action = QueueActionFactory::create(
+            EntityOperationFactory::createEntityInsert(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId
+        );
+
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (...$args) use ($action) {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) use ($action) {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(function (...$args) use ($action) {
+            return empty($args);
+        });
+
+        // But the action SHOULD be saved (with skipped flag)
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (QueueAction $savedAction) {
+            return $savedAction->skipped === true;
+        });
+
+        $this->eventBus->shouldNotReceive('publish');
+
+        // When
+        $syncQueueActions->__invoke(new UserAuth($userId), $action);
+    }
+
+    function testInvokeWithPartialSkippedActions()
+    {
+        $userId = $this->faker->uuid;
+        $mapper = Horus::getInstance()->getEntityMapper();
+
+        // Restriction that skips only INSERT actions
+        $config = new Config(true, entityRestrictions: [
+            new QueueActionSkipperValidatorEntityRestriction(
+                ParentFakeWritableEntity::getEntityName(),
+                fn(SyncAction $action) => $action === SyncAction::INSERT
+            )
+        ]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            $mapper,
+            $config
+        );
+
+        $insertAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityInsert(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId
+        );
+
+        $updateAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->addMinute()->toDateTimeImmutable()
+            ),
+            $userId
+        );
+
+
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (...$args)  {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(function (...$args)  {
+            return empty($args);
+        });
+        $this->entityRepository->shouldReceive('update')->once();
+        $this->entityRepository->shouldReceive('getEntityOwner')->andReturn($userId);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->andReturn(true);
+
+        // BOTH actions should be saved
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) {
+            $skipped = array_filter($args, fn(QueueAction $a) => $a->skipped);
+            $notSkipped = array_filter($args, fn(QueueAction $a) => !$a->skipped);
+            return count($args) === 2 && count($skipped) === 1 && count($notSkipped) === 1;
+        });
+
+        // Event should be published ONLY for UPDATE
+        $this->eventBus->shouldReceive('publish')->once()->with("sync.update", \Mockery::any());
+
+        // When
+        $syncQueueActions->__invoke(new UserAuth($userId), $insertAction, $updateAction);
+    }
+
+    function testInvokeWithSkippedActionByData()
+    {
+        $userId = $this->faker->uuid;
+        $mapper = Horus::getInstance()->getEntityMapper();
+
+        // Restriction that skips only if data has 'should_skip' => true
+        $config = new Config(true, entityRestrictions: [
+            new QueueActionSkipperValidatorEntityRestriction(
+                ParentFakeWritableEntity::getEntityName(),
+                fn(SyncAction $action, EntityData $data) => ($data->getData()['should_skip'] ?? false) === true
+            )
+        ]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            $mapper,
+            $config
+        );
+
+        $actionToSkip = QueueActionFactory::create(
+            EntityOperationFactory::createEntityInsert(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                array_merge(ParentFakeEntityFactory::newData(), ['should_skip' => true]),
+                now()->toDateTimeImmutable()
+            ),
+            $userId
+        );
+
+        $actionToKeep = QueueActionFactory::create(
+            EntityOperationFactory::createEntityInsert(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                array_merge(ParentFakeEntityFactory::newData(), ['should_skip' => false]),
+                now()->addMinute()->toDateTimeImmutable()
+            ),
+            $userId
+        );
+
+        // Mocks
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(function (EntityOperation $op) use ($actionToKeep) {
+            return $op->id === $actionToKeep->operation->id;
+        });
+
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args)  {
+            return empty($args);
+        });
+
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(function (...$args)  {
+            return empty($args);
+        });
+
+        $this->entityRepository->shouldReceive("getEntityParentOwner")->andReturn($userId);
+
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($actionToSkip, $actionToKeep) {
+            return count($args) === 2;
+        });
+
+        $this->eventBus->shouldReceive('publish')->once();
+
+        // Mocks for file validation (since newData() generates an image field)
+        $this->fileUploadedRepository->shouldReceive('search')->andReturn(FileUploadedFactory::create($this->faker->uuid));
+        $this->fileHandler->shouldReceive('generateUrl')->andReturn($this->faker->imageUrl);
+        $this->fileUploadedRepository->shouldReceive('save');
+        $this->fileHandler->shouldReceive('copy')->andReturn(true);
+        $this->fileHandler->shouldReceive('delete')->andReturn(true);
+        $this->entityRepository->shouldReceive('getEntityPathHierarchy')->andReturn([ParentFakeEntityFactory::create()]);
+
+        // When
+        $syncQueueActions->__invoke(new UserAuth($userId), $actionToSkip, $actionToKeep);
     }
 }

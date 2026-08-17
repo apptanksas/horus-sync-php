@@ -9,11 +9,13 @@ use AppTank\Horus\Core\Auth\UserActingAs;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
+use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
+use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
@@ -1471,6 +1473,64 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'name' => $nameExpected,
             'color' => $colorExpected,
             'value_enum' => $valueEnumExpected
+        ]);
+    }
+
+    function testPostSyncQueueIsSuccessWithSkipperRestrictions()
+    {
+        $userId = $this->faker->uuid;
+
+        Horus::getInstance()
+            ->setUserAuthenticated(new UserAuth($userId))
+            ->setConfig(new Config(true))
+            ->setEntityRestrictions([
+                new QueueActionSkipperValidatorEntityRestriction(ParentFakeWritableEntity::getEntityName(), function () {
+                    return true;
+                })
+            ]);
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $timestamp = $this->faker->dateTimeBetween->getTimestamp();
+        $valueEnum = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+
+        $data = [
+            // insert action
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestamp,
+                    "value_enum" => $valueEnum,
+                    "coordinates" => Coordinates::generateRaw()
+                ],
+                "actioned_at" => 1725037000
+            ],
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 1);
+
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_SKIPPED => true
+        ]);
+
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 0);
+        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $name,
+            'color' => $color,
+            'value_enum' => $valueEnum
         ]);
     }
 }
