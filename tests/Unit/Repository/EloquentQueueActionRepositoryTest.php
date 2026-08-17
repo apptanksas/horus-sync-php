@@ -291,4 +291,34 @@ class EloquentQueueActionRepositoryTest extends TestCase
         }
     }
 
+    function testGetActionsAfterTimestampIsSuccessWithSkipped()
+    {
+        $ownerId = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        /**
+         * @var SyncQueueActionModel[] $actions
+         */
+        $actions = $this->generateArray(fn() => SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAt),
+            SyncQueueActionModel::ATTR_SKIPPED => true
+        ]));
+
+        // Generate entities before the updatedAt
+        $this->generateArray(function () use ($ownerId, $syncedAt) {
+            $timestamp = $this->faker->dateTimeBetween(endDate: $syncedAt)->getTimestamp();
+            return SyncQueueActionModelFactory::create($ownerId, [
+                SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($timestamp),
+                SyncQueueActionModel::ATTR_SKIPPED => true
+            ]);
+        });
+
+        $syncedAtTarget = $syncedAt - 1;
+
+        // When
+        $result = $this->repository->getActions($ownerId, $syncedAtTarget);
+
+        // Then
+        $this->assertCount(0, $result);
+    }
+
 }

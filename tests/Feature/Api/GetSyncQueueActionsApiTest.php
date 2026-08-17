@@ -57,6 +57,23 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $response->assertExactJsonStructure(self::JSON_SCHEME);
     }
 
+    function testGetActionsIsSuccessValidateSkipped()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $this->generateArray(fn() => SyncQueueActionModelFactory::create(userId: $userId, skipped: true));
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(0);
+    }
+
     function testGetActionsAfterTimestampIsSuccess()
     {
         $ownerId = $this->faker->uuid;
