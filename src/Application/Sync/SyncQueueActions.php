@@ -201,7 +201,7 @@ class SyncQueueActions
             } elseif ($action->operation instanceof EntityUpdate) {
 
                 // Check if user has permission to update entity
-                if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
+                if ($action->skipped === false && $isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::UPDATE) === false) {
 
                     // Check if there was access to the entity previously
                     if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::UPDATE)) {
@@ -216,7 +216,7 @@ class SyncQueueActions
             } elseif ($action->operation instanceof EntityDelete) {
 
                 // Check if user has permission to delete entity
-                if ($isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
+                if ($action->skipped === false && $isEntityIdInInsertActions === false && $this->accessValidatorRepository->canAccessEntity($userAuth, $entityReference, Permission::DELETE) === false) {
 
                     // Check if there was access to the entity previously
                     if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::DELETE)) {

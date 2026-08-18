@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.19.1
+- From now on, permission validation will be avoided if an action has already been omitted.
+
 # 0.19.0
 - Added new entity restriction [QueueActionSkipperValidatorEntityRestriction] to validate if synchronization action must be skipped.
 
