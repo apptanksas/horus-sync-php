@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.19.1
+- From now on, when a user does not have permission to perform an action, the action will be skipped but no unauthorized error will be thrown.
+
 # 0.19.0
 - Added new entity restriction [QueueActionSkipperValidatorEntityRestriction] to validate if synchronization action must be skipped.
 

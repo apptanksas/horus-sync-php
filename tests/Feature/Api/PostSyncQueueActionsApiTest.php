@@ -589,7 +589,21 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
 
         // Then
-        $response->assertUnauthorized();
+        $response->assertAccepted();
+
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::FK_OWNER_ID => $userOwnerId,
+            SyncQueueActionModel::FK_USER_ID => $userId,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
+            SyncQueueActionModel::ATTR_ENTITY => $entityName,
+            SyncQueueActionModel::ATTR_SKIPPED => true
+        ]);
+
+        // Validate that the update is not done
+        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_NAME => $nameExpected,
+            ParentFakeWritableEntity::ATTR_COLOR => $colorExpected,
+        ]);
     }
 
     function testTryUpdateEntityButNotPermissionByActingAsNotMatchWithEntityGranted()

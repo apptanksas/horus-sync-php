@@ -208,7 +208,7 @@ class SyncQueueActions
                         continue;
                     }
 
-                    throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
+                    $action = $action->cloneAsSkipped();
                 }
 
                 $updateActions[] = $action;
