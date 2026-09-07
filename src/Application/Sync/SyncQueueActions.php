@@ -100,6 +100,12 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
+        $actions = $this->filterUnregisteredActions(...$actions);
+
+        if (empty($actions)) {
+            return;
+        }
+
         $actions = $this->actions = $this->validateQueueActionSkipperRestriction(...$actions);
 
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
@@ -135,6 +141,32 @@ class SyncQueueActions
 
             $this->publishEvents($actions);
         });
+    }
+
+    /**
+     * Filters actions with an event ID that has not been registered yet.
+     * Actions without an event ID are kept for backwards compatibility.
+     *
+     * @param QueueAction ...$actions The queue actions to filter.
+     * @return QueueAction[] The registered actions and legacy actions without an event ID.
+     */
+    private function filterUnregisteredActions(QueueAction ...$actions): array
+    {
+        $eventIds = array_values(array_filter(
+            array_map(fn(QueueAction $action) => $action->eventId, $actions),
+            fn(?string $eventId) => $eventId !== null
+        ));
+
+        if (empty($eventIds)) {
+            return $actions;
+        }
+
+        $registeredEventIds = $this->queueActionRepository->checkExistsByEventIds($eventIds);
+
+        return array_values(array_filter(
+            $actions,
+            fn(QueueAction $action) => $action->eventId === null || ($registeredEventIds[$action->eventId] ?? false)
+        ));
     }
 
     /**

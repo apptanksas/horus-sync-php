@@ -513,4 +513,103 @@ class SyncQueueActionsTest extends TestCase
         // When
         $syncQueueActions->__invoke(new UserAuth($userId), $actionToSkip, $actionToKeep);
     }
+
+    function testInvokeExecutesOnlyRegisteredEventActionsAndLegacyActions()
+    {
+        $userId = $this->faker->uuid;
+        $registeredEventId = $this->faker->uuid;
+        $unregisteredEventId = $this->faker->uuid;
+
+        $registeredAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $registeredEventId,
+            actionedAt: now()->toDateTimeImmutable()
+        );
+        $unregisteredAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->addMinute()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $unregisteredEventId,
+            actionedAt: now()->addMinute()->toDateTimeImmutable()
+        );
+        $legacyAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->addMinutes(2)->toDateTimeImmutable()
+            ),
+            $userId,
+            actionedAt: now()->addMinutes(2)->toDateTimeImmutable()
+        );
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$registeredEventId, $unregisteredEventId])
+            ->andReturn([
+                $registeredEventId => true,
+                $unregisteredEventId => false,
+            ]);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->twice()->andReturn(true);
+        $this->entityRepository->shouldReceive('getEntityOwner')->twice()->andReturn($userId);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) use ($registeredAction, $legacyAction) {
+            return count($args) === 2 &&
+                $args[0]->id === $registeredAction->operation->id &&
+                $args[1]->id === $legacyAction->operation->id;
+        });
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($registeredEventId, $legacyAction) {
+            return count($args) === 2 &&
+                $args[0]->eventId === $registeredEventId &&
+                $args[1]->eventId === $legacyAction->eventId;
+        });
+        $this->eventBus->shouldReceive('publish')->twice()->with('sync.update', \Mockery::any());
+
+        // When
+        $this->syncQueueActions->__invoke(new UserAuth($userId), $registeredAction, $unregisteredAction, $legacyAction);
+    }
+
+    function testInvokeDoesNothingWhenAllEventActionsAreUnregistered()
+    {
+        $userId = $this->faker->uuid;
+        $eventId = $this->faker->uuid;
+        $action = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $eventId
+        );
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$eventId])
+            ->andReturn([$eventId => false]);
+        $this->entityRepository->shouldNotReceive('insert');
+        $this->entityRepository->shouldNotReceive('update');
+        $this->entityRepository->shouldNotReceive('delete');
+        $this->queueActionRepository->shouldNotReceive('save');
+        $this->eventBus->shouldNotReceive('publish');
+
+        // When
+        $this->syncQueueActions->__invoke(new UserAuth($userId), $action);
+    }
 }
