@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
@@ -31,6 +32,7 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Validator\EntityRestrictionValidator;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -79,8 +81,9 @@ class SyncQueueActions
         private readonly FileUploadedRepository          $fileUploadedRepository,
         private readonly IEventBus                       $eventBus,
         private readonly IFileHandler                    $fileHandler,
-        private readonly EntityMapper                    $entityMapper,
-        private readonly Config                          $config
+        private readonly EntityMapper                   $entityMapper,
+        private readonly Config                         $config,
+        private readonly QueueActionWebsocketPublisher $queueActionWebsocketPublisher,
     )
     {
         $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
@@ -172,6 +175,10 @@ class SyncQueueActions
                 $this->eventBus->publish("sync.update", $eventData);
             } elseif ($action->action == SyncAction::DELETE) {
                 $this->eventBus->publish("sync.delete", $eventData);
+            }
+
+            if ($this->config->isFeatureEnabled(FeatureName::WEBSOCKET)) {
+                $this->queueActionWebsocketPublisher->publish($action);
             }
         }
     }

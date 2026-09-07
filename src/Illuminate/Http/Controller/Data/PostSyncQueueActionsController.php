@@ -14,6 +14,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
@@ -49,7 +50,8 @@ class PostSyncQueueActionsController extends Controller
         EntityAccessValidatorRepository $accessValidatorRepository,
         FileUploadedRepository          $fileUploadedRepository,
         IEventBus                       $eventBus,
-        EntityMapper                    $entityMapper
+        EntityMapper                    $entityMapper,
+        QueueActionWebsocketPublisher  $queueActionWebsocketPublisher
     )
     {
         parent::__construct();
@@ -63,7 +65,8 @@ class PostSyncQueueActionsController extends Controller
             $eventBus,
             Horus::getInstance()->getFileHandler(),
             $entityMapper,
-            Horus::getInstance()->getConfig()
+            Horus::getInstance()->getConfig(),
+            $queueActionWebsocketPublisher
         );
     }
 

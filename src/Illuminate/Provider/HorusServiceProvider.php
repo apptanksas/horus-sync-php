@@ -23,6 +23,7 @@ use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
@@ -39,7 +40,10 @@ use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\EloquentSyncJobRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
+use AppTank\Horus\Illuminate\Websocket\QueueActionWebsocket;
+use AppTank\Horus\Illuminate\Http\Middleware\AuthenticateHorusBroadcast;
 use Carbon\Laravel\ServiceProvider;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -58,6 +62,9 @@ class HorusServiceProvider extends ServiceProvider
     {
         $this->registerCommands();
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
+        Broadcast::resolveAuthenticatedUserUsing(function () {
+            return Horus::getInstance()->getUserAuthenticated();
+        });
         $this->app->afterResolving(function () {
             $this->registerRoutes();
         });
@@ -74,12 +81,22 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
+        $this->app['config']->set('broadcasting', Horus::getInstance()->getConfig()->websocketConfig->toArray());
+
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository($this->app->make(CacheRepository::class));
         });
 
         $this->app->singleton(IEventBus::class, function () {
             return new EventBus();
+        });
+
+        $this->app->singleton(QueueActionWebsocket::class, function () {
+            return new QueueActionWebsocket($this->app->make(QueueActionRepository::class));
+        });
+
+        $this->app->singleton(QueueActionWebsocketPublisher::class, function () {
+            return $this->app->make(QueueActionWebsocket::class);
         });
 
         $this->app->singleton(IJobDispatcher::class, function () {
@@ -195,6 +212,12 @@ class HorusServiceProvider extends ServiceProvider
         ], function () {
             $this->loadRoutesFrom(__DIR__ . '/../../../routes/api_v1.php');
         });
+
+        Broadcast::routes([
+            'prefix' => 'horus/v1',
+            'middleware' => [AuthenticateHorusBroadcast::class],
+        ]);
+        $this->loadRoutesFrom(__DIR__ . '/../../../routes/channels.php');
     }
 
     /**

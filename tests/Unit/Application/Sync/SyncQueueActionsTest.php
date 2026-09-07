@@ -6,6 +6,7 @@ use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Exception\RestrictionException;
@@ -21,6 +22,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
@@ -46,6 +48,8 @@ class SyncQueueActionsTest extends TestCase
 
     private IFileHandler|Mock $fileHandler;
 
+    private QueueActionWebsocketPublisher|Mock $queueActionWebsocketPublisher;
+
     private SyncQueueActions $syncQueueActions;
 
     public function setUp(): void
@@ -63,6 +67,8 @@ class SyncQueueActionsTest extends TestCase
         $this->accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
         $this->fileUploadedRepository = $this->mock(FileUploadedRepository::class);
         $this->fileHandler = $this->mock(IFileHandler::class);
+        $this->queueActionWebsocketPublisher = $this->mock(QueueActionWebsocketPublisher::class);
+        $this->queueActionWebsocketPublisher->shouldReceive('publish')->byDefault();
 
         $this->syncQueueActions = new SyncQueueActions(
             $this->transactionHandler,
@@ -73,7 +79,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
     }
 
@@ -168,6 +175,45 @@ class SyncQueueActionsTest extends TestCase
         $this->syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
     }
 
+    function testInvokeDoesNotPublishWebsocketEventWhenFeatureIsDisabled(): void
+    {
+        $userId = $this->faker->uuid;
+        $action = QueueActionFactory::create(
+            EntityOperationFactory::createEntityDelete(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                now()->toDateTimeImmutable(),
+            ),
+            userId: $userId,
+        );
+        $config = new Config(true, disabledFeatures: [FeatureName::WEBSOCKET]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            Horus::getInstance()->getEntityMapper(),
+            $config,
+            $this->queueActionWebsocketPublisher,
+        );
+
+        $this->entityRepository->shouldReceive('getEntityOwner')->once()->andReturn($userId);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->once()->andReturn(true);
+        $this->entityRepository->shouldReceive('insert')->once();
+        $this->entityRepository->shouldReceive('update')->once();
+        $this->entityRepository->shouldReceive('delete')->once();
+        $this->queueActionRepository->shouldReceive('save')->once();
+        $this->eventBus->shouldReceive('publish')->once();
+        $this->queueActionWebsocketPublisher->shouldReceive('publish')->never();
+
+        $syncQueueActions->__invoke(new UserAuth($userId), $action);
+    }
+
 
     function testInvokeIsFailureByMaxCountEntityExceeded()
     {
@@ -188,7 +234,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertActions = $this->generateArray(function () use ($userId) {
@@ -230,7 +277,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertActions = $this->generateCountArray(function () use ($ownerId, &$filesUploaded) {
@@ -331,7 +379,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $action = QueueActionFactory::create(
@@ -387,7 +436,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertAction = QueueActionFactory::create(
@@ -458,7 +508,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $actionToSkip = QueueActionFactory::create(

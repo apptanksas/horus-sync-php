@@ -16,6 +16,7 @@ use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\SyncAction;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
 use AppTank\Horus\Illuminate\Http\Controller;
@@ -38,6 +39,15 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 {
 
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $publisher = \Mockery::mock(QueueActionWebsocketPublisher::class);
+        $publisher->shouldReceive('publish')->byDefault();
+        $this->app->instance(QueueActionWebsocketPublisher::class, $publisher);
+    }
 
     function testPostSyncQueueInsertIsFailureByUnauthorized()
     {
