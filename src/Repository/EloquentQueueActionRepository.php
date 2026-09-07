@@ -177,6 +177,38 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             ->toArray();
     }
 
+    /**
+     * Checks if actions are registered for the given event IDs.
+     *
+     * @param array $eventIds List of event IDs to check.
+     * @return array Associative array mapping each event ID to a boolean indicating if it is registered.
+     */
+    public function checkExistsByEventIds(array $eventIds): array
+    {
+        if (empty($eventIds)) {
+            return [];
+        }
+
+        $validEventIds = array_values(array_filter($eventIds, fn($id) => is_string($id) && trim($id) !== ''));
+
+        $registered = [];
+        if (!empty($validEventIds)) {
+            $registered = $this->getTable()
+                ->whereIn(SyncQueueActionModel::ATTR_EVENT_ID, $validEventIds)
+                ->pluck(SyncQueueActionModel::ATTR_EVENT_ID)
+                ->toArray();
+        }
+
+        $registeredMap = array_fill_keys($registered, true);
+
+        $result = [];
+        foreach ($eventIds as $eventId) {
+            $result[$eventId] = isset($registeredMap[$eventId]);
+        }
+
+        return $result;
+    }
+
 
     /**
      * Converts a QueueAction object to an array format suitable for database insertion.

@@ -51,4 +51,12 @@ interface QueueActionRepository
         ?string          $afterEventId = null,
         array            $excludeEventIds = []
     ): array;
+
+    /**
+     * Checks if actions are registered for the given event IDs.
+     *
+     * @param array $eventIds List of event IDs to check.
+     * @return array Associative array mapping each event ID to a boolean indicating if it is registered.
+     */
+    public function checkExistsByEventIds(array $eventIds): array;
 }

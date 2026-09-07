@@ -646,4 +646,114 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertEquals($actions[1]->eventId, $result[0]->eventId);
         $this->assertEquals($actions[3]->eventId, $result[1]->eventId);
     }
+
+    function testCheckExistsByEventIdsWithEmptyListReturnsEmptyArray()
+    {
+        // When
+        $result = $this->repository->checkExistsByEventIds([]);
+
+        // Then
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    function testCheckExistsByEventIdsWithAllExistingEventIds()
+    {
+        // Given
+        $eventId1 = $this->faker->uuid;
+        $eventId2 = $this->faker->uuid;
+        $actions = [
+            QueueActionFactory::create(eventId: $eventId1),
+            QueueActionFactory::create(eventId: $eventId2),
+        ];
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->checkExistsByEventIds([$eventId1, $eventId2]);
+
+        // Then
+        $this->assertEquals([
+            $eventId1 => true,
+            $eventId2 => true,
+        ], $result);
+    }
+
+    function testCheckExistsByEventIdsWithNonExistingEventIds()
+    {
+        // Given
+        $nonExistent1 = $this->faker->uuid;
+        $nonExistent2 = $this->faker->uuid;
+
+        // When
+        $result = $this->repository->checkExistsByEventIds([$nonExistent1, $nonExistent2]);
+
+        // Then
+        $this->assertEquals([
+            $nonExistent1 => false,
+            $nonExistent2 => false,
+        ], $result);
+    }
+
+    function testCheckExistsByEventIdsWithMixedExistingAndNonExisting()
+    {
+        // Given
+        $e1 = $this->faker->uuid;
+        $e2 = $this->faker->uuid;
+        $e3 = $this->faker->uuid;
+        $e4 = $this->faker->uuid;
+        $e5 = $this->faker->uuid;
+
+        $actions = [
+            QueueActionFactory::create(eventId: $e1),
+            QueueActionFactory::create(eventId: $e2),
+            QueueActionFactory::create(eventId: $e3),
+        ];
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->checkExistsByEventIds([$e1, $e4, $e2, $e5, $e3]);
+
+        // Then
+        $this->assertEquals([
+            $e1 => true,
+            $e4 => false,
+            $e2 => true,
+            $e5 => false,
+            $e3 => true,
+        ], $result);
+    }
+
+    function testCheckExistsByEventIdsWithSkippedActionReturnsTrue()
+    {
+        // Given
+        $eventId = $this->faker->uuid;
+        $action = QueueActionFactory::create(skipped: true, eventId: $eventId);
+        $this->repository->save($action);
+
+        // When
+        $result = $this->repository->checkExistsByEventIds([$eventId]);
+
+        // Then
+        $this->assertEquals([
+            $eventId => true,
+        ], $result);
+    }
+
+    function testCheckExistsByEventIdsWithDuplicateEventIdsInInput()
+    {
+        // Given
+        $eventId1 = $this->faker->uuid;
+        $eventId2 = $this->faker->uuid;
+        $action = QueueActionFactory::create(eventId: $eventId1);
+        $this->repository->save($action);
+
+        // When
+        $result = $this->repository->checkExistsByEventIds([$eventId1, $eventId1, $eventId2]);
+
+        // Then
+        $this->assertEquals([
+            $eventId1 => true,
+            $eventId2 => false,
+        ], $result);
+    }
 }
