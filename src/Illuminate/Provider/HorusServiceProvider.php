@@ -215,7 +215,10 @@ class HorusServiceProvider extends ServiceProvider
 
         Broadcast::routes([
             'prefix' => 'horus/v1',
-            'middleware' => [AuthenticateHorusBroadcast::class],
+            'middleware' => array_merge(
+                Horus::getInstance()->getMiddlewares(),
+                [AuthenticateHorusBroadcast::class]
+            ),
         ]);
         $this->loadRoutesFrom(__DIR__ . '/../../../routes/channels.php');
     }

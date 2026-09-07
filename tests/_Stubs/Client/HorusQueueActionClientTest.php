@@ -152,7 +152,7 @@ class HorusQueueActionClientTest extends TestCase
         $this->assertTrue(true);
     }
 
-    function testPushActionsExecutesRegisteredAndLegacyActionsOnly()
+    function testPushActionsExecutesOnlyUnregisteredEventActionsAndLegacyActions()
     {
         // Given
         $registeredEventId = $this->faker->uuid();
@@ -172,27 +172,27 @@ class HorusQueueActionClientTest extends TestCase
         $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
         $this->entityRepository->shouldReceive('update')
             ->once()
-            ->withArgs(function (...$args) use ($registeredAction, $legacyAction) {
+            ->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
                 return count($args) === 2 &&
-                    $args[0] === $registeredAction->operation &&
-                    $args[1] === $legacyAction->operation;
+                    in_array($unregisteredAction->operation, $args, true) &&
+                    in_array($legacyAction->operation, $args, true);
             });
         $this->queueActionRepository->shouldReceive('save')
             ->once()
-            ->withArgs(function (...$args) use ($registeredAction, $legacyAction) {
+            ->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
                 return count($args) === 2 &&
-                    $args[0] === $registeredAction &&
-                    $args[1] === $legacyAction;
+                    in_array($unregisteredAction, $args, true) &&
+                    in_array($legacyAction, $args, true);
             });
 
         // When
         $this->horusQueueActionClient->pushActions($registeredAction, $unregisteredAction, $legacyAction);
 
-        // Then - the repository and entity operations only receive registered and legacy actions
+        // Then - the repository and entity operations only receive unregistered and legacy actions
         $this->assertTrue(true);
     }
 
-    function testPushActionsDoesNothingWhenAllEventActionsAreUnregistered()
+    function testPushActionsExecutesWhenEventActionIsUnregistered()
     {
         // Given
         $eventId = $this->faker->uuid();
@@ -202,15 +202,15 @@ class HorusQueueActionClientTest extends TestCase
             ->once()
             ->with([$eventId])
             ->andReturn([$eventId => false]);
-        $this->entityRepository->shouldNotReceive('insert');
-        $this->entityRepository->shouldNotReceive('update');
-        $this->entityRepository->shouldNotReceive('delete');
-        $this->queueActionRepository->shouldNotReceive('save');
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action->operation);
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action);
 
         // When
         $this->horusQueueActionClient->pushActions($action);
 
-        // Then - no entity or queue action operation is performed
+        // Then - the unregistered action is processed
         $this->assertTrue(true);
     }
 

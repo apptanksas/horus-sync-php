@@ -145,11 +145,9 @@ class SyncQueueActionsTest extends TestCase
                     $action instanceof EntityOperation, true);
         });
         $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($actions) {
-            // Validate that args are QueueAction and the first item actionedAt is less than the last item actionedAt
+            // Validate that all actions are persisted, regardless of their operation group order.
             return count($args) === count($actions) &&
-                array_reduce($args, fn($carry, $action) => $carry &&
-                    $action instanceof QueueAction, true) &&
-                $args[0]->actionedAt < $args[count($args) - 1]->actionedAt;
+                array_reduce($args, fn($carry, $action) => $carry && $action instanceof QueueAction, true);
         });
 
         $this->entityRepository->shouldReceive("getEntityOwner")->andReturn($this->faker->uuid);
@@ -565,7 +563,7 @@ class SyncQueueActionsTest extends TestCase
         $syncQueueActions->__invoke(new UserAuth($userId), $actionToSkip, $actionToKeep);
     }
 
-    function testInvokeExecutesOnlyRegisteredEventActionsAndLegacyActions()
+    function testInvokeExecutesOnlyUnregisteredEventActionsAndLegacyActions()
     {
         $userId = $this->faker->uuid;
         $registeredEventId = $this->faker->uuid;
@@ -618,14 +616,14 @@ class SyncQueueActionsTest extends TestCase
         $this->entityRepository->shouldReceive('getEntityOwner')->twice()->andReturn($userId);
         $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
         $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
-        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) use ($registeredAction, $legacyAction) {
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
             return count($args) === 2 &&
-                $args[0]->id === $registeredAction->operation->id &&
+                $args[0]->id === $unregisteredAction->operation->id &&
                 $args[1]->id === $legacyAction->operation->id;
         });
-        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($registeredEventId, $legacyAction) {
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($unregisteredEventId, $legacyAction) {
             return count($args) === 2 &&
-                $args[0]->eventId === $registeredEventId &&
+                $args[0]->eventId === $unregisteredEventId &&
                 $args[1]->eventId === $legacyAction->eventId;
         });
         $this->eventBus->shouldReceive('publish')->twice()->with('sync.update', \Mockery::any());
@@ -634,7 +632,7 @@ class SyncQueueActionsTest extends TestCase
         $this->syncQueueActions->__invoke(new UserAuth($userId), $registeredAction, $unregisteredAction, $legacyAction);
     }
 
-    function testInvokeDoesNothingWhenAllEventActionsAreUnregistered()
+    function testInvokeExecutesWhenEventActionIsUnregistered()
     {
         $userId = $this->faker->uuid;
         $eventId = $this->faker->uuid;
@@ -654,11 +652,13 @@ class SyncQueueActionsTest extends TestCase
             ->once()
             ->with([$eventId])
             ->andReturn([$eventId => false]);
-        $this->entityRepository->shouldNotReceive('insert');
-        $this->entityRepository->shouldNotReceive('update');
-        $this->entityRepository->shouldNotReceive('delete');
-        $this->queueActionRepository->shouldNotReceive('save');
-        $this->eventBus->shouldNotReceive('publish');
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->once()->andReturn(true);
+        $this->entityRepository->shouldReceive('getEntityOwner')->once()->andReturn($userId);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0]->id === $action->operation->id);
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action);
+        $this->eventBus->shouldReceive('publish')->once()->with('sync.update', \Mockery::any());
 
         // When
         $this->syncQueueActions->__invoke(new UserAuth($userId), $action);

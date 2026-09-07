@@ -70,6 +70,19 @@ class QueueActionWebsocketApiTest extends ApiTestCase
         Event::assertDispatched(QueueActionBroadcast::class, 2);
     }
 
+    function testBroadcastAuthenticationSupportsHorusUserForNonPrivateChannel(): void
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $response = $this->post('/horus/v1/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => QueueActionWebsocket::channelName($userId),
+        ]);
+
+        $response->assertOk();
+    }
+
     function testSubscriptionIsRejectedWhenWebsocketFeatureIsDisabled(): void
     {
         $userId = $this->faker->uuid;

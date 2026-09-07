@@ -16,10 +16,10 @@ final readonly class QueueActionEventIdFilter
     }
 
     /**
-     * Keeps registered actions and actions without an event ID for backwards compatibility.
+     * Keeps unregistered actions and actions without an event ID for backwards compatibility.
      *
      * @param QueueAction ...$actions The queue actions to filter.
-     * @return QueueAction[] The registered actions and legacy actions without an event ID.
+     * @return QueueAction[] The unregistered actions and legacy actions without an event ID.
      */
     public function filter(QueueAction ...$actions): array
     {
@@ -36,7 +36,7 @@ final readonly class QueueActionEventIdFilter
 
         return array_values(array_filter(
             $actions,
-            fn(QueueAction $action) => $action->eventId === null || ($registeredEventIds[$action->eventId] ?? false)
+            fn(QueueAction $action) => $action->eventId === null || !($registeredEventIds[$action->eventId] ?? false)
         ));
     }
 }

@@ -195,11 +195,6 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $eventId = $this->faker->uuid;
         Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
 
-        SyncQueueActionModelFactory::create(
-            userId: $userId,
-            data: [SyncQueueActionModel::ATTR_EVENT_ID => $eventId]
-        );
-
         $entityId = $this->faker->uuid;
         $entityName = ParentFakeWritableEntity::getEntityName();
         $name = $this->faker->userName;
@@ -242,7 +237,7 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         ]);
     }
 
-    function testPostSyncQueueFiltersUnregisteredEventIds()
+    function testPostSyncQueueProcessesUnregisteredAndFiltersRegisteredEventIds()
     {
         $userId = $this->faker->uuid;
         $registeredEventId = $this->faker->uuid;
@@ -283,20 +278,21 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
 
         // Then
         $response->assertAccepted();
-        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
             ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $registeredEntityId,
         ]);
-        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
             ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
             'id' => $unregisteredEntityId,
         ]);
-        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+        $this->assertDatabaseMissing(SyncQueueActionModel::TABLE_NAME, [
             SyncQueueActionModel::ATTR_EVENT_ID => $registeredEventId,
             SyncQueueActionModel::ATTR_ENTITY_ID => $registeredEntityId,
         ]);
-        $this->assertDatabaseMissing(SyncQueueActionModel::TABLE_NAME, [
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
             SyncQueueActionModel::ATTR_EVENT_ID => $unregisteredEventId,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $unregisteredEntityId,
         ]);
     }
 
