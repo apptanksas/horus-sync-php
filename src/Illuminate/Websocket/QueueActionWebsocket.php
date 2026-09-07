@@ -51,13 +51,12 @@ class QueueActionWebsocket implements QueueActionWebsocketPublisher
     public static function serializeAction(QueueAction $action): array
     {
         return [
-            'event_id' => $action->eventId,
-            'action' => $action->action->value,
+            'sequence' => $action->sequence,
+            'action' => $action->action->name,
             'entity' => $action->entity,
             'data' => $action->operation->toArray(),
-            'actioned_at' => $action->actionedAt->format(DATE_ATOM),
-            'synced_at' => $action->syncedAt->format(DATE_ATOM),
-            'sequence' => $action->sequence,
+            'actioned_at' => $action->actionedAt->getTimestamp(),
+            'synced_at' => $action->syncedAt->getTimestamp(),
         ];
     }
 }
