@@ -15,6 +15,7 @@ use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\File\SyncFileStatus;
+use AppTank\Horus\Core\Filter\QueueActionEventIdFilter;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
@@ -46,6 +47,7 @@ class SyncQueueActions
 {
     private IFileReferenceValidator $fileReferenceValidator;
     private EntityRestrictionValidator $entityRestrictionValidator;
+    private QueueActionEventIdFilter $queueActionEventIdFilter;
 
     /**
      * @var array <string, int|string> Cache to store the owner IDs of parent entities to avoid redundant database queries.
@@ -83,6 +85,7 @@ class SyncQueueActions
     {
         $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
         $this->entityRestrictionValidator = new EntityRestrictionValidator($this->entityRepository, $this->config);
+        $this->queueActionEventIdFilter = new QueueActionEventIdFilter($this->queueActionRepository);
     }
 
     /**
@@ -100,7 +103,7 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
-        $actions = $this->filterUnregisteredActions(...$actions);
+        $actions = $this->queueActionEventIdFilter->filter(...$actions);
 
         if (empty($actions)) {
             return;
@@ -143,31 +146,6 @@ class SyncQueueActions
         });
     }
 
-    /**
-     * Filters actions with an event ID that has not been registered yet.
-     * Actions without an event ID are kept for backwards compatibility.
-     *
-     * @param QueueAction ...$actions The queue actions to filter.
-     * @return QueueAction[] The registered actions and legacy actions without an event ID.
-     */
-    private function filterUnregisteredActions(QueueAction ...$actions): array
-    {
-        $eventIds = array_values(array_filter(
-            array_map(fn(QueueAction $action) => $action->eventId, $actions),
-            fn(?string $eventId) => $eventId !== null
-        ));
-
-        if (empty($eventIds)) {
-            return $actions;
-        }
-
-        $registeredEventIds = $this->queueActionRepository->checkExistsByEventIds($eventIds);
-
-        return array_values(array_filter(
-            $actions,
-            fn(QueueAction $action) => $action->eventId === null || ($registeredEventIds[$action->eventId] ?? false)
-        ));
-    }
 
     /**
      * Dispatches events for the actions based on their type (insert, update, delete).
