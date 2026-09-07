@@ -20,6 +20,7 @@ final class SyncQueueActionModel extends Model
 {
     // Table and column names
     const string TABLE_NAME = "sync_queue_actions";
+    const string ATTR_EVENT_ID = "event_id"; // Event Identifier.
     const string ATTR_ACTION = "action"; // Action made on the entity.
     const string ATTR_ENTITY = "entity"; // Entity name
     const string ATTR_ENTITY_ID = "entity_id"; // Entity Identifier.
