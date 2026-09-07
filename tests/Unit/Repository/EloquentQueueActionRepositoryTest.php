@@ -487,4 +487,163 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount(1, $actions);
         $this->assertEquals($eventId, $actions[0]->eventId);
     }
+
+    function testGetActionsAfterEventIdIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $baseDate = now()->subMinutes(10);
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinute()->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(2)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(3)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(4)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(5)->toDateTimeImmutable()),
+        ];
+
+        $this->repository->save(...$actions);
+
+        $targetEventId = $actions[1]->eventId; // We want actions after action index 1 (i.e. indices 2, 3, 4)
+
+        // When
+        $result = $this->repository->getActions($ownerId, afterEventId: $targetEventId);
+
+        // Then
+        $this->assertCount(3, $result);
+        $this->assertEquals($actions[2]->eventId, $result[0]->eventId);
+        $this->assertEquals($actions[3]->eventId, $result[1]->eventId);
+        $this->assertEquals($actions[4]->eventId, $result[2]->eventId);
+    }
+
+    function testGetActionsAfterEventIdWhenEventNotFoundReturnsEmpty()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+        ];
+
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getActions($ownerId, afterEventId: 'non-existent-event-id');
+
+        // Then
+        $this->assertCount(0, $result);
+    }
+
+    function testGetActionsFilterExcludeEventIdsIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+        ];
+
+        $this->repository->save(...$actions);
+
+        $excludeEventIds = [$actions[0]->eventId, $actions[2]->eventId];
+
+        // When
+        $result = $this->repository->getActions($ownerId, excludeEventIds: $excludeEventIds);
+
+        // Then
+        $this->assertCount(3, $result);
+        $resultEventIds = array_map(fn(QueueAction $a) => $a->eventId, $result);
+        $this->assertNotContains($actions[0]->eventId, $resultEventIds);
+        $this->assertNotContains($actions[2]->eventId, $resultEventIds);
+        $this->assertContains($actions[1]->eventId, $resultEventIds);
+        $this->assertContains($actions[3]->eventId, $resultEventIds);
+        $this->assertContains($actions[4]->eventId, $resultEventIds);
+    }
+
+    function testGetActionsFilterExcludeEventIdsWhenActorIsNotOwnerKeepsAction()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $guestUserId = $this->faker->uuid;
+        $eventId1 = $this->faker->uuid;
+        $eventId2 = $this->faker->uuid;
+
+        // Owner action (actor is owner)
+        $ownerAction = QueueActionFactory::create(userId: $ownerId, eventId: $eventId1);
+        // Guest action on owner's entity (actor is not owner)
+        $guestAction = new QueueAction(
+            $ownerAction->action,
+            $ownerAction->entity,
+            $ownerAction->entityId,
+            $ownerAction->operation,
+            $ownerAction->actionedAt,
+            $ownerAction->syncedAt,
+            $guestUserId,
+            $ownerId,
+            eventId: $eventId2
+        );
+
+        $this->repository->save($ownerAction, $guestAction);
+
+        // When
+        $result = $this->repository->getActions($ownerId, excludeEventIds: [$eventId1, $eventId2]);
+
+        // Then: owner action is excluded, but guest action is kept because user_id != owner_id
+        $this->assertCount(1, $result);
+        $this->assertEquals($eventId2, $result[0]->eventId);
+    }
+
+    function testGetActionsWithAlwaysIncludeOwnerIdsAndExcludeEventIds()
+    {
+        // Given
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        $eventId1 = $this->faker->uuid;
+        $eventId2 = $this->faker->uuid;
+
+        $action1 = QueueActionFactory::create(userId: $ownerId1, eventId: $eventId1);
+        $action2 = QueueActionFactory::create(userId: $ownerId2, eventId: $eventId2);
+
+        $this->repository->save($action1, $action2);
+
+        // When: ownerId1 is in filteredOwnerIds (Group A), ownerId2 is in alwaysIncludeOwnerIds (Group B)
+        $result = $this->repository->getActions(
+            filteredOwnerIds: [$ownerId1],
+            alwaysIncludeOwnerIds: [$ownerId2],
+            excludeEventIds: [$eventId1, $eventId2]
+        );
+
+        // Then: Group A excludes eventId1, Group B unconditionally includes action2
+        $this->assertCount(1, $result);
+        $this->assertEquals($eventId2, $result[0]->eventId);
+    }
+
+    function testGetActionsWithBothAfterEventIdAndExcludeEventIds()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $baseDate = now()->subMinutes(10);
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinute()->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(2)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(3)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(4)->toDateTimeImmutable()),
+        ];
+
+        $this->repository->save(...$actions);
+
+        // When: after event 0, excluding event 2
+        $result = $this->repository->getActions(
+            filteredOwnerIds: $ownerId,
+            afterEventId: $actions[0]->eventId,
+            excludeEventIds: [$actions[2]->eventId]
+        );
+
+        // Then: should return event 1 and event 3
+        $this->assertCount(2, $result);
+        $this->assertEquals($actions[1]->eventId, $result[0]->eventId);
+        $this->assertEquals($actions[3]->eventId, $result[1]->eventId);
+    }
 }

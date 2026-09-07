@@ -34,17 +34,21 @@ interface QueueActionRepository
     function getLastAction(string|int $userOwnerId): ?QueueAction;
 
     /**
-     * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
+     * Retrieves actions combining restricted owners (filtered by date or event ID) and unrestricted owners (always included).
      *
-     * @param array|int|string $filteredOwnerIds Owners subject to the date exclusion logic.
+     * @param array|int|string $filteredOwnerIds Owners subject to the date/event exclusion logic.
      * @param int|null $afterTimestamp Global time filter (applies to everything).
      * @param array $excludeDateTimes Dates to exclude for the filtered owners.
      * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
+     * @param string|null $afterEventId Filter actions after the specified event ID.
+     * @param array $excludeEventIds Event IDs to exclude for the filtered owners.
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
         ?int             $afterTimestamp = null,
         array            $excludeDateTimes = [],
-        array            $alwaysIncludeOwnerIds = [] // Nuevo parámetro
+        array            $alwaysIncludeOwnerIds = [],
+        ?string          $afterEventId = null,
+        array            $excludeEventIds = []
     ): array;
 }

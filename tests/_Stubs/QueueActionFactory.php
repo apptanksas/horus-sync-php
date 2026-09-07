@@ -14,7 +14,7 @@ class QueueActionFactory
 {
 
 
-    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false, ?SyncAction $action = null, bool $skipped = false, ?string $eventId = null): QueueAction
+    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false, ?SyncAction $action = null, bool $skipped = false, ?string $eventId = null, ?\DateTimeImmutable $actionedAt = null): QueueAction
     {
 
         $faker = \Faker\Factory::create();
@@ -38,7 +38,7 @@ class QueueActionFactory
             $entityOperation?->entity ?? $faker->userName,
             $operation->id,
             $operation,
-            Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
+            $actionedAt ?? Carbon::create($faker->dateTimeBetween)->toDateTimeImmutable(),
             now()->toDateTimeImmutable(),
             $userId ?? $faker->uuid,
             $userId ?? $faker->uuid,

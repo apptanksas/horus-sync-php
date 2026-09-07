@@ -38,6 +38,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      */
     function save(QueueAction ...$actions): void
     {
+        usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt->getTimestamp() <=> $b->actionedAt->getTimestamp());
+
         $dataWithEventIds = [];
         $dataDefault = [];
         $table = $this->getTable();
@@ -82,18 +84,22 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     }
 
     /**
-     * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
+     * Retrieves actions combining restricted owners (filtered by date or event ID) and unrestricted owners (always included).
      *
-     * @param array|int|string $filteredOwnerIds Owners subject to the date exclusion logic.
+     * @param array|int|string $filteredOwnerIds Owners subject to the date/event exclusion logic.
      * @param int|null $afterTimestamp Global time filter (applies to everything).
      * @param array $excludeDateTimes Dates to exclude for the filtered owners.
      * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
+     * @param string|null $afterEventId Filter actions after the specified event ID.
+     * @param array $excludeEventIds Event IDs to exclude for the filtered owners.
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
         ?int             $afterTimestamp = null,
         array            $excludeDateTimes = [],
-        array            $alwaysIncludeOwnerIds = []
+        array            $alwaysIncludeOwnerIds = [],
+        ?string          $afterEventId = null,
+        array            $excludeEventIds = [],
     ): array
     {
 
@@ -103,6 +109,17 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         if ($afterTimestamp !== null) {
             $formattedAfterDate = $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp());
             $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=', $formattedAfterDate)->orderBy("id");
+        }
+
+        // Global Event ID Filter (Applies to both groups)
+        if ($afterEventId !== null) {
+            $afterAction = SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_EVENT_ID, $afterEventId)->first();
+
+            if ($afterAction) {
+                $query->where('id', '>', $afterAction->id)->orderBy("id");
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Prepare exclusion dates
@@ -119,11 +136,11 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         $unrestrictedIds = is_array($alwaysIncludeOwnerIds) ? $alwaysIncludeOwnerIds : [$alwaysIncludeOwnerIds];
 
         // 2. Core Logic: (Group A: Filtered) OR (Group B: Unrestricted)
-        $query->where(function ($mainQuery) use ($filteredIds, $unrestrictedIds, $arrayDateExcludes) {
+        $query->where(function ($mainQuery) use ($filteredIds, $unrestrictedIds, $arrayDateExcludes, $excludeEventIds) {
 
             // GROUP A: The owners subject to date exclusion logic
             if (!empty($filteredIds)) {
-                $mainQuery->where(function ($q) use ($filteredIds, $arrayDateExcludes) {
+                $mainQuery->where(function ($q) use ($filteredIds, $arrayDateExcludes, $excludeEventIds) {
                     $q->whereIn(SyncQueueActionModel::FK_OWNER_ID, $filteredIds);
 
                     // Apply exclusion logic ONLY to this group
@@ -132,6 +149,17 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
                             // Keep if date is valid OR actor is not the owner
                             $subQ->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT, $arrayDateExcludes)
                                 ->orWhereColumn(SyncQueueActionModel::FK_USER_ID, '!=', SyncQueueActionModel::FK_OWNER_ID);
+                        });
+                    }
+
+                    // Apply event ID exclusion logic ONLY to this group
+                    if (!empty($excludeEventIds)) {
+                        $q->where(function ($subQ) use ($excludeEventIds) {
+                            // Keep if event_id is not in excludeEventIds (or null) OR actor is not the owner
+                            $subQ->where(function ($innerQ) use ($excludeEventIds) {
+                                $innerQ->whereNotIn(SyncQueueActionModel::ATTR_EVENT_ID, $excludeEventIds)
+                                    ->orWhereNull(SyncQueueActionModel::ATTR_EVENT_ID);
+                            })->orWhereColumn(SyncQueueActionModel::FK_USER_ID, '!=', SyncQueueActionModel::FK_OWNER_ID);
                         });
                     }
                 });
