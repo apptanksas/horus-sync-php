@@ -90,6 +90,7 @@ readonly class GetQueueActions
 
         return array_map(function ($action) {
             return [
+                'event_id' => $action->eventId,
                 'sequence' => $action->sequence,
                 'action' => $action->action->name,
                 'entity' => $action->entity,

@@ -51,6 +51,7 @@ class QueueActionWebsocket implements QueueActionWebsocketPublisher
     public static function serializeAction(QueueAction $action): array
     {
         return [
+            'event_id' => $action->eventId,
             'sequence' => $action->sequence,
             'action' => $action->action->name,
             'entity' => $action->entity,

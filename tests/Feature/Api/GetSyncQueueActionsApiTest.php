@@ -29,6 +29,7 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
 
     private const array JSON_SCHEME = [
         '*' => [
+            'event_id',
             'sequence',
             'action',
             'entity',
