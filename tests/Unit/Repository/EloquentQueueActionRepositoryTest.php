@@ -321,4 +321,170 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertCount(0, $result);
     }
 
+    function testSaveWithEventIdInsertsNewRecord()
+    {
+        // Given
+        $eventId = $this->faker->uuid;
+        /** @var QueueAction $action */
+        $action = QueueActionFactory::create(eventId: $eventId);
+
+        // When
+        $this->repository->save($action);
+
+        // Then
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 1);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId,
+            SyncQueueActionModel::ATTR_ACTION => $action->action->value,
+            SyncQueueActionModel::ATTR_ENTITY => $action->entity,
+            SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+            SyncQueueActionModel::ATTR_ENTITY_ID => $action->operation->id,
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $action->actionedAt->format('Y-m-d H:i:s'),
+            SyncQueueActionModel::ATTR_SYNCED_AT => $action->syncedAt->format('Y-m-d H:i:s'),
+            SyncQueueActionModel::ATTR_BY_SYSTEM => false,
+            SyncQueueActionModel::ATTR_SKIPPED => false
+        ]);
+    }
+
+    function testSaveWithEventIdUpdatesExistingRecord()
+    {
+        // Given
+        $eventId = $this->faker->uuid;
+        $userId = $this->faker->uuid;
+        /** @var QueueAction $action1 */
+        $action1 = QueueActionFactory::create(userId: $userId, action: SyncAction::INSERT, skipped: false, eventId: $eventId);
+
+        $this->repository->save($action1);
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 1);
+
+        /** @var QueueAction $action2 */
+        $action2 = QueueActionFactory::create(userId: $userId, action: SyncAction::UPDATE, skipped: true, eventId: $eventId);
+
+        // When
+        $this->repository->save($action2);
+
+        // Then
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 1);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value,
+            SyncQueueActionModel::ATTR_ENTITY => $action2->entity,
+            SyncQueueActionModel::ATTR_DATA => json_encode($action2->operation->toArray()),
+            SyncQueueActionModel::ATTR_ENTITY_ID => $action2->operation->id,
+            SyncQueueActionModel::ATTR_ACTIONED_AT => $action2->actionedAt->format('Y-m-d H:i:s'),
+            SyncQueueActionModel::ATTR_SYNCED_AT => $action2->syncedAt->format('Y-m-d H:i:s'),
+            SyncQueueActionModel::ATTR_SKIPPED => true
+        ]);
+        $this->assertDatabaseMissing(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::INSERT->value,
+            SyncQueueActionModel::ATTR_ENTITY => $action1->entity,
+        ]);
+    }
+
+    function testSaveMultipleActionsWithUniqueEventIdsInsertsAll()
+    {
+        // Given
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(eventId: $this->faker->uuid));
+
+        // When
+        $this->repository->save(...$actions);
+
+        // Then
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, count($actions));
+        foreach ($actions as $action) {
+            $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+                SyncQueueActionModel::ATTR_EVENT_ID => $action->eventId,
+                SyncQueueActionModel::ATTR_ACTION => $action->action->value,
+                SyncQueueActionModel::ATTR_ENTITY => $action->entity,
+                SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+            ]);
+        }
+    }
+
+    function testSaveWithNullEventIdMaintainsBackwardsCompatibility()
+    {
+        // Given
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(eventId: null));
+
+        // When
+        $this->repository->save(...$actions);
+
+        // Then
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, count($actions));
+        foreach ($actions as $action) {
+            $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+                SyncQueueActionModel::ATTR_EVENT_ID => null,
+                SyncQueueActionModel::ATTR_ACTION => $action->action->value,
+                SyncQueueActionModel::ATTR_ENTITY => $action->entity,
+                SyncQueueActionModel::ATTR_DATA => json_encode($action->operation->toArray()),
+            ]);
+        }
+    }
+
+    function testSaveMixedActionsWithAndWithoutEventId()
+    {
+        // Given
+        $eventId1 = $this->faker->uuid;
+        $eventId2 = $this->faker->uuid;
+        $actionWithEvent1 = QueueActionFactory::create(action: SyncAction::INSERT, skipped: false, eventId: $eventId1);
+        $actionWithoutEvent = QueueActionFactory::create(action: SyncAction::INSERT, eventId: null);
+        $actionWithEvent2 = QueueActionFactory::create(action: SyncAction::INSERT, eventId: $eventId2);
+
+        // When: saving initial batch with mixed actions
+        $this->repository->save($actionWithEvent1, $actionWithoutEvent, $actionWithEvent2);
+
+        // Then
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 3);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId1,
+            SyncQueueActionModel::ATTR_SKIPPED => false,
+        ]);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => null,
+            SyncQueueActionModel::ATTR_ENTITY => $actionWithoutEvent->entity,
+        ]);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId2,
+            SyncQueueActionModel::ATTR_ENTITY => $actionWithEvent2->entity,
+        ]);
+
+        // When: updating eventId1 and inserting a new null eventId action
+        $updatedActionWithEvent1 = QueueActionFactory::create(action: SyncAction::UPDATE, skipped: true, eventId: $eventId1);
+        $newActionWithoutEvent = QueueActionFactory::create(action: SyncAction::DELETE, eventId: null);
+
+        $this->repository->save($updatedActionWithEvent1, $newActionWithoutEvent);
+
+        // Then: count should be 4 (3 existing - 1 updated + 1 new inserted)
+        $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 4);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId1,
+            SyncQueueActionModel::ATTR_ACTION => SyncAction::UPDATE->value,
+            SyncQueueActionModel::ATTR_SKIPPED => true,
+        ]);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => null,
+            SyncQueueActionModel::ATTR_ENTITY => $newActionWithoutEvent->entity,
+        ]);
+    }
+
+    function testGetLastActionAndGetActionsIncludesEventId()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        $eventId = $this->faker->uuid;
+        $action = QueueActionFactory::create(userId: $userId, eventId: $eventId);
+
+        $this->repository->save($action);
+
+        // When
+        $lastAction = $this->repository->getLastAction($userId);
+        $actions = $this->repository->getActions($userId);
+
+        // Then
+        $this->assertNotNull($lastAction);
+        $this->assertEquals($eventId, $lastAction->eventId);
+        $this->assertCount(1, $actions);
+        $this->assertEquals($eventId, $actions[0]->eventId);
+    }
 }

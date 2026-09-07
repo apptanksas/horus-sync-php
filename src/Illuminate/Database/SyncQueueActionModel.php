@@ -39,6 +39,7 @@ final class SyncQueueActionModel extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        self::ATTR_EVENT_ID,
         self::FK_USER_ID,
         self::FK_OWNER_ID,
         self::ATTR_ACTION,
@@ -176,6 +177,16 @@ final class SyncQueueActionModel extends Model
     public function getBySystem(): bool
     {
         return $this->getAttribute(self::ATTR_BY_SYSTEM);
+    }
+
+    /**
+     * Get the event ID attribute.
+     *
+     * @return string|null Event Identifier.
+     */
+    public function getEventId(): ?string
+    {
+        return $this->getAttribute(self::ATTR_EVENT_ID);
     }
 
     /**

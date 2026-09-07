@@ -28,6 +28,9 @@ readonly class QueueAction
      * @param int|string $userId The ID of the user who initiated the action.
      * @param int|string $ownerId The owner ID of the entity.
      * @param bool $bySystem Indicates if the action was performed by the system.
+     * @param bool $skipped Indicates if the action was skipped.
+     * @param int|null $sequence The sequence number of the action.
+     * @param string|null $eventId The event ID associated with the action.
      */
     function __construct(
         public SyncAction         $action,
@@ -41,6 +44,7 @@ readonly class QueueAction
         public bool               $bySystem = false,
         public bool               $skipped = false,
         public int|null           $sequence = null,
+        public string|null        $eventId = null,
     )
     {
 
@@ -60,7 +64,8 @@ readonly class QueueAction
             $ownerId,
             $this->bySystem,
             $this->skipped,
-            $this->sequence
+            $this->sequence,
+            $this->eventId
         );
     }
 
@@ -78,7 +83,8 @@ readonly class QueueAction
             $this->ownerId,
             $this->bySystem,
             skipped: true,
-            sequence: $this->sequence
+            sequence: $this->sequence,
+            eventId: $this->eventId,
         );
     }
 

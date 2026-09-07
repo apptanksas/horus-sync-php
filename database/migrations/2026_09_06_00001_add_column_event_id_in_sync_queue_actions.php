@@ -14,7 +14,7 @@ return new class extends Migration {
 
         $callbackTable = function (Blueprint $table) use ($container) {
             if (!Schema::connection($container->getConnectionName())->hasColumn(SyncQueueActionModel::TABLE_NAME, SyncQueueActionModel::ATTR_EVENT_ID)) {
-                $table->uuid(SyncQueueActionModel::ATTR_EVENT_ID)->nullable()->after("id");
+                $table->uuid(SyncQueueActionModel::ATTR_EVENT_ID)->unique()->nullable()->after("id");
             }
         };
 

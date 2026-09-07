@@ -31,7 +31,8 @@ class QueueActionMapper
             $model->getOwnerId(),
             bySystem: $model->getBySystem(),
             skipped: $model->skipped(),
-            sequence: $model->getId()
+            sequence: $model->getId(),
+            eventId: $model->getEventId()
         );
     }
 }

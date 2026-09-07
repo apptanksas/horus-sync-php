@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,24 +28,35 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     /**
      * Saves one or more queue actions to the database.
      *
-     * This method inserts the provided queue actions into the database.
+     * This method inserts or updates the provided queue actions in the database.
+     * If an action has an event_id, it uses updateOrInsert based on event_id.
+     * If event_id is null, it inserts a new record to maintain backwards compatibility.
      * Throws an exception if the operation fails.
      *
      * @param QueueAction ...$actions The queue actions to be saved.
-     * @throws \Exception If the insertion operation fails.
+     * @throws \Exception If the operation fails.
      */
     function save(QueueAction ...$actions): void
     {
-        $table = (is_null($this->connectionName)) ? DB::table(SyncQueueActionModel::TABLE_NAME) :
-            DB::connection($this->connectionName)->table(SyncQueueActionModel::TABLE_NAME);
-
-        $data = [];
+        $dataWithEventIds = [];
+        $dataDefault = [];
+        $table = $this->getTable();
 
         foreach ($actions as $action) {
-            $data[] = $this->parseData($action);
+            // With event ids
+            if (!is_null($action->eventId) && !empty($action->eventId)) {
+                $dataWithEventIds[] = $this->parseData($action);
+                continue;
+            }
+
+            $dataDefault[] = $this->parseData($action);
         }
 
-        if (!$table->insert($data)) {
+        if (!empty($dataDefault) && !$table->insert($dataDefault)) {
+            throw new \Exception('Failed to save queue actions');
+        }
+
+        if (!empty($dataWithEventIds) && !$table->upsert($dataWithEventIds, [SyncQueueActionModel::ATTR_EVENT_ID])) {
             throw new \Exception('Failed to save queue actions');
         }
     }
@@ -156,7 +168,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
             SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
             SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
-            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped
+            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped,
+            SyncQueueActionModel::ATTR_EVENT_ID => $queueAction->eventId,
         ];
     }
 
@@ -171,4 +184,14 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         return QueueActionMapper::createFromEloquent($model);
     }
 
+    /**
+     * Retrieves a query builder instance for the sync queue actions table.
+     *
+     * @return Builder
+     */
+    private function getTable(): Builder
+    {
+        return (is_null($this->connectionName)) ? DB::table(SyncQueueActionModel::TABLE_NAME) :
+            DB::connection($this->connectionName)->table(SyncQueueActionModel::TABLE_NAME);
+    }
 }
