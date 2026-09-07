@@ -49,17 +49,40 @@ class GetQueueActionsController extends Controller
     function __invoke(Request $request): JsonResponse
     {
         return $this->handle(function () use ($request) {
-            $afterTimestamp = $request->get("after");
+            $afterTimestamp = null;
+            $afterEventId = null;
+
+            if ($request->has("after")) {
+                $after = trim((string) $request->get("after"));
+
+                if ($this->isNotUUID($after)) {
+                    $afterTimestamp = intval($after);
+                } else {
+                    $afterEventId = $after;
+                }
+            }
+
             $excludeDateTimes = [];
+            $excludeEventIds = [];
 
             if ($request->has("exclude")) {
-                $excludeDateTimes = array_map(fn($datetime) => intval(trim($datetime)), explode(",", $request->get("exclude")));
+                foreach (explode(",", (string) $request->get("exclude")) as $exclude) {
+                    $exclude = trim($exclude);
+
+                    if ($this->isNotUUID($exclude)) {
+                        $excludeDateTimes[] = intval($exclude);
+                    } else {
+                        $excludeEventIds[] = $exclude;
+                    }
+                }
             }
 
             return $this->responseSuccess($this->useCase->__invoke(
                 $this->getUserAuthenticated(),
                 $afterTimestamp,
-                $excludeDateTimes
+                $excludeDateTimes,
+                $afterEventId,
+                $excludeEventIds
             ));
         });
     }

@@ -104,6 +104,82 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $response->assertExactJsonStructure(self::JSON_SCHEME);
     }
 
+    function testGetActionsAfterEventIdIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $actions = [
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+        ];
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, [
+            "after" => $actions[1]->getEventId()
+        ]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(1);
+        $response->assertJsonPath('0.sequence', $actions[2]->getId());
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
+    function testGetActionsExcludesEventIdsIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $excludedAction = SyncQueueActionModelFactory::create($userId, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid
+        ]);
+        $includedAction = SyncQueueActionModelFactory::create($userId, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid
+        ]);
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, [
+            "exclude" => $excludedAction->getEventId()
+        ]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(1);
+        $response->assertJsonPath('0.sequence', $includedAction->getId());
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
+    function testGetActionsWithAfterEventIdAndExcludedEventIdsIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $actions = [
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+        ];
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, [
+            "after" => $actions[0]->getEventId(),
+            "exclude" => $actions[2]->getEventId()
+        ]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(2);
+        $response->assertJsonPath('0.sequence', $actions[1]->getId());
+        $response->assertJsonPath('1.sequence', $actions[3]->getId());
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
     function testGetActionsFilterDateTimes()
     {
         $ownerId = $this->faker->uuid;
