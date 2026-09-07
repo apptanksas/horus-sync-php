@@ -111,7 +111,8 @@ class PostSyncQueueActionsController extends Controller
                 \DateTimeImmutable::createFromMutable($dateUtil->parseDateTime($itemAction['actioned_at'])),
                 now("UTC")->toDateTimeImmutable(),
                 $userId,
-                $ownerId
+                $ownerId,
+                eventId: $itemAction['event_id'] ?? null
             );
         }
 

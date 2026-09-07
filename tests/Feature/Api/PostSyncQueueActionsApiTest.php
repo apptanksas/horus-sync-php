@@ -15,7 +15,6 @@ use AppTank\Horus\Core\Entity\Values\Coordinates;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Model\FileUploaded;
-use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
@@ -23,7 +22,6 @@ use AppTank\Horus\Illuminate\Http\Controller;
 use AppTank\Horus\RouteName;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Src\Shared\Commons\Domain\ValueObject\DateTime;
 use Tests\_Stubs\ChildFakeEntityFactory;
 use Tests\_Stubs\ChildFakeWritableEntity;
 use Tests\_Stubs\NestedChildFakeEntityFactory;
@@ -33,6 +31,7 @@ use Tests\_Stubs\ReadableFakeEntityFactory;
 use Tests\_Stubs\ParentFakeWritableEntity;
 use Tests\_Stubs\ParentFakeEntityFactory;
 use Tests\_Stubs\SyncFileUploadedModelFactory;
+use Tests\_Stubs\SyncQueueActionModelFactory;
 use Tests\Feature\Api\ApiTestCase;
 
 class PostSyncQueueActionsApiTest extends ApiTestCase
@@ -177,6 +176,117 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'name' => $name,
             'color' => $color,
             'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
+        ]);
+    }
+
+    function testPostSyncQueueInsertWithEventIdIsSuccess()
+    {
+        $userId = $this->faker->uuid;
+        $eventId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        SyncQueueActionModelFactory::create(
+            userId: $userId,
+            data: [SyncQueueActionModel::ATTR_EVENT_ID => $eventId]
+        );
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $timestamp = 1674579600;
+        $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "event_id" => $eventId,
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestamp,
+                    "value_enum" => $enumValue,
+                    "coordinates" => Coordinates::generateRaw()
+                ],
+                "actioned_at" => $this->faker->dateTimeBetween->getTimestamp()
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $name,
+            'color' => $color,
+            'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestamp),
+        ]);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $eventId,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $entityId,
+        ]);
+    }
+
+    function testPostSyncQueueFiltersUnregisteredEventIds()
+    {
+        $userId = $this->faker->uuid;
+        $registeredEventId = $this->faker->uuid;
+        $unregisteredEventId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        SyncQueueActionModelFactory::create(
+            userId: $userId,
+            data: [SyncQueueActionModel::ATTR_EVENT_ID => $registeredEventId]
+        );
+
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $registeredEntityId = $this->faker->uuid;
+        $unregisteredEntityId = $this->faker->uuid;
+        $actionedAt = $this->faker->dateTimeBetween->getTimestamp();
+        $createData = fn(string $entityId, string $name) => [
+            "action" => "INSERT",
+            "event_id" => $entityId === $registeredEntityId ? $registeredEventId : $unregisteredEventId,
+            "entity" => $entityName,
+            "data" => [
+                "id" => $entityId,
+                "name" => $name,
+                "color" => $this->faker->colorName,
+                "timestamp" => 1674579600,
+                "value_enum" => ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)],
+                "coordinates" => Coordinates::generateRaw()
+            ],
+            "actioned_at" => $actionedAt
+        ];
+
+        $data = [
+            $createData($registeredEntityId, $this->faker->userName),
+            $createData($unregisteredEntityId, $this->faker->userName),
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertAccepted();
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $registeredEntityId,
+        ]);
+        $this->assertDatabaseMissing(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $unregisteredEntityId,
+        ]);
+        $this->assertDatabaseHas(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $registeredEventId,
+            SyncQueueActionModel::ATTR_ENTITY_ID => $registeredEntityId,
+        ]);
+        $this->assertDatabaseMissing(SyncQueueActionModel::TABLE_NAME, [
+            SyncQueueActionModel::ATTR_EVENT_ID => $unregisteredEventId,
         ]);
     }
 
