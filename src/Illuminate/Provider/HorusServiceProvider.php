@@ -63,6 +63,12 @@ class HorusServiceProvider extends ServiceProvider
     {
         $this->registerCommands();
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
+        if ($this->app->runningInConsole()) {
+            $configPath = realpath(__DIR__ . '/../../../config/horusync.php') ?: (__DIR__ . '/../../../config/horusync.php');
+            $this->publishes([
+                $configPath => config_path('horusync.php'),
+            ], ['horusync-config', 'horusync', 'config']);
+        }
         Broadcast::resolveAuthenticatedUserUsing(function () {
             return Horus::getInstance()->getUserAuthenticated();
         });
@@ -82,7 +88,33 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
-        $wsConfig = Horus::getInstance()->getConfig()->websocketConfig;
+        $this->mergeConfigFrom(
+            __DIR__ . '/../../../config/horusync.php',
+            'horusync'
+        );
+
+        $horus = Horus::getInstance();
+        $config = $horus->getConfig();
+        if (!$config->hasExplicitWebSocketConfig) {
+            $refreshedConfig = new Config(
+                validateAccess: $config->validateAccess,
+                connectionName: $config->connectionName,
+                usesUUIDs: $config->usesUUIDs,
+                prefixTables: $config->prefixTables,
+                basePathFiles: $config->basePathFiles,
+                entityRestrictions: $config->getEntityRestrictions(),
+                sharedEntities: $config->getSharedEntities(),
+                disabledFeatures: $config->disabledFeatures,
+                extraParametersReferenceFile: $config->extraParametersReferenceFile,
+                websocketConfig: null
+            );
+            if ($config->getCallbackValidateEntityWasGranted()) {
+                $refreshedConfig->setupOnValidateEntityWasGranted($config->getCallbackValidateEntityWasGranted());
+            }
+            $horus->setConfig($refreshedConfig);
+        }
+
+        $wsConfig = $horus->getConfig()->websocketConfig;
 
         $this->app['config']->set('broadcasting', $wsConfig->toArray());
 

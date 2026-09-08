@@ -159,8 +159,36 @@ client subscribes.
 
 ### WebSocket configuration
 
-The WebSocket configuration is provided through `Config` using the typed `WebSocketConfig` class. The default values
-are compatible with a local Reverb server:
+You can configure Horus WebSocket options either through the publishable `config/horusync.php` configuration file and `.env` variables, or programmatically via the `Config` and `WebSocketConfig` classes.
+
+#### 1. Configuration file (`horusync.php`) and `.env`
+
+Publish the configuration file using Artisan:
+
+```bash
+php artisan vendor:publish --tag=horusync-config
+```
+
+This creates `config/horusync.php`. You can configure all parameters directly in the file or through environment variables using the `HORUS_` prefix in your `.env` file:
+
+```dotenv
+HORUS_WEBSOCKET_DEFAULT=reverb
+HORUS_WEBSOCKET_CONNECTION=reverb
+HORUS_WEBSOCKET_DRIVER=reverb
+HORUS_WEBSOCKET_KEY=horus-app-key
+HORUS_WEBSOCKET_SECRET=horus-app-secret
+HORUS_WEBSOCKET_APP_ID=horus-app
+HORUS_WEBSOCKET_HOST=127.0.0.1
+HORUS_WEBSOCKET_PORT=8080
+HORUS_WEBSOCKET_SCHEME=http
+HORUS_WEBSOCKET_USE_TLS=false
+```
+
+When you do not define a custom configuration through the `Config` class, Horus automatically uses `config/horusync.php` and your `.env` variables as the default configuration.
+
+#### 2. Programmatic configuration via `Config`
+
+You can also define or override the WebSocket configuration programmatically using `WebSocketConfig`:
 
 ```php
 use AppTank\Horus\Core\Config\Config;
@@ -187,11 +215,11 @@ Horus::initialize($entityMap)->setConfig($config);
 
 The configuration properties are:
 
-* `default`: default broadcasting connection name.
-* `connectionName`: name of the configured connection.
-* `driver`: broadcasting driver, normally `reverb`.
-* `key`, `secret` and `appId`: credentials used by the broadcasting connection.
-* `host`, `port`, `scheme` and `useTLS`: Reverb server connection settings.
+* `default`: default broadcasting connection name (`HORUS_WEBSOCKET_DEFAULT`).
+* `connectionName`: name of the configured connection (`HORUS_WEBSOCKET_CONNECTION`).
+* `driver`: broadcasting driver, normally `reverb` (`HORUS_WEBSOCKET_DRIVER`).
+* `key`, `secret` and `appId`: credentials used by the broadcasting connection (`HORUS_WEBSOCKET_KEY`, `HORUS_WEBSOCKET_SECRET`, `HORUS_WEBSOCKET_APP_ID`).
+* `host`, `port`, `scheme` and `useTLS`: Reverb server connection settings (`HORUS_WEBSOCKET_HOST`, `HORUS_WEBSOCKET_PORT`, `HORUS_WEBSOCKET_SCHEME`, `HORUS_WEBSOCKET_USE_TLS`).
 * `clientOptions`: additional options passed to the broadcasting client.
 
 Start the Horus WebSocket server:

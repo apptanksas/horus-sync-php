@@ -43,6 +43,9 @@ class Config
      */
     private array $restrictionsByEntity = [];
 
+    public readonly WebSocketConfig $websocketConfig;
+    public readonly bool $hasExplicitWebSocketConfig;
+
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
      * @param string|null $connectionName The name of the database connection, or null if not specified.
@@ -77,13 +80,12 @@ class Config
 
         $this->entityRestrictions = $entityRestrictions;
         $this->sharedEntities = $sharedEntities;
+        $this->hasExplicitWebSocketConfig = $websocketConfig !== null;
         $this->websocketConfig = $websocketConfig instanceof WebSocketConfig
             ? $websocketConfig
             : WebSocketConfig::fromArray($websocketConfig ?? []);
         $this->populateRestrictionsByEntity();
     }
-
-    public readonly WebSocketConfig $websocketConfig;
 
     /**
      * Sets the entity restrictions.
@@ -254,6 +256,7 @@ class Config
             'disabledFeatures' => $this->disabledFeatures,
             'extraParametersReferenceFile' => $this->extraParametersReferenceFile,
             'websocketConfig' => $this->websocketConfig,
+            'hasExplicitWebSocketConfig' => $this->hasExplicitWebSocketConfig,
             'restrictionsByEntity' => $this->restrictionsByEntity,
             // Closures are not serialized
         ];
@@ -276,6 +279,7 @@ class Config
         $this->sharedEntities = $data['sharedEntities'];
         $this->disabledFeatures = $data['disabledFeatures'];
         $this->extraParametersReferenceFile = $data['extraParametersReferenceFile'];
+        $this->hasExplicitWebSocketConfig = $data['hasExplicitWebSocketConfig'] ?? (($data['websocketConfig'] ?? null) !== null);
         $websocketConfig = $data['websocketConfig'] ?? null;
         $this->websocketConfig = $websocketConfig instanceof WebSocketConfig
             ? $websocketConfig

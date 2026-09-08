@@ -10,6 +10,81 @@ use Tests\TestCase;
 
 class HorusWebSocketConfigurationTest extends TestCase
 {
+    function testConfigPublishesHorusyncConfigFile(): void
+    {
+        (new HorusServiceProvider($this->app))->boot();
+
+        $paths = HorusServiceProvider::pathsToPublish(HorusServiceProvider::class, 'horusync-config');
+
+        $this->assertNotEmpty($paths);
+        $expectedSource = realpath(__DIR__ . '/../../config/horusync.php');
+        $this->assertArrayHasKey($expectedSource, $paths);
+        $this->assertSame(config_path('horusync.php'), $paths[$expectedSource]);
+    }
+
+    function testServiceProviderUsesPublishedHorusyncConfigWhenNoExplicitConfigIsSet(): void
+    {
+        $this->app['config']->set('horusync.websocket', [
+            'default' => 'reverb',
+            'connection' => 'reverb',
+            'driver' => 'reverb',
+            'key' => 'published-key',
+            'secret' => 'published-secret',
+            'app_id' => 'published-app',
+            'options' => [
+                'host' => '127.0.0.1',
+                'port' => 8888,
+                'scheme' => 'http',
+                'useTLS' => false,
+            ],
+            'client_options' => [],
+        ]);
+
+        Horus::initialize([]);
+        (new HorusServiceProvider($this->app))->register();
+
+        $wsConfig = Horus::getInstance()->getConfig()->websocketConfig;
+        $this->assertSame('published-key', $wsConfig->key);
+        $this->assertSame('published-secret', $wsConfig->secret);
+        $this->assertSame('published-app', $wsConfig->appId);
+        $this->assertSame(8888, $wsConfig->port);
+
+        $reverbApps = $this->app['config']->get('reverb.apps.apps');
+        $horusApp = collect($reverbApps)->firstWhere('key', 'published-key');
+        $this->assertNotNull($horusApp);
+        $this->assertSame('published-app', $horusApp['app_id']);
+        $this->assertSame(8888, $horusApp['options']['port']);
+    }
+
+    function testExplicitConfigOverridesHorusyncConfig(): void
+    {
+        $this->app['config']->set('horusync.websocket', [
+            'key' => 'from-horusync-file',
+            'secret' => 'from-horusync-file-secret',
+            'app_id' => 'from-horusync-file-app',
+            'port' => 8888,
+        ]);
+
+        $customConfig = new Config(
+            websocketConfig: new WebSocketConfig(
+                key: 'explicit-key',
+                secret: 'explicit-secret',
+                appId: 'explicit-app',
+                host: '127.0.0.1',
+                port: 9999
+            )
+        );
+        Horus::getInstance()->setConfig($customConfig);
+
+        (new HorusServiceProvider($this->app))->register();
+
+        $wsConfig = Horus::getInstance()->getConfig()->websocketConfig;
+        $this->assertSame('explicit-key', $wsConfig->key);
+        $this->assertSame('explicit-secret', $wsConfig->secret);
+        $this->assertSame('explicit-app', $wsConfig->appId);
+        $this->assertSame(9999, $wsConfig->port);
+    }
+
     function testServiceProviderInjectsReverbAppConfiguration(): void
     {
         $customConfig = new Config(
