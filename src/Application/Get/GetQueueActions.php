@@ -48,6 +48,7 @@ readonly class GetQueueActions
      * @param array $excludeDateTimes Optional array of date times to exclude from the results.
      * @param string|null $afterEventId Optional event ID after which actions are retrieved.
      * @param array $excludeEventIds Optional event IDs to exclude from the results.
+     * @param int|null $limit Optional maximum number of actions to retrieve.
      * @return array An array of formatted queue actions.
      */
     function __invoke(
@@ -55,7 +56,8 @@ readonly class GetQueueActions
         ?int $afterTimestamp = null,
         array $excludeDateTimes = [],
         ?string $afterEventId = null,
-        array $excludeEventIds = []
+        array $excludeEventIds = [],
+        ?int $limit = null
     ): array
     {
         $userOwnersId = $userAuth->getUserOwnersId();
@@ -66,7 +68,8 @@ readonly class GetQueueActions
             $excludeDateTimes,
             $userOwnersId,
             $afterEventId,
-            $excludeEventIds
+            $excludeEventIds,
+            $limit
         );
 
         /**

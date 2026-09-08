@@ -92,6 +92,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
      * @param string|null $afterEventId Filter actions after the specified event ID.
      * @param array $excludeEventIds Event IDs to exclude for the filtered owners.
+     * @param int|null $limit Maximum number of actions to retrieve.
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
@@ -100,6 +101,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         array            $alwaysIncludeOwnerIds = [],
         ?string          $afterEventId = null,
         array            $excludeEventIds = [],
+        ?int             $limit = null,
     ): array
     {
 
@@ -171,6 +173,10 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
                 $mainQuery->orWhereIn(SyncQueueActionModel::FK_OWNER_ID, $unrestrictedIds);
             }
         });
+
+        if ($limit !== null) {
+            $query->limit($limit)->orderBy("id", "DESC");
+        }
 
         return $query->get()
             ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))

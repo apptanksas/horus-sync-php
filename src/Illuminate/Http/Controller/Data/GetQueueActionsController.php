@@ -77,12 +77,19 @@ class GetQueueActionsController extends Controller
                 }
             }
 
+            $limit = null;
+
+            if ($request->has("limit")) {
+                $limit = intval($request->get("limit"));
+            }
+
             return $this->responseSuccess($this->useCase->__invoke(
                 $this->getUserAuthenticated(),
                 $afterTimestamp,
                 $excludeDateTimes,
                 $afterEventId,
-                $excludeEventIds
+                $excludeEventIds,
+                $limit
             ));
         });
     }

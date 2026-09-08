@@ -25,7 +25,7 @@ class GetQueueActionsTest extends TestCase
 
         $queueActionRepository->shouldReceive('getActions')
             ->once()
-            ->with([$userId], 100, [200], [], $afterEventId, $excludeEventIds)
+            ->with([$userId], 100, [200], [], $afterEventId, $excludeEventIds, null)
             ->andReturn([$action]);
         $entityMapper->shouldReceive('isPrimaryEntity')
             ->once()
@@ -52,7 +52,7 @@ class GetQueueActionsTest extends TestCase
 
         $queueActionRepository->shouldReceive('getActions')
             ->once()
-            ->with([$userId], null, [], [], null, [])
+            ->with([$userId], null, [], [], null, [], null)
             ->andReturn([$action]);
         $entityMapper->shouldReceive('isPrimaryEntity')
             ->once()
@@ -63,6 +63,34 @@ class GetQueueActionsTest extends TestCase
 
         // When
         $result = $useCase(new UserAuth($userId));
+
+        // Then
+        $this->assertCount(1, $result);
+    }
+
+    function testInvokePassesLimitToRepository()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        $limit = 5;
+        $action = QueueActionFactory::create(userId: $userId);
+        $queueActionRepository = $this->mock(QueueActionRepository::class);
+        $accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
+        $entityMapper = $this->mock(EntityMapper::class);
+
+        $queueActionRepository->shouldReceive('getActions')
+            ->once()
+            ->with([$userId], null, [], [], null, [], $limit)
+            ->andReturn([$action]);
+        $entityMapper->shouldReceive('isPrimaryEntity')
+            ->once()
+            ->with($action->entity)
+            ->andReturn(false);
+
+        $useCase = new GetQueueActions($queueActionRepository, $accessValidatorRepository, $entityMapper);
+
+        // When
+        $result = $useCase(new UserAuth($userId), limit: $limit);
 
         // Then
         $this->assertCount(1, $result);

@@ -42,6 +42,7 @@ interface QueueActionRepository
      * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
      * @param string|null $afterEventId Filter actions after the specified event ID.
      * @param array $excludeEventIds Event IDs to exclude for the filtered owners.
+     * @param int|null $limit Maximum number of actions to retrieve.
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
@@ -49,7 +50,8 @@ interface QueueActionRepository
         array            $excludeDateTimes = [],
         array            $alwaysIncludeOwnerIds = [],
         ?string          $afterEventId = null,
-        array            $excludeEventIds = []
+        array            $excludeEventIds = [],
+        ?int             $limit = null
     ): array;
 
     /**

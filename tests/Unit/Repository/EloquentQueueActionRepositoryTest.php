@@ -756,4 +756,90 @@ class EloquentQueueActionRepositoryTest extends TestCase
             $eventId2 => false,
         ], $result);
     }
+
+    function testGetActionsWithLimitIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+        ];
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getActions($ownerId, limit: 3);
+
+        // Then
+        $this->assertCount(3, $result);
+    }
+
+    function testGetActionsWithLimitAndAfterTimestampIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        $syncedAtTarget = $syncedAt - 100;
+
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 10)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 20)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 30)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 40)
+        ]);
+
+        // When
+        $result = $this->repository->getActions($ownerId, afterTimestamp: $syncedAtTarget, limit: 2);
+
+        // Then
+        $this->assertCount(2, $result);
+    }
+
+    function testGetActionsWithLimitAndAfterEventIdIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $baseDate = now()->subMinutes(10);
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinute()->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(2)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(3)->toDateTimeImmutable()),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid, actionedAt: $baseDate->addMinutes(4)->toDateTimeImmutable()),
+        ];
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getActions($ownerId, afterEventId: $actions[0]->eventId, limit: 2);
+
+        // Then
+        $this->assertCount(2, $result);
+        $this->assertEquals($actions[1]->eventId, $result[0]->eventId);
+        $this->assertEquals($actions[2]->eventId, $result[1]->eventId);
+    }
+
+    function testGetActionsWithLimitExceedingTotalReturnsAll()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = [
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+            QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid),
+        ];
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getActions($ownerId, limit: 10);
+
+        // Then
+        $this->assertCount(2, $result);
+    }
 }

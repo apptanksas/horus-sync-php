@@ -505,4 +505,85 @@ class GetSyncQueueActionsApiTest extends ApiTestCase
         $response->assertExactJsonStructure(self::JSON_SCHEME);
     }
 
+    function testGetActionsWithLimitIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        SyncQueueActionModelFactory::create($userId);
+        SyncQueueActionModelFactory::create($userId);
+        SyncQueueActionModelFactory::create($userId);
+        SyncQueueActionModelFactory::create($userId);
+        SyncQueueActionModelFactory::create($userId);
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, ["limit" => 2]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(2);
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
+    function testGetActionsWithLimitAndAfterTimestampIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($ownerId));
+
+        $syncedAt = $this->faker->dateTimeBetween()->getTimestamp();
+        $syncedAtTarget = $syncedAt - 100;
+
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 10)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 20)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 30)
+        ]);
+        SyncQueueActionModelFactory::create($ownerId, [
+            SyncQueueActionModel::ATTR_SYNCED_AT => $this->getDateTimeUtil()->getFormatDate($syncedAtTarget + 40)
+        ]);
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, [
+            "after" => $syncedAtTarget,
+            "limit" => 2
+        ]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(2);
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
+
+    function testGetActionsWithLimitAndAfterEventIdIsSuccess()
+    {
+        // Given
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $actions = [
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+            SyncQueueActionModelFactory::create($userId, [SyncQueueActionModel::ATTR_EVENT_ID => $this->faker->uuid]),
+        ];
+
+        // When
+        $response = $this->get(route(RouteName::GET_SYNC_QUEUE_ACTIONS->value, [
+            "after" => $actions[0]->getEventId(),
+            "limit" => 2
+        ]));
+
+        // Then
+        $response->assertOk();
+        $response->assertJsonCount(2);
+        $response->assertJsonPath('0.sequence', $actions[1]->getId());
+        $response->assertJsonPath('1.sequence', $actions[2]->getId());
+        $response->assertExactJsonStructure(self::JSON_SCHEME);
+    }
 }
