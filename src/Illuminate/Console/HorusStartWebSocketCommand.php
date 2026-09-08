@@ -12,6 +12,7 @@ use Laravel\Reverb\Contracts\Logger;
 use Laravel\Reverb\Jobs\PingInactiveConnections;
 use Laravel\Reverb\Jobs\PruneStaleConnections;
 use Laravel\Reverb\Loggers\CliLogger;
+use Laravel\Reverb\Loggers\NullLogger;
 use Laravel\Reverb\Protocols\Pusher\Contracts\ChannelConnectionManager;
 use Laravel\Reverb\Protocols\Pusher\Contracts\ChannelManager;
 use Laravel\Reverb\Protocols\Pusher\Http\Controllers\ChannelController;
@@ -145,6 +146,17 @@ class HorusStartWebSocketCommand extends Command implements SignalableCommandInt
     {
         $container = $this->getContainer();
 
+        if ($container->bound('config')) {
+            $config = $container->make('config');
+            $reverbApps = $config->get('reverb.apps.apps', []);
+            $filteredApps = array_values(array_filter($reverbApps, function ($app) {
+                return is_array($app) && !empty($app['app_id']) && !empty($app['key']);
+            }));
+            if (count($filteredApps) !== count($reverbApps)) {
+                $config->set('reverb.apps.apps', $filteredApps);
+            }
+        }
+
         $container->singletonIf(
             ApplicationManager::class,
             fn ($app) => new ApplicationManager($app)
@@ -163,6 +175,11 @@ class HorusStartWebSocketCommand extends Command implements SignalableCommandInt
         $container->bindIf(
             ChannelConnectionManager::class,
             fn () => new ArrayChannelConnectionManager
+        );
+
+        $container->singletonIf(
+            Logger::class,
+            fn () => new NullLogger
         );
 
         $container->singletonIf(

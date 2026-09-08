@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\WebSocketConfig;
 use AppTank\Horus\Horus;
+use AppTank\Horus\Illuminate\Console\HorusStartWebSocketCommand;
 use AppTank\Horus\Illuminate\Provider\HorusServiceProvider;
+use Laravel\Reverb\Contracts\ApplicationProvider;
 use Tests\TestCase;
 
 class HorusWebSocketConfigurationTest extends TestCase
@@ -112,5 +114,57 @@ class HorusWebSocketConfigurationTest extends TestCase
         $this->assertSame(8090, $horusApp['options']['port']);
         $this->assertSame('127.0.0.1', $this->app['config']->get('reverb.servers.reverb.host'));
         $this->assertSame(8090, $this->app['config']->get('reverb.servers.reverb.port'));
+    }
+
+    function testUnconfiguredReverbAppsWithNullValuesAreFilteredOutAndPruningWorks(): void
+    {
+        $this->app['config']->set('reverb.apps.apps', [
+            [
+                'key' => null,
+                'secret' => null,
+                'app_id' => null,
+                'options' => [
+                    'host' => null,
+                    'port' => 443,
+                    'scheme' => 'https',
+                    'useTLS' => true,
+                ],
+                'allowed_origins' => ['*'],
+                'ping_interval' => 60,
+                'activity_timeout' => 30,
+                'max_message_size' => 10_000,
+            ],
+        ]);
+
+        $customConfig = new Config(
+            websocketConfig: new WebSocketConfig(
+                key: 'valid-horus-key',
+                secret: 'valid-horus-secret',
+                appId: 'valid-horus-app',
+                host: '127.0.0.1',
+                port: 8080
+            )
+        );
+        Horus::getInstance()->setConfig($customConfig);
+
+        (new HorusServiceProvider($this->app))->register();
+
+        $reverbApps = $this->app['config']->get('reverb.apps.apps');
+        $this->assertCount(1, $reverbApps);
+        $this->assertSame('valid-horus-key', $reverbApps[0]['key']);
+        $this->assertSame('valid-horus-app', $reverbApps[0]['app_id']);
+
+        $command = $this->app->make(HorusStartWebSocketCommand::class);
+        $command->getRoutes();
+
+        /** @var ApplicationProvider $appProvider */
+        $appProvider = $this->app->make(ApplicationProvider::class);
+        $applications = $appProvider->all();
+
+        $this->assertCount(1, $applications);
+        $this->assertSame('valid-horus-app', $applications->first()->id());
+
+        \Laravel\Reverb\Jobs\PruneStaleConnections::dispatch();
+        $this->assertTrue(true);
     }
 }

@@ -119,6 +119,9 @@ class HorusServiceProvider extends ServiceProvider
         $this->app['config']->set('broadcasting', $wsConfig->toArray());
 
         $reverbApps = $this->app['config']->get('reverb.apps.apps', []);
+        $reverbApps = array_values(array_filter($reverbApps, function ($app) {
+            return is_array($app) && !empty($app['app_id']) && !empty($app['key']);
+        }));
         $found = false;
         foreach ($reverbApps as &$app) {
             if (($app['key'] ?? null) === $wsConfig->key || ($app['app_id'] ?? null) === $wsConfig->appId) {
