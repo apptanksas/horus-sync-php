@@ -234,18 +234,6 @@ Clients can connect using the independent Horus WebSocket URI:
 ws://127.0.0.1:8080/horus/horus-app-key
 ```
 
-Or using the standard Reverb route for backwards compatibility:
-
-```text
-ws://127.0.0.1:8080/app/horus-app-key
-```
-
-You can also run Reverb directly if preferred:
-
-```bash
-php artisan reverb:start --host=127.0.0.1 --port=8080
-```
-
 To disable WebSocket publishing and subscriptions, add `FeatureName::WEBSOCKET` to `disabledFeatures`:
 
 ```php
