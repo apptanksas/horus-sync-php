@@ -23,12 +23,6 @@ $authorize = function ($user, string|int $ownerId): bool {
         return false;
     }
 
-    $checkpointEventId = request()->input('checkpoint_event_id')
-        ?? request()->query('checkpoint_event_id')
-        ?? request()->header('X-Horus-Checkpoint-Event-Id');
-
-    app(QueueActionWebsocket::class)->replay($ownerId, $checkpointEventId);
-
     return true;
 };
 

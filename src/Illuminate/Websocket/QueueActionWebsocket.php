@@ -27,27 +27,6 @@ class QueueActionWebsocket implements QueueActionWebsocketPublisher
         Event::dispatch(new QueueActionBroadcast($action));
     }
 
-    /**
-     * Publishes the initial stream for a websocket subscriber.
-     *
-     * @return QueueAction[] The actions published to the channel.
-     */
-    public function replay(string|int $ownerId, ?string $checkpointEventId = null): array
-    {
-        $actions = $this->queueActionRepository->getActions(
-            [$ownerId],
-            alwaysIncludeOwnerIds: [],
-            afterEventId: $checkpointEventId,
-            excludeEventIds: [],
-        );
-
-        foreach ($actions as $action) {
-            $this->publish($action);
-        }
-
-        return $actions;
-    }
-
     public static function serializeAction(QueueAction $action): array
     {
         return [
