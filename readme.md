@@ -194,7 +194,25 @@ The configuration properties are:
 * `host`, `port`, `scheme` and `useTLS`: Reverb server connection settings.
 * `clientOptions`: additional options passed to the broadcasting client.
 
-Start Reverb using the values configured for the application:
+Start the Horus WebSocket server:
+
+```bash
+php artisan horus:websocket
+```
+
+Clients can connect using the independent Horus WebSocket URI:
+
+```text
+ws://127.0.0.1:8080/horus/horus-app-key
+```
+
+Or using the standard Reverb route for backwards compatibility:
+
+```text
+ws://127.0.0.1:8080/app/horus-app-key
+```
+
+You can also run Reverb directly if preferred:
 
 ```bash
 php artisan reverb:start --host=127.0.0.1 --port=8080

@@ -29,6 +29,7 @@ use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Bus\JobDispatcher;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
+use AppTank\Horus\Illuminate\Console\HorusStartWebSocketCommand;
 use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
@@ -81,7 +82,56 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
-        $this->app['config']->set('broadcasting', Horus::getInstance()->getConfig()->websocketConfig->toArray());
+        $wsConfig = Horus::getInstance()->getConfig()->websocketConfig;
+
+        $this->app['config']->set('broadcasting', $wsConfig->toArray());
+
+        $reverbApps = $this->app['config']->get('reverb.apps.apps', []);
+        $found = false;
+        foreach ($reverbApps as &$app) {
+            if (($app['key'] ?? null) === $wsConfig->key || ($app['app_id'] ?? null) === $wsConfig->appId) {
+                $app = [
+                    'key' => $wsConfig->key,
+                    'secret' => $wsConfig->secret,
+                    'app_id' => $wsConfig->appId,
+                    'options' => [
+                        'host' => $wsConfig->host,
+                        'port' => $wsConfig->port,
+                        'scheme' => $wsConfig->scheme,
+                        'useTLS' => $wsConfig->useTLS,
+                    ],
+                    'allowed_origins' => $app['allowed_origins'] ?? ['*'],
+                    'ping_interval' => $app['ping_interval'] ?? 60,
+                    'activity_timeout' => $app['activity_timeout'] ?? 30,
+                    'max_message_size' => $app['max_message_size'] ?? 10_000,
+                ];
+                $found = true;
+                break;
+            }
+        }
+        unset($app);
+
+        if (!$found) {
+            $reverbApps[] = [
+                'key' => $wsConfig->key,
+                'secret' => $wsConfig->secret,
+                'app_id' => $wsConfig->appId,
+                'options' => [
+                    'host' => $wsConfig->host,
+                    'port' => $wsConfig->port,
+                    'scheme' => $wsConfig->scheme,
+                    'useTLS' => $wsConfig->useTLS,
+                ],
+                'allowed_origins' => ['*'],
+                'ping_interval' => 60,
+                'activity_timeout' => 30,
+                'max_message_size' => 10_000,
+            ];
+        }
+
+        $this->app['config']->set('reverb.apps.apps', $reverbApps);
+        $this->app['config']->set('reverb.servers.reverb.host', $wsConfig->host);
+        $this->app['config']->set('reverb.servers.reverb.port', $wsConfig->port);
 
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository($this->app->make(CacheRepository::class));
@@ -235,7 +285,8 @@ class HorusServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CreateEntitySynchronizableCommand::class,
-                PruneFilesUploadedCommand::class
+                PruneFilesUploadedCommand::class,
+                HorusStartWebSocketCommand::class,
             ]);
         }
     }

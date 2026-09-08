@@ -5,6 +5,7 @@
 - Added `after` and `exclude` filters for queue actions using timestamps or event UUIDs.
 - Added Laravel Reverb WebSocket synchronization with private owner channels, event replay from checkpoints, and typed `WebSocketConfig` configuration.
 - Added the `FeatureName::WEBSOCKET` feature flag to enable or disable WebSocket synchronization.
+- Added `php artisan horus:websocket` command and dynamic Reverb configuration injection to run the independent Horus WebSocket server with `/horus/{appKey}` URI support.
 
 # 0.19.1
 - From now on, permission validation will be avoided if an action has already been omitted.
