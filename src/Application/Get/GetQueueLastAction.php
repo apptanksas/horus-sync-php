@@ -46,6 +46,7 @@ readonly class GetQueueLastAction
             'data' => $action->operation->toArray(),
             'actioned_at' => $action->actionedAt->getTimestamp(),
             'synced_at' => $action->syncedAt->getTimestamp(),
+            'event_id' => $action->eventId
         ];
     }
 }

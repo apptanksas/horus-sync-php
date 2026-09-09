@@ -18,7 +18,8 @@ class GetQueueLastActionApiTest extends ApiTestCase
         'entity',
         'data',
         'actioned_at',
-        'synced_at'
+        'synced_at',
+        'event_id'
     ];
 
     function testGetLastActionIsSuccess()
