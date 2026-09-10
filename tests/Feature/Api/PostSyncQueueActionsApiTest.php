@@ -1534,7 +1534,6 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $this->assertDatabaseCount(SyncQueueActionModel::TABLE_NAME, 2);
     }
 
-
     function testTryUpdateEntityWithGrantedPreviously()
     {
         $userOwnerId = $this->faker->uuid;
@@ -1648,6 +1647,70 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             'color' => $color,
             'value_enum' => $valueEnum
         ]);
+    }
+
+    function testPostSyncQueueIsSuccessUsingActionedAsMillis()
+    {
+        $userId = $this->faker->uuid;
+        Horus::getInstance()->setUserAuthenticated(new UserAuth($userId));
+
+        $entityId = $this->faker->uuid;
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $name = $this->faker->userName;
+        $color = $this->faker->colorName;
+        $enumValue = ParentFakeWritableEntity::ENUM_VALUES[array_rand(ParentFakeWritableEntity::ENUM_VALUES)];
+        $timestampWithSeconds = 1674579600;
+        $actionedAtInSeconds = 1789060878;
+        $actionedAtInMillis = ($actionedAtInSeconds * 1000) + 10;
+
+        $data = [
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $this->faker->uuid,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestampWithSeconds,
+                    "value_enum" => $enumValue,
+                    "coordinates" => Coordinates::generateRaw()
+                ],
+                "actioned_at" => $actionedAtInMillis
+            ],
+            [
+                "action" => "INSERT",
+                "entity" => $entityName,
+                "data" => [
+                    "id" => $entityId,
+                    "name" => $name,
+                    "color" => $color,
+                    "timestamp" => $timestampWithSeconds,
+                    "value_enum" => $enumValue,
+                    "coordinates" => Coordinates::generateRaw()
+                ],
+                "actioned_at" => $actionedAtInSeconds
+            ]
+        ];
+
+        // When
+        $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
+
+        // Then
+        $response->assertStatus(202);
+        $this->assertDatabaseCount(ParentFakeWritableEntity::getTableName(), 2);
+        $this->assertDatabaseHas(ParentFakeWritableEntity::getTableName(), [
+            ParentFakeWritableEntity::ATTR_SYNC_OWNER_ID => $userId,
+            'id' => $entityId,
+            'name' => $name,
+            'color' => $color,
+            'timestamp' => $this->getDateTimeUtil()->getFormatDate($timestampWithSeconds),
+        ]);;
+
+        // Check that the last item save is the one with timestamp in seconds(The timestamp in millis must be first)
+        $this->assertEquals(
+            $entityId,
+            SyncQueueActionModel::query()->orderByDesc("id")->get()->last()->getEntityId()
+        );
     }
 }
 
