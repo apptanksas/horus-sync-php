@@ -103,6 +103,37 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     }
 
     /**
+     * Retrieves a page of the most recent queue actions for a specific set of owner IDs, ordered from
+     * newest to oldest. Supports cursor-based pagination through the internal sequence (id) of the action,
+     * which is useful for scanning backwards in time until an accessible action is found.
+     *
+     * @param array $ownerIds The IDs of the user owners whose actions are to be retrieved.
+     * @param int $limit Maximum number of actions to retrieve.
+     * @param int|null $beforeSequence If provided, only actions with a sequence (id) lower than this value are retrieved.
+     * @return QueueAction[] The queue actions ordered from newest to oldest.
+     */
+    public function getLastActionsByOwners(array $ownerIds, int $limit, ?int $beforeSequence = null): array
+    {
+        if (empty($ownerIds)) {
+            return [];
+        }
+
+        $query = SyncQueueActionModel::query()
+            ->whereIn(SyncQueueActionModel::FK_OWNER_ID, $ownerIds)
+            ->where(SyncQueueActionModel::ATTR_SKIPPED, false);
+
+        if ($beforeSequence !== null) {
+            $query->where('id', '<', $beforeSequence);
+        }
+
+        return $query->orderByDesc("id")
+            ->limit($limit)
+            ->get()
+            ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))
+            ->toArray();
+    }
+
+    /**
      * Retrieves actions combining restricted owners (filtered by date or event ID) and unrestricted owners (always included).
      *
      * @param array|int|string $filteredOwnerIds Owners subject to the date/event exclusion logic.

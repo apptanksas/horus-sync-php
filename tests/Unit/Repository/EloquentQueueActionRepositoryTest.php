@@ -254,6 +254,166 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->assertEquals($ownerB, $lastAction->ownerId);
     }
 
+    function testGetLastActionsByOwnersIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([$ownerId], 50);
+
+        // Then
+        $this->assertCount(count($actions), $result);
+    }
+
+    function testGetLastActionsByOwnersReturnsEmptyArrayWhenOwnerIdsArrayIsEmpty()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId));
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([], 50);
+
+        // Then
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    function testGetLastActionsByOwnersReturnsEmptyArrayWhenNoActionsExist()
+    {
+        // When
+        $result = $this->repository->getLastActionsByOwners([$this->faker->uuid], 50);
+
+        // Then
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    function testGetLastActionsByOwnersOrdersFromNewestToOldest()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $action1 = QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid);
+        $action2 = QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid);
+        $action3 = QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid);
+
+        // Insert sequentially: action1 (id: 1), action2 (id: 2), action3 (id: 3)
+        $this->repository->save($action1);
+        $this->repository->save($action2);
+        $this->repository->save($action3);
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([$ownerId], 50);
+
+        // Then: newest first
+        $this->assertCount(3, $result);
+        $this->assertEquals($action3->eventId, $result[0]->eventId);
+        $this->assertEquals($action2->eventId, $result[1]->eventId);
+        $this->assertEquals($action1->eventId, $result[2]->eventId);
+    }
+
+    function testGetLastActionsByOwnersRespectsLimit()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateCountArray(fn() => QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid), 5);
+        $this->repository->save(...$actions);
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([$ownerId], 2);
+
+        // Then
+        $this->assertCount(2, $result);
+        $this->assertEquals($actions[4]->eventId, $result[0]->eventId);
+        $this->assertEquals($actions[3]->eventId, $result[1]->eventId);
+    }
+
+    function testGetLastActionsByOwnersCombinesMultipleOwners()
+    {
+        // Given
+        $ownerA = $this->faker->uuid;
+        $ownerB = $this->faker->uuid;
+        $ownerC = $this->faker->uuid;
+
+        $actionA = QueueActionFactory::create(userId: $ownerA, eventId: $this->faker->uuid);
+        $actionB = QueueActionFactory::create(userId: $ownerB, eventId: $this->faker->uuid);
+        $actionC = QueueActionFactory::create(userId: $ownerC, eventId: $this->faker->uuid);
+
+        // Insert sequentially: A (id: 1), B (id: 2), C (id: 3)
+        $this->repository->save($actionA);
+        $this->repository->save($actionB);
+        $this->repository->save($actionC);
+
+        // When: querying only ownerA and ownerB (excluding ownerC who has the latest overall action)
+        $result = $this->repository->getLastActionsByOwners([$ownerA, $ownerB], 50);
+
+        // Then: should return actionB then actionA, excluding actionC
+        $this->assertCount(2, $result);
+        $this->assertEquals($actionB->eventId, $result[0]->eventId);
+        $this->assertEquals($actionA->eventId, $result[1]->eventId);
+    }
+
+    function testGetLastActionsByOwnersIgnoresSkippedActions()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $validAction = QueueActionFactory::create(userId: $ownerId, skipped: false, eventId: $this->faker->uuid);
+        $skippedAction = QueueActionFactory::create(userId: $ownerId, skipped: true, eventId: $this->faker->uuid);
+
+        $this->repository->save($validAction);
+        $this->repository->save($skippedAction);
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([$ownerId], 50);
+
+        // Then
+        $this->assertCount(1, $result);
+        $this->assertEquals($validAction->eventId, $result[0]->eventId);
+    }
+
+    function testGetLastActionsByOwnersWithBeforeSequenceIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateCountArray(fn() => QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid), 5);
+        $this->repository->save(...$actions);
+
+        $firstPage = $this->repository->getLastActionsByOwners([$ownerId], 2);
+        $beforeSequence = end($firstPage)->sequence;
+
+        // When: fetch the next page, before the last sequence of the first page
+        $secondPage = $this->repository->getLastActionsByOwners([$ownerId], 2, $beforeSequence);
+
+        // Then: second page contains the next two actions, older than the first page
+        $this->assertCount(2, $secondPage);
+        $this->assertEquals($actions[2]->eventId, $secondPage[0]->eventId);
+        $this->assertEquals($actions[1]->eventId, $secondPage[1]->eventId);
+        $this->assertLessThan($beforeSequence, $secondPage[0]->sequence);
+    }
+
+    function testGetLastActionsByOwnersWithBeforeSequenceReturnsEmptyArrayWhenNoMoreActions()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $action = QueueActionFactory::create(userId: $ownerId, eventId: $this->faker->uuid);
+        $this->repository->save($action);
+
+        $firstPage = $this->repository->getLastActionsByOwners([$ownerId], 50);
+        $beforeSequence = end($firstPage)->sequence;
+
+        // When
+        $result = $this->repository->getLastActionsByOwners([$ownerId], 50, $beforeSequence);
+
+        // Then
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
     function testGetActionsIsSuccess()
     {
 
