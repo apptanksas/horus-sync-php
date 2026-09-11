@@ -81,9 +81,9 @@ class SyncQueueActions
         private readonly FileUploadedRepository          $fileUploadedRepository,
         private readonly IEventBus                       $eventBus,
         private readonly IFileHandler                    $fileHandler,
-        private readonly EntityMapper                   $entityMapper,
-        private readonly Config                         $config,
-        private readonly QueueActionWebsocketPublisher $queueActionWebsocketPublisher,
+        private readonly EntityMapper                    $entityMapper,
+        private readonly Config                          $config,
+        private readonly QueueActionWebsocketPublisher   $queueActionWebsocketPublisher,
     )
     {
         $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
@@ -113,15 +113,23 @@ class SyncQueueActions
         }
 
         $actions = $this->actions = $this->validateQueueActionSkipperRestriction(...$actions);
+        $actionsUsingTimestampSecs = array_values(array_filter($actions, fn(QueueAction $action) => !$action->useTimestampMillis));
+        $actionsUsingTimestampMillis = array_values(array_filter($actions, fn(QueueAction $action) => $action->useTimestampMillis));
 
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
-        usort($actions, function (QueueAction $a, QueueAction $b) {
+        usort($actionsUsingTimestampSecs, function (QueueAction $a, QueueAction $b) {
             $levelComparison = $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
             if ($levelComparison !== 0) {
                 return $levelComparison;
             }
             return $a->actionedAt <=> $b->actionedAt;
         });
+
+        usort($actionsUsingTimestampMillis, function (QueueAction $a, QueueAction $b) {
+            return $a->actionedAt <=> $b->actionedAt;
+        });
+
+        $actions = array_merge($actionsUsingTimestampSecs, $actionsUsingTimestampMillis);
 
         $this->transactionHandler->executeTransaction(function () use ($actions, $userAuth) {
 
@@ -177,7 +185,7 @@ class SyncQueueActions
                 $this->eventBus->publish("sync.delete", $eventData);
             }
 
-            if ($this->config->isFeatureEnabled(FeatureName::WEBSOCKET)) {
+            if ($action->useTimestampMillis && $this->config->isFeatureEnabled(FeatureName::WEBSOCKET)) {
                 $this->queueActionWebsocketPublisher->publish($action);
             }
         }

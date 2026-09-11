@@ -107,7 +107,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->repository->save(...$actions);
 
         // When
-        $lastAction = $this->repository->getLastAction($userId);
+        $lastAction = $this->repository->getLastActionByUserOwnerId($userId);
 
         // Then
         $this->assertNotNull($lastAction);
@@ -122,10 +122,136 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->repository->save(...$actions);
 
         // When
-        $lastAction = $this->repository->getLastAction($this->faker->uuid);
+        $lastAction = $this->repository->getLastActionByUserOwnerId($this->faker->uuid);
 
         // Then
         $this->assertNull($lastAction);
+    }
+
+    function testGetLastActionByOwnersIsSuccess()
+    {
+        // Given
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        $actionsOwner1 = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId1));
+        $actionsOwner2 = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId2));
+
+        $this->repository->save(...$actionsOwner1);
+        $this->repository->save(...$actionsOwner2);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([$ownerId1, $ownerId2]);
+
+        // Then
+        $this->assertNotNull($lastAction);
+        $this->assertContains($lastAction->ownerId, [$ownerId1, $ownerId2]);
+    }
+
+    function testGetLastActionByOwnersWithSingleOwnerInArrayIsSuccess()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([$ownerId]);
+
+        // Then
+        $this->assertNotNull($lastAction);
+        $this->assertEquals($ownerId, $lastAction->ownerId);
+    }
+
+    function testGetLastActionByOwnersReturnsNullWhenNoActionsExist()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([$this->faker->uuid, $this->faker->uuid]);
+
+        // Then
+        $this->assertNull($lastAction);
+    }
+
+    function testGetLastActionByOwnersReturnsNullWhenOwnerIdsArrayIsEmpty()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $actions = $this->generateArray(fn() => QueueActionFactory::create(userId: $ownerId));
+
+        $this->repository->save(...$actions);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([]);
+
+        // Then
+        $this->assertNull($lastAction);
+    }
+
+    function testGetLastActionByOwnersIgnoresSkippedActions()
+    {
+        // Given
+        $ownerId = $this->faker->uuid;
+        $validAction = QueueActionFactory::create(userId: $ownerId, skipped: false, eventId: $this->faker->uuid);
+        $skippedAction = QueueActionFactory::create(userId: $ownerId, skipped: true, eventId: $this->faker->uuid);
+
+        // Save valid action first, then skipped action (which has higher ID)
+        $this->repository->save($validAction);
+        $this->repository->save($skippedAction);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([$ownerId]);
+
+        // Then
+        $this->assertNotNull($lastAction);
+        $this->assertEquals($validAction->eventId, $lastAction->eventId);
+    }
+
+    function testGetLastActionByOwnersReturnsNullWhenAllActionsAreSkipped()
+    {
+        // Given
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        $skipped1 = QueueActionFactory::create(userId: $ownerId1, skipped: true, eventId: $this->faker->uuid);
+        $skipped2 = QueueActionFactory::create(userId: $ownerId2, skipped: true, eventId: $this->faker->uuid);
+
+        $this->repository->save($skipped1, $skipped2);
+
+        // When
+        $lastAction = $this->repository->getLastActionByOwners([$ownerId1, $ownerId2]);
+
+        // Then
+        $this->assertNull($lastAction);
+    }
+
+    function testGetLastActionByOwnersReturnsMostRecentAcrossMultipleOwners()
+    {
+        // Given
+        $ownerA = $this->faker->uuid;
+        $ownerB = $this->faker->uuid;
+        $ownerC = $this->faker->uuid;
+
+        $actionA = QueueActionFactory::create(userId: $ownerA, eventId: $this->faker->uuid);
+        $actionB = QueueActionFactory::create(userId: $ownerB, eventId: $this->faker->uuid);
+        $actionC = QueueActionFactory::create(userId: $ownerC, eventId: $this->faker->uuid);
+
+        // Insert sequentially: A (id: 1), B (id: 2), C (id: 3)
+        $this->repository->save($actionA);
+        $this->repository->save($actionB);
+        $this->repository->save($actionC);
+
+        // When: querying only ownerA and ownerB (excluding ownerC who has the latest overall action)
+        $lastAction = $this->repository->getLastActionByOwners([$ownerA, $ownerB]);
+
+        // Then: should return actionB (the latest among ownerA and ownerB)
+        $this->assertNotNull($lastAction);
+        $this->assertEquals($actionB->eventId, $lastAction->eventId);
+        $this->assertEquals($ownerB, $lastAction->ownerId);
     }
 
     function testGetActionsIsSuccess()
@@ -478,7 +604,7 @@ class EloquentQueueActionRepositoryTest extends TestCase
         $this->repository->save($action);
 
         // When
-        $lastAction = $this->repository->getLastAction($userId);
+        $lastAction = $this->repository->getLastActionByUserOwnerId($userId);
         $actions = $this->repository->getActions($userId);
 
         // Then

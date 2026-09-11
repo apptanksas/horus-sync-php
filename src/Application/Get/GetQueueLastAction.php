@@ -38,7 +38,7 @@ readonly class GetQueueLastAction
      */
     function __invoke(UserAuth $userAuth): array
     {
-        $action = $this->queueActionRepository->getLastAction($userAuth->getEffectiveUserId());
+        $action = $this->queueActionRepository->getLastActionByUserOwnerId($userAuth->getEffectiveUserId());
 
         return [
             'action' => $action->action->name,

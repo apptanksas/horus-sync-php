@@ -11,7 +11,7 @@ class DateTimeUtil implements IDateTimeUtil
     public function parseDatetime(int|string $datetime): \DateTime
     {
         // Validate if datetime is a timestamp in milliseconds
-        if (is_int($datetime) && strlen($datetime) > 10) {
+        if ($this->isTimestampMillis($datetime)) {
             return Carbon::createFromTimestampMsUTC($datetime);
         }
 
@@ -32,4 +32,10 @@ class DateTimeUtil implements IDateTimeUtil
     {
         return date(self::FORMAT_DATE, $timestamp);
     }
+
+    public function isTimestampMillis(int|string $timestamp): bool
+    {
+        return is_int($timestamp) && strlen($timestamp) > 10;
+    }
+
 }

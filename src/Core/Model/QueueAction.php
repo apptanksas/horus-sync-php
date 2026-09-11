@@ -45,6 +45,7 @@ readonly class QueueAction
         public bool               $skipped = false,
         public int|null           $sequence = null,
         public string|null        $eventId = null,
+        public bool               $useTimestampMillis = false
     )
     {
 

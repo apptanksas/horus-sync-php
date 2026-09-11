@@ -1712,7 +1712,9 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
             SyncQueueActionModel::query()->orderByDesc("id")->get()->last()->getEntityId()
         );
     }
+    
 }
+
 
 class TestFileHandler implements IFileHandler
 {

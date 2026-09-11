@@ -31,7 +31,15 @@ interface QueueActionRepository
      * @param string|int $userOwnerId The ID of the user owner whose last action is to be retrieved.
      * @return QueueAction|null The last queue action for the specified user owner ID, or null if no actions are found.
      */
-    function getLastAction(string|int $userOwnerId): ?QueueAction;
+    function getLastActionByUserOwnerId(string|int $userOwnerId): ?QueueAction;
+
+    /**
+     * Retrieves the last queue action for a specific array of user owner IDs.
+     *
+     * @param array $ownerIds The IDs of the user owners whose last action is to be retrieved.
+     * @return QueueAction|null The last queue action for the specified user owner ID, or null if no actions are found.
+     */
+    function getLastActionByOwners(array $ownerIds): ?QueueAction;
 
     /**
      * Retrieves actions combining restricted owners (filtered by date or event ID) and unrestricted owners (always included).

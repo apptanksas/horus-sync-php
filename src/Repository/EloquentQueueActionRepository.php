@@ -38,8 +38,6 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      */
     function save(QueueAction ...$actions): void
     {
-        usort($actions, fn(QueueAction $a, QueueAction $b) => $a->actionedAt->getTimestamp() <=> $b->actionedAt->getTimestamp());
-
         $dataWithEventIds = [];
         $dataDefault = [];
         $table = $this->getTable();
@@ -69,10 +67,31 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      * @param int|string $userOwnerId The ID of the user or owner to retrieve the last action for.
      * @return QueueAction|null The most recent QueueAction, or null if no actions are found.
      */
-    function getLastAction(int|string $userOwnerId): ?QueueAction
+    function getLastActionByUserOwnerId(int|string $userOwnerId): ?QueueAction
     {
         $result = SyncQueueActionModel::query()
             ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId)
+            ->where(SyncQueueActionModel::ATTR_SKIPPED, false)
+            ->orderByDesc("id")->limit(1)->get()->first();
+
+        if (is_null($result)) {
+            return null;
+        }
+
+        return $this->buildQueueActionByModel($result);
+    }
+
+
+    /**
+     * Retrieves the last queue action for a specific array of user owner IDs.
+     *
+     * @param array $ownerIds The IDs of the user owners whose last action is to be retrieved.
+     * @return QueueAction|null The last queue action for the specified user owner ID, or null if no actions are found.
+     */
+    public function getLastActionByOwners(array $ownerIds): ?QueueAction
+    {
+        $result = SyncQueueActionModel::query()
+            ->whereIn(SyncQueueActionModel::FK_OWNER_ID, $ownerIds)
             ->where(SyncQueueActionModel::ATTR_SKIPPED, false)
             ->orderByDesc("id")->limit(1)->get()->first();
 

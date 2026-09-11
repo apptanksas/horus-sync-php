@@ -51,7 +51,7 @@ class PostSyncQueueActionsController extends Controller
         FileUploadedRepository          $fileUploadedRepository,
         IEventBus                       $eventBus,
         EntityMapper                    $entityMapper,
-        QueueActionWebsocketPublisher  $queueActionWebsocketPublisher
+        QueueActionWebsocketPublisher   $queueActionWebsocketPublisher
     )
     {
         parent::__construct();
@@ -115,7 +115,8 @@ class PostSyncQueueActionsController extends Controller
                 now("UTC")->toDateTimeImmutable(),
                 $userId,
                 $ownerId,
-                eventId: $itemAction['event_id'] ?? null
+                eventId: $itemAction['event_id'] ?? null,
+                useTimestampMillis: $dateUtil->isTimestampMillis($itemAction['actioned_at']),
             );
         }
 
