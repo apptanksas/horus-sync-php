@@ -23,11 +23,13 @@ use AppTank\Horus\Core\Repository\MigrationSchemaRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Repository\SyncJobRepository;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Bus\EventBus;
 use AppTank\Horus\Illuminate\Bus\JobDispatcher;
 use AppTank\Horus\Illuminate\Console\CreateEntitySynchronizableCommand;
+use AppTank\Horus\Illuminate\Console\HorusStartWebSocketCommand;
 use AppTank\Horus\Illuminate\Console\PruneFilesUploadedCommand;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
@@ -39,7 +41,10 @@ use AppTank\Horus\Repository\EloquentFileUploadedRepository;
 use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use AppTank\Horus\Repository\EloquentSyncJobRepository;
 use AppTank\Horus\Repository\StaticMigrationSchemaRepository;
+use AppTank\Horus\Illuminate\Websocket\QueueActionWebsocket;
+use AppTank\Horus\Illuminate\Http\Middleware\AuthenticateHorusBroadcast;
 use Carbon\Laravel\ServiceProvider;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -58,6 +63,15 @@ class HorusServiceProvider extends ServiceProvider
     {
         $this->registerCommands();
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
+        if ($this->app->runningInConsole()) {
+            $configPath = realpath(__DIR__ . '/../../../config/horusync.php') ?: (__DIR__ . '/../../../config/horusync.php');
+            $this->publishes([
+                $configPath => config_path('horusync.php'),
+            ], ['horusync-config', 'horusync', 'config']);
+        }
+        Broadcast::resolveAuthenticatedUserUsing(function () {
+            return Horus::getInstance()->getUserAuthenticated();
+        });
         $this->app->afterResolving(function () {
             $this->registerRoutes();
         });
@@ -74,12 +88,100 @@ class HorusServiceProvider extends ServiceProvider
     {
         parent::register();
 
+        $this->mergeConfigFrom(
+            __DIR__ . '/../../../config/horusync.php',
+            'horusync'
+        );
+
+        $horus = Horus::getInstance();
+        $config = $horus->getConfig();
+        if (!$config->hasExplicitWebSocketConfig) {
+            $refreshedConfig = new Config(
+                validateAccess: $config->validateAccess,
+                connectionName: $config->connectionName,
+                usesUUIDs: $config->usesUUIDs,
+                prefixTables: $config->prefixTables,
+                basePathFiles: $config->basePathFiles,
+                entityRestrictions: $config->getEntityRestrictions(),
+                sharedEntities: $config->getSharedEntities(),
+                disabledFeatures: $config->disabledFeatures,
+                extraParametersReferenceFile: $config->extraParametersReferenceFile,
+                websocketConfig: null
+            );
+            if ($config->getCallbackValidateEntityWasGranted()) {
+                $refreshedConfig->setupOnValidateEntityWasGranted($config->getCallbackValidateEntityWasGranted());
+            }
+            $horus->setConfig($refreshedConfig);
+        }
+
+        $wsConfig = $horus->getConfig()->websocketConfig;
+
+        $this->app['config']->set('broadcasting', $wsConfig->toArray());
+
+        $reverbApps = $this->app['config']->get('reverb.apps.apps', []);
+        $reverbApps = array_values(array_filter($reverbApps, function ($app) {
+            return is_array($app) && !empty($app['app_id']) && !empty($app['key']);
+        }));
+        $found = false;
+        foreach ($reverbApps as &$app) {
+            if (($app['key'] ?? null) === $wsConfig->key || ($app['app_id'] ?? null) === $wsConfig->appId) {
+                $app = [
+                    'key' => $wsConfig->key,
+                    'secret' => $wsConfig->secret,
+                    'app_id' => $wsConfig->appId,
+                    'options' => [
+                        'host' => $wsConfig->host,
+                        'port' => $wsConfig->port,
+                        'scheme' => $wsConfig->scheme,
+                        'useTLS' => $wsConfig->useTLS,
+                    ],
+                    'allowed_origins' => $app['allowed_origins'] ?? ['*'],
+                    'ping_interval' => $app['ping_interval'] ?? 60,
+                    'activity_timeout' => $app['activity_timeout'] ?? 30,
+                    'max_message_size' => $app['max_message_size'] ?? 10_000,
+                ];
+                $found = true;
+                break;
+            }
+        }
+        unset($app);
+
+        if (!$found) {
+            $reverbApps[] = [
+                'key' => $wsConfig->key,
+                'secret' => $wsConfig->secret,
+                'app_id' => $wsConfig->appId,
+                'options' => [
+                    'host' => $wsConfig->host,
+                    'port' => $wsConfig->port,
+                    'scheme' => $wsConfig->scheme,
+                    'useTLS' => $wsConfig->useTLS,
+                ],
+                'allowed_origins' => ['*'],
+                'ping_interval' => 60,
+                'activity_timeout' => 30,
+                'max_message_size' => 10_000,
+            ];
+        }
+
+        $this->app['config']->set('reverb.apps.apps', $reverbApps);
+        $this->app['config']->set('reverb.servers.reverb.host', $wsConfig->host);
+        $this->app['config']->set('reverb.servers.reverb.port', $wsConfig->port);
+
         $this->app->singleton(MigrationSchemaRepository::class, function () {
             return new StaticMigrationSchemaRepository($this->app->make(CacheRepository::class));
         });
 
         $this->app->singleton(IEventBus::class, function () {
             return new EventBus();
+        });
+
+        $this->app->singleton(QueueActionWebsocket::class, function () {
+            return new QueueActionWebsocket($this->app->make(QueueActionRepository::class));
+        });
+
+        $this->app->singleton(QueueActionWebsocketPublisher::class, function () {
+            return $this->app->make(QueueActionWebsocket::class);
         });
 
         $this->app->singleton(IJobDispatcher::class, function () {
@@ -195,6 +297,15 @@ class HorusServiceProvider extends ServiceProvider
         ], function () {
             $this->loadRoutesFrom(__DIR__ . '/../../../routes/api_v1.php');
         });
+
+        Broadcast::routes([
+            'prefix' => 'horus/v1',
+            'middleware' => array_merge(
+                Horus::getInstance()->getMiddlewares(),
+                [AuthenticateHorusBroadcast::class]
+            ),
+        ]);
+        $this->loadRoutesFrom(__DIR__ . '/../../../routes/channels.php');
     }
 
     /**
@@ -209,7 +320,8 @@ class HorusServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CreateEntitySynchronizableCommand::class,
-                PruneFilesUploadedCommand::class
+                PruneFilesUploadedCommand::class,
+                HorusStartWebSocketCommand::class,
             ]);
         }
     }

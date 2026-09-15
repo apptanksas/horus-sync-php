@@ -6,6 +6,7 @@ use AppTank\Horus\Core\Auth\Permission;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
@@ -15,6 +16,7 @@ use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\IFileReferenceValidator;
 use AppTank\Horus\Core\File\SyncFileStatus;
+use AppTank\Horus\Core\Filter\QueueActionEventIdFilter;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
@@ -30,6 +32,7 @@ use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Validator\EntityRestrictionValidator;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -46,6 +49,7 @@ class SyncQueueActions
 {
     private IFileReferenceValidator $fileReferenceValidator;
     private EntityRestrictionValidator $entityRestrictionValidator;
+    private QueueActionEventIdFilter $queueActionEventIdFilter;
 
     /**
      * @var array <string, int|string> Cache to store the owner IDs of parent entities to avoid redundant database queries.
@@ -78,11 +82,13 @@ class SyncQueueActions
         private readonly IEventBus                       $eventBus,
         private readonly IFileHandler                    $fileHandler,
         private readonly EntityMapper                    $entityMapper,
-        private readonly Config                          $config
+        private readonly Config                          $config,
+        private readonly QueueActionWebsocketPublisher   $queueActionWebsocketPublisher,
     )
     {
         $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
         $this->entityRestrictionValidator = new EntityRestrictionValidator($this->entityRepository, $this->config);
+        $this->queueActionEventIdFilter = new QueueActionEventIdFilter($this->queueActionRepository);
     }
 
     /**
@@ -100,16 +106,30 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
+        $actions = $this->queueActionEventIdFilter->filter(...$actions);
+
+        if (empty($actions)) {
+            return;
+        }
+
         $actions = $this->actions = $this->validateQueueActionSkipperRestriction(...$actions);
+        $actionsUsingTimestampSecs = array_values(array_filter($actions, fn(QueueAction $action) => !$action->useTimestampMillis));
+        $actionsUsingTimestampMillis = array_values(array_filter($actions, fn(QueueAction $action) => $action->useTimestampMillis));
 
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
-        usort($actions, function (QueueAction $a, QueueAction $b) {
+        usort($actionsUsingTimestampSecs, function (QueueAction $a, QueueAction $b) {
             $levelComparison = $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
             if ($levelComparison !== 0) {
                 return $levelComparison;
             }
             return $a->actionedAt <=> $b->actionedAt;
         });
+
+        usort($actionsUsingTimestampMillis, function (QueueAction $a, QueueAction $b) {
+            return $a->actionedAt <=> $b->actionedAt;
+        });
+
+        $actions = array_merge($actionsUsingTimestampSecs, $actionsUsingTimestampMillis);
 
         $this->transactionHandler->executeTransaction(function () use ($actions, $userAuth) {
 
@@ -137,6 +157,7 @@ class SyncQueueActions
         });
     }
 
+
     /**
      * Dispatches events for the actions based on their type (insert, update, delete).
      *
@@ -162,6 +183,10 @@ class SyncQueueActions
                 $this->eventBus->publish("sync.update", $eventData);
             } elseif ($action->action == SyncAction::DELETE) {
                 $this->eventBus->publish("sync.delete", $eventData);
+            }
+
+            if ($action->useTimestampMillis && $this->config->isFeatureEnabled(FeatureName::WEBSOCKET)) {
+                $this->queueActionWebsocketPublisher->publish($action);
             }
         }
     }

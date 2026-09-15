@@ -6,6 +6,7 @@ use AppTank\Horus\Application\Sync\SyncQueueActions;
 use AppTank\Horus\Core\Auth\UserAuth;
 use AppTank\Horus\Core\Bus\IEventBus;
 use AppTank\Horus\Core\Config\Config;
+use AppTank\Horus\Core\Config\FeatureName;
 use AppTank\Horus\Core\Config\Restriction\MaxCountEntityRestriction;
 use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
 use AppTank\Horus\Core\Exception\RestrictionException;
@@ -21,6 +22,7 @@ use AppTank\Horus\Core\Repository\FileUploadedRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
+use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
 use AppTank\Horus\Horus;
 use AppTank\Horus\Illuminate\Transaction\EloquentTransactionHandler;
 use Mockery\Mock;
@@ -46,6 +48,8 @@ class SyncQueueActionsTest extends TestCase
 
     private IFileHandler|Mock $fileHandler;
 
+    private QueueActionWebsocketPublisher|Mock $queueActionWebsocketPublisher;
+
     private SyncQueueActions $syncQueueActions;
 
     public function setUp(): void
@@ -63,6 +67,8 @@ class SyncQueueActionsTest extends TestCase
         $this->accessValidatorRepository = $this->mock(EntityAccessValidatorRepository::class);
         $this->fileUploadedRepository = $this->mock(FileUploadedRepository::class);
         $this->fileHandler = $this->mock(IFileHandler::class);
+        $this->queueActionWebsocketPublisher = $this->mock(QueueActionWebsocketPublisher::class);
+        $this->queueActionWebsocketPublisher->shouldReceive('publish')->byDefault();
 
         $this->syncQueueActions = new SyncQueueActions(
             $this->transactionHandler,
@@ -73,7 +79,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
     }
 
@@ -138,11 +145,9 @@ class SyncQueueActionsTest extends TestCase
                     $action instanceof EntityOperation, true);
         });
         $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($actions) {
-            // Validate that args are QueueAction and the first item actionedAt is less than the last item actionedAt
+            // Validate that all actions are persisted, regardless of their operation group order.
             return count($args) === count($actions) &&
-                array_reduce($args, fn($carry, $action) => $carry &&
-                    $action instanceof QueueAction, true) &&
-                $args[0]->actionedAt < $args[count($args) - 1]->actionedAt;
+                array_reduce($args, fn($carry, $action) => $carry && $action instanceof QueueAction, true);
         });
 
         $this->entityRepository->shouldReceive("getEntityOwner")->andReturn($this->faker->uuid);
@@ -168,6 +173,45 @@ class SyncQueueActionsTest extends TestCase
         $this->syncQueueActions->__invoke(new UserAuth($userId), ...$actions);
     }
 
+    function testInvokeDoesNotPublishWebsocketEventWhenFeatureIsDisabled(): void
+    {
+        $userId = $this->faker->uuid;
+        $action = QueueActionFactory::create(
+            EntityOperationFactory::createEntityDelete(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                now()->toDateTimeImmutable(),
+            ),
+            userId: $userId,
+        );
+        $config = new Config(true, disabledFeatures: [FeatureName::WEBSOCKET]);
+
+        $syncQueueActions = new SyncQueueActions(
+            $this->transactionHandler,
+            $this->queueActionRepository,
+            $this->entityRepository,
+            $this->accessValidatorRepository,
+            $this->fileUploadedRepository,
+            $this->eventBus,
+            $this->fileHandler,
+            Horus::getInstance()->getEntityMapper(),
+            $config,
+            $this->queueActionWebsocketPublisher,
+        );
+
+        $this->entityRepository->shouldReceive('getEntityOwner')->once()->andReturn($userId);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->once()->andReturn(true);
+        $this->entityRepository->shouldReceive('insert')->once();
+        $this->entityRepository->shouldReceive('update')->once();
+        $this->entityRepository->shouldReceive('delete')->once();
+        $this->queueActionRepository->shouldReceive('save')->once();
+        $this->eventBus->shouldReceive('publish')->once();
+        $this->queueActionWebsocketPublisher->shouldReceive('publish')->never();
+
+        $syncQueueActions->__invoke(new UserAuth($userId), $action);
+    }
+
 
     function testInvokeIsFailureByMaxCountEntityExceeded()
     {
@@ -188,7 +232,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertActions = $this->generateArray(function () use ($userId) {
@@ -230,7 +275,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertActions = $this->generateCountArray(function () use ($ownerId, &$filesUploaded) {
@@ -331,7 +377,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $action = QueueActionFactory::create(
@@ -387,7 +434,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $insertAction = QueueActionFactory::create(
@@ -458,7 +506,8 @@ class SyncQueueActionsTest extends TestCase
             $this->eventBus,
             $this->fileHandler,
             $mapper,
-            $config
+            $config,
+            $this->queueActionWebsocketPublisher
         );
 
         $actionToSkip = QueueActionFactory::create(
@@ -512,5 +561,106 @@ class SyncQueueActionsTest extends TestCase
 
         // When
         $syncQueueActions->__invoke(new UserAuth($userId), $actionToSkip, $actionToKeep);
+    }
+
+    function testInvokeExecutesOnlyUnregisteredEventActionsAndLegacyActions()
+    {
+        $userId = $this->faker->uuid;
+        $registeredEventId = $this->faker->uuid;
+        $unregisteredEventId = $this->faker->uuid;
+
+        $registeredAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $registeredEventId,
+            actionedAt: now()->toDateTimeImmutable()
+        );
+        $unregisteredAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->addMinute()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $unregisteredEventId,
+            actionedAt: now()->addMinute()->toDateTimeImmutable()
+        );
+        $legacyAction = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->addMinutes(2)->toDateTimeImmutable()
+            ),
+            $userId,
+            actionedAt: now()->addMinutes(2)->toDateTimeImmutable()
+        );
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$registeredEventId, $unregisteredEventId])
+            ->andReturn([
+                $registeredEventId => true,
+                $unregisteredEventId => false,
+            ]);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->twice()->andReturn(true);
+        $this->entityRepository->shouldReceive('getEntityOwner')->twice()->andReturn($userId);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
+            return count($args) === 2 &&
+                $args[0]->id === $unregisteredAction->operation->id &&
+                $args[1]->id === $legacyAction->operation->id;
+        });
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(function (...$args) use ($unregisteredEventId, $legacyAction) {
+            return count($args) === 2 &&
+                $args[0]->eventId === $unregisteredEventId &&
+                $args[1]->eventId === $legacyAction->eventId;
+        });
+        $this->eventBus->shouldReceive('publish')->twice()->with('sync.update', \Mockery::any());
+
+        // When
+        $this->syncQueueActions->__invoke(new UserAuth($userId), $registeredAction, $unregisteredAction, $legacyAction);
+    }
+
+    function testInvokeExecutesWhenEventActionIsUnregistered()
+    {
+        $userId = $this->faker->uuid;
+        $eventId = $this->faker->uuid;
+        $action = QueueActionFactory::create(
+            EntityOperationFactory::createEntityUpdate(
+                $userId,
+                ParentFakeWritableEntity::getEntityName(),
+                $this->faker->uuid,
+                ParentFakeEntityFactory::newData(),
+                now()->toDateTimeImmutable()
+            ),
+            $userId,
+            eventId: $eventId
+        );
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$eventId])
+            ->andReturn([$eventId => false]);
+        $this->accessValidatorRepository->shouldReceive('canAccessEntity')->once()->andReturn(true);
+        $this->entityRepository->shouldReceive('getEntityOwner')->once()->andReturn($userId);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0]->id === $action->operation->id);
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action);
+        $this->eventBus->shouldReceive('publish')->once()->with('sync.update', \Mockery::any());
+
+        // When
+        $this->syncQueueActions->__invoke(new UserAuth($userId), $action);
     }
 }

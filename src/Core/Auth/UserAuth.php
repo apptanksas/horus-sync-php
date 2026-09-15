@@ -89,6 +89,16 @@ readonly class UserAuth
         return $this->userActingAs?->userId ?? $this->userId;
     }
 
+    /**
+     * Get the identifier expected by Laravel's broadcasting authentication.
+     *
+     * @return string|int
+     */
+    function getAuthIdentifier(): string|int
+    {
+        return $this->getEffectiveUserId();
+    }
+
     function toArray(): array
     {
         return [

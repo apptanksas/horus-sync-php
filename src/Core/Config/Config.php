@@ -43,6 +43,9 @@ class Config
      */
     private array $restrictionsByEntity = [];
 
+    public readonly WebSocketConfig $websocketConfig;
+    public readonly bool $hasExplicitWebSocketConfig;
+
     /**
      * @param bool $validateAccess Indicates whether access validation is enabled.
      * @param string|null $connectionName The name of the database connection, or null if not specified.
@@ -53,6 +56,7 @@ class Config
      * @param EntityReference[] $sharedEntities An array of shared entities.
      * @param FeatureName[] $disabledFeatures An array of disabled features.
      * @param array $extraParametersReferenceFile An array of extra parameters for the reference file, when not use parameter as file reference.
+     * @param WebSocketConfig|array|null $websocketConfig The broadcasting configuration used by Horus websocket events.
      */
     function __construct(
         public readonly bool    $validateAccess = false,
@@ -63,7 +67,8 @@ class Config
         array                   $entityRestrictions = [],
         array                   $sharedEntities = [],
         public readonly array   $disabledFeatures = [],
-        public readonly array   $extraParametersReferenceFile = []
+        public readonly array   $extraParametersReferenceFile = [],
+        WebSocketConfig|array|null $websocketConfig = null,
     )
     {
         // Validate if ends with a slash
@@ -75,6 +80,10 @@ class Config
 
         $this->entityRestrictions = $entityRestrictions;
         $this->sharedEntities = $sharedEntities;
+        $this->hasExplicitWebSocketConfig = $websocketConfig !== null;
+        $this->websocketConfig = $websocketConfig instanceof WebSocketConfig
+            ? $websocketConfig
+            : WebSocketConfig::fromArray($websocketConfig ?? []);
         $this->populateRestrictionsByEntity();
     }
 
@@ -194,6 +203,17 @@ class Config
     }
 
     /**
+     * Checks whether a feature is enabled.
+     *
+     * @param FeatureName $feature The feature to check.
+     * @return bool
+     */
+    function isFeatureEnabled(FeatureName $feature): bool
+    {
+        return !in_array($feature, $this->disabledFeatures, true);
+    }
+
+    /**
      * Gets the shared entities.
      *
      * @return EntityReference[]
@@ -235,6 +255,8 @@ class Config
             'sharedEntities' => $this->sharedEntities,
             'disabledFeatures' => $this->disabledFeatures,
             'extraParametersReferenceFile' => $this->extraParametersReferenceFile,
+            'websocketConfig' => $this->websocketConfig,
+            'hasExplicitWebSocketConfig' => $this->hasExplicitWebSocketConfig,
             'restrictionsByEntity' => $this->restrictionsByEntity,
             // Closures are not serialized
         ];
@@ -257,6 +279,11 @@ class Config
         $this->sharedEntities = $data['sharedEntities'];
         $this->disabledFeatures = $data['disabledFeatures'];
         $this->extraParametersReferenceFile = $data['extraParametersReferenceFile'];
+        $this->hasExplicitWebSocketConfig = $data['hasExplicitWebSocketConfig'] ?? (($data['websocketConfig'] ?? null) !== null);
+        $websocketConfig = $data['websocketConfig'] ?? null;
+        $this->websocketConfig = $websocketConfig instanceof WebSocketConfig
+            ? $websocketConfig
+            : WebSocketConfig::fromArray(is_array($websocketConfig) ? $websocketConfig : []);
         $this->restrictionsByEntity = $data['restrictionsByEntity'];
         // Closures are initialized to null
         $this->onSetupSharedEntities = null;

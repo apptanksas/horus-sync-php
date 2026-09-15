@@ -22,6 +22,7 @@ use AppTank\Horus\Repository\EloquentQueueActionRepository;
 use DateTimeImmutable;
 use Mockery\Mock;
 use Tests\_Stubs\ParentFakeWritableEntity;
+use Tests\_Stubs\QueueActionFactory;
 use Tests\_Stubs\SyncQueueActionModelFactory;
 use Tests\TestCase;
 
@@ -148,6 +149,68 @@ class HorusQueueActionClientTest extends TestCase
         $this->horusQueueActionClient->pushActions(...$allActions);
 
         // Then - If we reach here without exception, the test passes
+        $this->assertTrue(true);
+    }
+
+    function testPushActionsExecutesOnlyUnregisteredEventActionsAndLegacyActions()
+    {
+        // Given
+        $registeredEventId = $this->faker->uuid();
+        $unregisteredEventId = $this->faker->uuid();
+        $registeredAction = QueueActionFactory::create(action: SyncAction::UPDATE, eventId: $registeredEventId);
+        $unregisteredAction = QueueActionFactory::create(action: SyncAction::UPDATE, eventId: $unregisteredEventId);
+        $legacyAction = QueueActionFactory::create(action: SyncAction::UPDATE);
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$registeredEventId, $unregisteredEventId])
+            ->andReturn([
+                $registeredEventId => true,
+                $unregisteredEventId => false,
+            ]);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')
+            ->once()
+            ->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
+                return count($args) === 2 &&
+                    in_array($unregisteredAction->operation, $args, true) &&
+                    in_array($legacyAction->operation, $args, true);
+            });
+        $this->queueActionRepository->shouldReceive('save')
+            ->once()
+            ->withArgs(function (...$args) use ($unregisteredAction, $legacyAction) {
+                return count($args) === 2 &&
+                    in_array($unregisteredAction, $args, true) &&
+                    in_array($legacyAction, $args, true);
+            });
+
+        // When
+        $this->horusQueueActionClient->pushActions($registeredAction, $unregisteredAction, $legacyAction);
+
+        // Then - the repository and entity operations only receive unregistered and legacy actions
+        $this->assertTrue(true);
+    }
+
+    function testPushActionsExecutesWhenEventActionIsUnregistered()
+    {
+        // Given
+        $eventId = $this->faker->uuid();
+        $action = QueueActionFactory::create(action: SyncAction::UPDATE, eventId: $eventId);
+
+        $this->queueActionRepository->shouldReceive('checkExistsByEventIds')
+            ->once()
+            ->with([$eventId])
+            ->andReturn([$eventId => false]);
+        $this->entityRepository->shouldReceive('insert')->once()->withArgs(fn(...$args) => empty($args));
+        $this->entityRepository->shouldReceive('update')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action->operation);
+        $this->entityRepository->shouldReceive('delete')->once()->withArgs(fn(...$args) => empty($args));
+        $this->queueActionRepository->shouldReceive('save')->once()->withArgs(fn(...$args) => count($args) === 1 && $args[0] === $action);
+
+        // When
+        $this->horusQueueActionClient->pushActions($action);
+
+        // Then - the unregistered action is processed
         $this->assertTrue(true);
     }
 

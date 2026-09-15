@@ -7,6 +7,7 @@ use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Core\Util\IDateTimeUtil;
 use AppTank\Horus\Illuminate\Database\SyncQueueActionModel;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,24 +28,35 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
     /**
      * Saves one or more queue actions to the database.
      *
-     * This method inserts the provided queue actions into the database.
+     * This method inserts or updates the provided queue actions in the database.
+     * If an action has an event_id, it uses updateOrInsert based on event_id.
+     * If event_id is null, it inserts a new record to maintain backwards compatibility.
      * Throws an exception if the operation fails.
      *
      * @param QueueAction ...$actions The queue actions to be saved.
-     * @throws \Exception If the insertion operation fails.
+     * @throws \Exception If the operation fails.
      */
     function save(QueueAction ...$actions): void
     {
-        $table = (is_null($this->connectionName)) ? DB::table(SyncQueueActionModel::TABLE_NAME) :
-            DB::connection($this->connectionName)->table(SyncQueueActionModel::TABLE_NAME);
-
-        $data = [];
+        $dataWithEventIds = [];
+        $dataDefault = [];
+        $table = $this->getTable();
 
         foreach ($actions as $action) {
-            $data[] = $this->parseData($action);
+            // With event ids
+            if (!is_null($action->eventId) && !empty($action->eventId)) {
+                $dataWithEventIds[] = $this->parseData($action);
+                continue;
+            }
+
+            $dataDefault[] = $this->parseData($action);
         }
 
-        if (!$table->insert($data)) {
+        if (!empty($dataDefault) && !$table->insert($dataDefault)) {
+            throw new \Exception('Failed to save queue actions');
+        }
+
+        if (!empty($dataWithEventIds) && !$table->upsert($dataWithEventIds, [SyncQueueActionModel::ATTR_EVENT_ID])) {
             throw new \Exception('Failed to save queue actions');
         }
     }
@@ -55,7 +67,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
      * @param int|string $userOwnerId The ID of the user or owner to retrieve the last action for.
      * @return QueueAction|null The most recent QueueAction, or null if no actions are found.
      */
-    function getLastAction(int|string $userOwnerId): ?QueueAction
+    function getLastActionByUserOwnerId(int|string $userOwnerId): ?QueueAction
     {
         $result = SyncQueueActionModel::query()
             ->where(SyncQueueActionModel::FK_OWNER_ID, $userOwnerId)
@@ -69,19 +81,77 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         return $this->buildQueueActionByModel($result);
     }
 
+
     /**
-     * Retrieves actions combining restricted owners (filtered by date) and unrestricted owners (always included).
+     * Retrieves the last queue action for a specific array of user owner IDs.
      *
-     * @param array|int|string $filteredOwnerIds Owners subject to the date exclusion logic.
+     * @param array $ownerIds The IDs of the user owners whose last action is to be retrieved.
+     * @return QueueAction|null The last queue action for the specified user owner ID, or null if no actions are found.
+     */
+    public function getLastActionByOwners(array $ownerIds): ?QueueAction
+    {
+        $result = SyncQueueActionModel::query()
+            ->whereIn(SyncQueueActionModel::FK_OWNER_ID, $ownerIds)
+            ->where(SyncQueueActionModel::ATTR_SKIPPED, false)
+            ->orderByDesc("id")->limit(1)->get()->first();
+
+        if (is_null($result)) {
+            return null;
+        }
+
+        return $this->buildQueueActionByModel($result);
+    }
+
+    /**
+     * Retrieves a page of the most recent queue actions for a specific set of owner IDs, ordered from
+     * newest to oldest. Supports cursor-based pagination through the internal sequence (id) of the action,
+     * which is useful for scanning backwards in time until an accessible action is found.
+     *
+     * @param array $ownerIds The IDs of the user owners whose actions are to be retrieved.
+     * @param int $limit Maximum number of actions to retrieve.
+     * @param int|null $beforeSequence If provided, only actions with a sequence (id) lower than this value are retrieved.
+     * @return QueueAction[] The queue actions ordered from newest to oldest.
+     */
+    public function getLastActionsByOwners(array $ownerIds, int $limit, ?int $beforeSequence = null): array
+    {
+        if (empty($ownerIds)) {
+            return [];
+        }
+
+        $query = SyncQueueActionModel::query()
+            ->whereIn(SyncQueueActionModel::FK_OWNER_ID, $ownerIds)
+            ->where(SyncQueueActionModel::ATTR_SKIPPED, false);
+
+        if ($beforeSequence !== null) {
+            $query->where('id', '<', $beforeSequence);
+        }
+
+        return $query->orderByDesc("id")
+            ->limit($limit)
+            ->get()
+            ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))
+            ->toArray();
+    }
+
+    /**
+     * Retrieves actions combining restricted owners (filtered by date or event ID) and unrestricted owners (always included).
+     *
+     * @param array|int|string $filteredOwnerIds Owners subject to the date/event exclusion logic.
      * @param int|null $afterTimestamp Global time filter (applies to everything).
      * @param array $excludeDateTimes Dates to exclude for the filtered owners.
      * @param array $alwaysIncludeOwnerIds Owners whose actions are always retrieved (ignoring exclusions).
+     * @param string|null $afterEventId Filter actions after the specified event ID.
+     * @param array $excludeEventIds Event IDs to exclude for the filtered owners.
+     * @param int|null $limit Maximum number of actions to retrieve.
      */
     public function getActions(
         array|int|string $filteredOwnerIds,
         ?int             $afterTimestamp = null,
         array            $excludeDateTimes = [],
-        array            $alwaysIncludeOwnerIds = []
+        array            $alwaysIncludeOwnerIds = [],
+        ?string          $afterEventId = null,
+        array            $excludeEventIds = [],
+        ?int             $limit = null,
     ): array
     {
 
@@ -91,6 +161,17 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         if ($afterTimestamp !== null) {
             $formattedAfterDate = $this->dateTimeUtil->getFormatDate($this->dateTimeUtil->parseDatetime($afterTimestamp)->getTimestamp());
             $query->where(SyncQueueActionModel::ATTR_SYNCED_AT, '>=', $formattedAfterDate)->orderBy("id");
+        }
+
+        // Global Event ID Filter (Applies to both groups)
+        if ($afterEventId !== null) {
+            $afterAction = SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_EVENT_ID, $afterEventId)->first();
+
+            if ($afterAction) {
+                $query->where('id', '>', $afterAction->id)->orderBy("id");
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Prepare exclusion dates
@@ -107,11 +188,11 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         $unrestrictedIds = is_array($alwaysIncludeOwnerIds) ? $alwaysIncludeOwnerIds : [$alwaysIncludeOwnerIds];
 
         // 2. Core Logic: (Group A: Filtered) OR (Group B: Unrestricted)
-        $query->where(function ($mainQuery) use ($filteredIds, $unrestrictedIds, $arrayDateExcludes) {
+        $query->where(function ($mainQuery) use ($filteredIds, $unrestrictedIds, $arrayDateExcludes, $excludeEventIds) {
 
             // GROUP A: The owners subject to date exclusion logic
             if (!empty($filteredIds)) {
-                $mainQuery->where(function ($q) use ($filteredIds, $arrayDateExcludes) {
+                $mainQuery->where(function ($q) use ($filteredIds, $arrayDateExcludes, $excludeEventIds) {
                     $q->whereIn(SyncQueueActionModel::FK_OWNER_ID, $filteredIds);
 
                     // Apply exclusion logic ONLY to this group
@@ -120,6 +201,17 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
                             // Keep if date is valid OR actor is not the owner
                             $subQ->whereNotIn(SyncQueueActionModel::ATTR_ACTIONED_AT, $arrayDateExcludes)
                                 ->orWhereColumn(SyncQueueActionModel::FK_USER_ID, '!=', SyncQueueActionModel::FK_OWNER_ID);
+                        });
+                    }
+
+                    // Apply event ID exclusion logic ONLY to this group
+                    if (!empty($excludeEventIds)) {
+                        $q->where(function ($subQ) use ($excludeEventIds) {
+                            // Keep if event_id is not in excludeEventIds (or null) OR actor is not the owner
+                            $subQ->where(function ($innerQ) use ($excludeEventIds) {
+                                $innerQ->whereNotIn(SyncQueueActionModel::ATTR_EVENT_ID, $excludeEventIds)
+                                    ->orWhereNull(SyncQueueActionModel::ATTR_EVENT_ID);
+                            })->orWhereColumn(SyncQueueActionModel::FK_USER_ID, '!=', SyncQueueActionModel::FK_OWNER_ID);
                         });
                     }
                 });
@@ -132,9 +224,45 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             }
         });
 
+        if ($limit !== null) {
+            $query->limit($limit)->orderBy("id", "DESC");
+        }
+
         return $query->get()
             ->map(fn(SyncQueueActionModel $model) => $this->buildQueueActionByModel($model))
             ->toArray();
+    }
+
+    /**
+     * Checks if actions are registered for the given event IDs.
+     *
+     * @param array $eventIds List of event IDs to check.
+     * @return array Associative array mapping each event ID to a boolean indicating if it is registered.
+     */
+    public function checkExistsByEventIds(array $eventIds): array
+    {
+        if (empty($eventIds)) {
+            return [];
+        }
+
+        $validEventIds = array_values(array_filter($eventIds, fn($id) => is_string($id) && trim($id) !== ''));
+
+        $registered = [];
+        if (!empty($validEventIds)) {
+            $registered = $this->getTable()
+                ->whereIn(SyncQueueActionModel::ATTR_EVENT_ID, $validEventIds)
+                ->pluck(SyncQueueActionModel::ATTR_EVENT_ID)
+                ->toArray();
+        }
+
+        $registeredMap = array_fill_keys($registered, true);
+
+        $result = [];
+        foreach ($eventIds as $eventId) {
+            $result[$eventId] = isset($registeredMap[$eventId]);
+        }
+
+        return $result;
     }
 
 
@@ -156,7 +284,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             SyncQueueActionModel::FK_USER_ID => $queueAction->userId,
             SyncQueueActionModel::FK_OWNER_ID => $queueAction->ownerId,
             SyncQueueActionModel::ATTR_BY_SYSTEM => $queueAction->bySystem,
-            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped
+            SyncQueueActionModel::ATTR_SKIPPED => $queueAction->skipped,
+            SyncQueueActionModel::ATTR_EVENT_ID => $queueAction->eventId,
         ];
     }
 
@@ -171,4 +300,14 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
         return QueueActionMapper::createFromEloquent($model);
     }
 
+    /**
+     * Retrieves a query builder instance for the sync queue actions table.
+     *
+     * @return Builder
+     */
+    private function getTable(): Builder
+    {
+        return (is_null($this->connectionName)) ? DB::table(SyncQueueActionModel::TABLE_NAME) :
+            DB::connection($this->connectionName)->table(SyncQueueActionModel::TABLE_NAME);
+    }
 }

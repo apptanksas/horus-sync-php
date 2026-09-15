@@ -4,6 +4,7 @@ namespace AppTank\Horus\Client;
 
 use AppTank\Horus\Core\Config\Config;
 use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestriction;
+use AppTank\Horus\Core\Filter\QueueActionEventIdFilter;
 use AppTank\Horus\Core\Mapper\QueueActionMapper;
 use AppTank\Horus\Core\Model\EntityData;
 use AppTank\Horus\Core\Model\EntityDelete;
@@ -39,6 +40,7 @@ class HorusQueueActionClient implements IHorusQueueActionClient
      * @param Config $config Application configuration.
      */
     private EntityRestrictionValidator $entityRestrictionValidator;
+    private QueueActionEventIdFilter $queueActionEventIdFilter;
 
     function __construct(
         private readonly ITransactionHandler   $transactionHandler,
@@ -51,6 +53,7 @@ class HorusQueueActionClient implements IHorusQueueActionClient
             $this->entityRepository,
             $this->config
         );
+        $this->queueActionEventIdFilter = new QueueActionEventIdFilter($this->queueActionRepository);
     }
 
     /**
@@ -64,6 +67,11 @@ class HorusQueueActionClient implements IHorusQueueActionClient
      */
     public function pushActions(QueueAction ...$actions): void
     {
+        $actions = $this->queueActionEventIdFilter->filter(...$actions);
+        if (empty($actions)) {
+            return;
+        }
+
         $actions = $this->validateQueueActionSkipperRestriction(...$actions);
 
         // Sort actions by timestamp to ensure chronological processing

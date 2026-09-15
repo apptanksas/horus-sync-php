@@ -3,6 +3,8 @@
 namespace AppTank\Horus\Illuminate\Http\Controller\Data;
 
 use AppTank\Horus\Application\Get\GetQueueLastAction;
+use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\QueueActionRepository;
 use AppTank\Horus\Illuminate\Http\Controller;
 use Illuminate\Http\JsonResponse;
@@ -24,11 +26,17 @@ class GetQueueLastActionController extends Controller
      * Constructor for GetQueueLastActionController.
      *
      * @param QueueActionRepository $repository Repository for fetching queue actions.
+     * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating entity access.
+     * @param EntityMapper $entityMapper Mapper for converting entities to arrays.
      */
-    function __construct(QueueActionRepository $repository)
+    function __construct(
+        QueueActionRepository           $repository,
+        EntityAccessValidatorRepository $accessValidatorRepository,
+        EntityMapper                    $entityMapper
+    )
     {
         parent::__construct();
-        $this->useCase = new GetQueueLastAction($repository);
+        $this->useCase = new GetQueueLastAction($repository, $accessValidatorRepository, $entityMapper);
     }
 
     /**

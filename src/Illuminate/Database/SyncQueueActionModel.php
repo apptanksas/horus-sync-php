@@ -20,6 +20,7 @@ final class SyncQueueActionModel extends Model
 {
     // Table and column names
     const string TABLE_NAME = "sync_queue_actions";
+    const string ATTR_EVENT_ID = "event_id"; // Event Identifier.
     const string ATTR_ACTION = "action"; // Action made on the entity.
     const string ATTR_ENTITY = "entity"; // Entity name
     const string ATTR_ENTITY_ID = "entity_id"; // Entity Identifier.
@@ -38,6 +39,7 @@ final class SyncQueueActionModel extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        self::ATTR_EVENT_ID,
         self::FK_USER_ID,
         self::FK_OWNER_ID,
         self::ATTR_ACTION,
@@ -175,6 +177,16 @@ final class SyncQueueActionModel extends Model
     public function getBySystem(): bool
     {
         return $this->getAttribute(self::ATTR_BY_SYSTEM);
+    }
+
+    /**
+     * Get the event ID attribute.
+     *
+     * @return string|null Event Identifier.
+     */
+    public function getEventId(): ?string
+    {
+        return $this->getAttribute(self::ATTR_EVENT_ID);
     }
 
     /**
