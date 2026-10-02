@@ -232,8 +232,9 @@ class SyncQueueActions
                     if ($this->accessValidatorRepository->thereWasAccessEntityPreviously($userAuth, $entityReference, Permission::UPDATE)) {
                         continue;
                     }
-
-                    throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
+                    // Skipped
+                    $action = $action->cloneAsSkipped();
+                    //throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
 
                 $updateActions[] = $action;
