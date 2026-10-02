@@ -705,7 +705,8 @@ class PostSyncQueueActionsApiTest extends ApiTestCase
         $response = $this->post(route(RouteName::POST_SYNC_QUEUE_ACTIONS->value), $data);
 
         // Then
-        $response->assertUnauthorized();
+        $response->assertAccepted();
+        $this->assertTrue(boolval(SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_ENTITY_ID, $entityId)->first()->getAttribute(SyncQueueActionModel::ATTR_SKIPPED)));
     }
 
     function testTryUpdateEntityButNotPermissionByActingAsNotMatchWithEntityGranted()

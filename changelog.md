@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.20.1
+- Workaround for skipped queue actions when operation is not permitted to update.
+
 # 0.20.0
 - Added `event_id` support to queue actions, including update-or-insert persistence and duplicate-action filtering.
 - Added `after` and `exclude` filters for queue actions using timestamps or event UUIDs.
