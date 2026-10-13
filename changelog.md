@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.20.2
+- Fixed get parent id from queue action in sync queue actions.
+
 # 0.20.1
 - Workaround for skipped queue actions when operation is not permitted to update.
 
