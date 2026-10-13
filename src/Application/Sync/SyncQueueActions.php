@@ -389,7 +389,7 @@ class SyncQueueActions
             $insertActions = array_filter(array_filter($this->actions, fn(QueueAction $a) => $a->operation instanceof EntityInsert));
             // Check if the insert action matches the current action's operation ID
             foreach ($insertActions as $insertAction) {
-                if ($insertAction->operation->id === $action->operation->id) {
+                if ($insertAction->operation->id === $action->operation->id && $insertAction->actionedAt <= $action->actionedAt) {
                     $entity = new $entityClass($insertAction->operation->toArray());
                     break;
                 }
