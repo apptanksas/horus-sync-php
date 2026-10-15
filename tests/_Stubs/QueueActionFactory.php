@@ -14,7 +14,7 @@ class QueueActionFactory
 {
 
 
-    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false, ?SyncAction $action = null, bool $skipped = false, ?string $eventId = null, ?\DateTimeImmutable $actionedAt = null): QueueAction
+    public static function create(?EntityOperation $entityOperation = null, ?string $userId = null, bool $bySystem = false, ?SyncAction $action = null, bool $skipped = false, ?string $eventId = null, ?\DateTimeImmutable $actionedAt = null, bool $useTimestampMillis = false): QueueAction
     {
 
         $faker = \Faker\Factory::create();
@@ -44,7 +44,8 @@ class QueueActionFactory
             $userId ?? $faker->uuid,
             $bySystem,
             $skipped,
-            eventId: $eventId
+            eventId: $eventId,
+            useTimestampMillis: $useTimestampMillis
         );
     }
 
