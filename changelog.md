@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.20.3
+- Fixed sorting actions with timestamp millis in sync queue actions.
+
 # 0.20.2
 - Fixed get parent id from queue action in sync queue actions.
 

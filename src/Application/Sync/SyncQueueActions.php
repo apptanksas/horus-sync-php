@@ -106,6 +106,7 @@ class SyncQueueActions
      */
     function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
+        $this->entityOwnerIds = [];
         $actions = $this->queueActionEventIdFilter->filter(...$actions);
 
         if (empty($actions)) {
@@ -126,7 +127,11 @@ class SyncQueueActions
         });
 
         usort($actionsUsingTimestampMillis, function (QueueAction $a, QueueAction $b) {
-            return $a->actionedAt <=> $b->actionedAt;
+            $timeComparison = $a->actionedAt <=> $b->actionedAt;
+            if ($timeComparison !== 0) {
+                return $timeComparison;
+            }
+            return $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
         });
 
         $actions = array_merge($actionsUsingTimestampSecs, $actionsUsingTimestampMillis);
@@ -329,6 +334,18 @@ class SyncQueueActions
 
             if ($parentExistsInInsertActions) {
                 $parentId = $this->getParentIdFromQueueAction($action);
+
+                if (isset($this->entityOwnerIds[$parentId])) {
+                    return $this->entityOwnerIds[$parentId];
+                }
+
+                $parentOwner = $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray());
+
+                if (!is_null($parentOwner)) {
+                    $this->entityOwnerIds[$parentId] = $parentOwner;
+                    return $parentOwner;
+                }
+
                 return $this->entityOwnerIds[$parentId] ?? throw new \Exception("Parent entity owner ID not found for entity {$action->entity} with ID {$parentId}");
             }
 
