@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.21.1
+- Fixed get owner id in sync queue actions.
+
 # 0.21.0
 - Added minimum support to Laravel 12.
 
