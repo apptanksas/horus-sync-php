@@ -11,11 +11,9 @@ use AppTank\Horus\Core\Config\Restriction\QueueActionSkipperValidatorEntityRestr
 use AppTank\Horus\Core\Entity\EntityDependsOn;
 use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\Exception\OperationNotPermittedException;
-use AppTank\Horus\Core\File\FilePathGenerator;
 use AppTank\Horus\Core\File\FileReferenceValidator;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\File\IFileReferenceValidator;
-use AppTank\Horus\Core\File\SyncFileStatus;
 use AppTank\Horus\Core\Filter\QueueActionEventIdFilter;
 use AppTank\Horus\Core\Mapper\EntityMapper;
 use AppTank\Horus\Core\Model\EntityData;
@@ -23,7 +21,6 @@ use AppTank\Horus\Core\Model\EntityDelete;
 use AppTank\Horus\Core\Model\EntityInsert;
 use AppTank\Horus\Core\Model\EntityOperation;
 use AppTank\Horus\Core\Model\EntityUpdate;
-use AppTank\Horus\Core\Model\FileUploaded;
 use AppTank\Horus\Core\Model\QueueAction;
 use AppTank\Horus\Core\Repository\EntityAccessValidatorRepository;
 use AppTank\Horus\Core\Repository\EntityRepository;
@@ -33,7 +30,6 @@ use AppTank\Horus\Core\SyncAction;
 use AppTank\Horus\Core\Transaction\ITransactionHandler;
 use AppTank\Horus\Core\Validator\EntityRestrictionValidator;
 use AppTank\Horus\Core\Websocket\QueueActionWebsocketPublisher;
-use Illuminate\Support\Facades\Log;
 
 /**
  * @internal Class SyncQueueActions
@@ -48,7 +44,9 @@ use Illuminate\Support\Facades\Log;
 class SyncQueueActions
 {
     private IFileReferenceValidator $fileReferenceValidator;
+
     private EntityRestrictionValidator $entityRestrictionValidator;
+
     private QueueActionEventIdFilter $queueActionEventIdFilter;
 
     /**
@@ -64,28 +62,27 @@ class SyncQueueActions
     /**
      * SyncQueueActions constructor.
      *
-     * @param ITransactionHandler $transactionHandler Handler for managing database transactions.
-     * @param QueueActionRepository $queueActionRepository Repository for queue actions.
-     * @param EntityRepository $entityRepository Repository for managing entities.
-     * @param EntityAccessValidatorRepository $accessValidatorRepository Repository for validating access to entities.
-     * @param FileUploadedRepository $fileUploadedRepository Repository for managing file uploads.
-     * @param IEventBus $eventBus Event bus for dispatching events.
-     * @param IFileHandler $fileHandler File handler for managing file uploads.
-     * @param EntityMapper $entityMapper Mapper for entity classes.
+     * @param  ITransactionHandler  $transactionHandler  Handler for managing database transactions.
+     * @param  QueueActionRepository  $queueActionRepository  Repository for queue actions.
+     * @param  EntityRepository  $entityRepository  Repository for managing entities.
+     * @param  EntityAccessValidatorRepository  $accessValidatorRepository  Repository for validating access to entities.
+     * @param  FileUploadedRepository  $fileUploadedRepository  Repository for managing file uploads.
+     * @param  IEventBus  $eventBus  Event bus for dispatching events.
+     * @param  IFileHandler  $fileHandler  File handler for managing file uploads.
+     * @param  EntityMapper  $entityMapper  Mapper for entity classes.
      */
-    function __construct(
-        private readonly ITransactionHandler             $transactionHandler,
-        private readonly QueueActionRepository           $queueActionRepository,
-        private readonly EntityRepository                $entityRepository,
+    public function __construct(
+        private readonly ITransactionHandler $transactionHandler,
+        private readonly QueueActionRepository $queueActionRepository,
+        private readonly EntityRepository $entityRepository,
         private readonly EntityAccessValidatorRepository $accessValidatorRepository,
-        private readonly FileUploadedRepository          $fileUploadedRepository,
-        private readonly IEventBus                       $eventBus,
-        private readonly IFileHandler                    $fileHandler,
-        private readonly EntityMapper                    $entityMapper,
-        private readonly Config                          $config,
-        private readonly QueueActionWebsocketPublisher   $queueActionWebsocketPublisher,
-    )
-    {
+        private readonly FileUploadedRepository $fileUploadedRepository,
+        private readonly IEventBus $eventBus,
+        private readonly IFileHandler $fileHandler,
+        private readonly EntityMapper $entityMapper,
+        private readonly Config $config,
+        private readonly QueueActionWebsocketPublisher $queueActionWebsocketPublisher,
+    ) {
         $this->fileReferenceValidator = new FileReferenceValidator($this->entityRepository, $this->fileUploadedRepository, $this->fileHandler, $this->config);
         $this->entityRestrictionValidator = new EntityRestrictionValidator($this->entityRepository, $this->config);
         $this->queueActionEventIdFilter = new QueueActionEventIdFilter($this->queueActionRepository);
@@ -98,13 +95,12 @@ class SyncQueueActions
      * and delete actions. These actions are executed within a transaction to ensure data integrity.
      * After executing the actions, the events related to these actions are published via the event bus.
      *
-     * @param UserAuth $userAuth The authenticated user performing the actions.
-     * @param QueueAction ...$actions The queue actions to be synchronized.
-     * @return void
+     * @param  UserAuth  $userAuth  The authenticated user performing the actions.
+     * @param  QueueAction  ...$actions  The queue actions to be synchronized.
      *
      * @throws OperationNotPermittedException If the user does not have the necessary permissions to perform an action.
      */
-    function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
+    public function __invoke(UserAuth $userAuth, QueueAction ...$actions): void
     {
         $this->entityOwnerIds = [];
         $actions = $this->queueActionEventIdFilter->filter(...$actions);
@@ -114,8 +110,8 @@ class SyncQueueActions
         }
 
         $actions = $this->actions = $this->validateQueueActionSkipperRestriction(...$actions);
-        $actionsUsingTimestampSecs = array_values(array_filter($actions, fn(QueueAction $action) => !$action->useTimestampMillis));
-        $actionsUsingTimestampMillis = array_values(array_filter($actions, fn(QueueAction $action) => $action->useTimestampMillis));
+        $actionsUsingTimestampSecs = array_values(array_filter($actions, fn (QueueAction $action) => ! $action->useTimestampMillis));
+        $actionsUsingTimestampMillis = array_values(array_filter($actions, fn (QueueAction $action) => $action->useTimestampMillis));
 
         // SORT ACTIONS BY HIERARCHICAL LEVEL AND ACTIONED AT TIME
         usort($actionsUsingTimestampSecs, function (QueueAction $a, QueueAction $b) {
@@ -123,6 +119,7 @@ class SyncQueueActions
             if ($levelComparison !== 0) {
                 return $levelComparison;
             }
+
             return $a->actionedAt <=> $b->actionedAt;
         });
 
@@ -131,6 +128,7 @@ class SyncQueueActions
             if ($timeComparison !== 0) {
                 return $timeComparison;
             }
+
             return $this->entityMapper->getHierarchicalLevel($a->entity) <=> $this->entityMapper->getHierarchicalLevel($b->entity);
         });
 
@@ -140,9 +138,9 @@ class SyncQueueActions
 
             [$insertActions, $updateActions, $deleteActions] = $this->organizeActions($userAuth, ...$actions);
 
-            $insertEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($insertActions, fn(QueueAction $action) => $action->skipped == false));
-            $updateEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($updateActions, fn(QueueAction $action) => $action->skipped == false));
-            $deleteEntities = array_map(fn(QueueAction $action) => $action->operation, array_filter($deleteActions, fn(QueueAction $action) => $action->skipped == false));
+            $insertEntities = array_map(fn (QueueAction $action) => $action->operation, array_filter($insertActions, fn (QueueAction $action) => $action->skipped == false));
+            $updateEntities = array_map(fn (QueueAction $action) => $action->operation, array_filter($updateActions, fn (QueueAction $action) => $action->skipped == false));
+            $deleteEntities = array_map(fn (QueueAction $action) => $action->operation, array_filter($deleteActions, fn (QueueAction $action) => $action->skipped == false));
             $insertEntitiesGroupedByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($insertEntities);
             $deleteEntitiesGroupsByUserOwnerId = $this->groupEntityOperationsByUserOwnerId($deleteEntities);
 
@@ -162,12 +160,10 @@ class SyncQueueActions
         });
     }
 
-
     /**
      * Dispatches events for the actions based on their type (insert, update, delete).
      *
-     * @param QueueAction[] $actions The actions for which to publish events.
-     * @return void
+     * @param  QueueAction[]  $actions  The actions for which to publish events.
      */
     private function publishEvents(array $actions): void
     {
@@ -179,15 +175,15 @@ class SyncQueueActions
 
             $eventData = [
                 $action->entity,
-                $action->operation->toArray()
+                $action->operation->toArray(),
             ];
 
             if ($action->action == SyncAction::INSERT) {
-                $this->eventBus->publish("sync.insert", $eventData);
+                $this->eventBus->publish('sync.insert', $eventData);
             } elseif ($action->action == SyncAction::UPDATE) {
-                $this->eventBus->publish("sync.update", $eventData);
+                $this->eventBus->publish('sync.update', $eventData);
             } elseif ($action->action == SyncAction::DELETE) {
-                $this->eventBus->publish("sync.delete", $eventData);
+                $this->eventBus->publish('sync.delete', $eventData);
             }
 
             if ($action->useTimestampMillis && $this->config->isFeatureEnabled(FeatureName::WEBSOCKET)) {
@@ -199,8 +195,8 @@ class SyncQueueActions
     /**
      * Organizes the actions into insert, update, and delete categories.
      *
-     * @param UserAuth $userAuth The authenticated user performing the actions.
-     * @param QueueAction ...$actions The actions to organize.
+     * @param  UserAuth  $userAuth  The authenticated user performing the actions.
+     * @param  QueueAction  ...$actions  The actions to organize.
      * @return array[] An array containing the organized actions [insertActions, updateActions, deleteActions].
      *
      * @throws OperationNotPermittedException If the user does not have the necessary permissions to update or delete an entity.
@@ -212,7 +208,7 @@ class SyncQueueActions
         $deleteActions = [];
 
         $userEffectiveUserId = $userAuth->getEffectiveUserId();
-        $allInsertIds = array_map(fn(QueueAction $action) => $action->operation->id, array_values(array_filter($actions, fn(QueueAction $action) => $action->operation instanceof EntityInsert)));
+        $allInsertIds = array_map(fn (QueueAction $action) => $action->operation->id, array_values(array_filter($actions, fn (QueueAction $action) => $action->operation instanceof EntityInsert)));
 
         foreach ($actions as $action) {
 
@@ -239,7 +235,7 @@ class SyncQueueActions
                     }
                     // Skipped
                     $action = $action->cloneAsSkipped();
-                    //throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
+                    // throw new OperationNotPermittedException("No have access to update entity {$action->entity} with id {$action->operation->id}", $userAuth);
                 }
 
                 $updateActions[] = $action;
@@ -266,9 +262,6 @@ class SyncQueueActions
 
     /**
      * Validate if the actions must be flagged as skipped
-     *
-     * @param QueueAction ...$actions
-     * @return array
      */
     public function validateQueueActionSkipperRestriction(QueueAction ...$actions): array
     {
@@ -295,8 +288,7 @@ class SyncQueueActions
     /**
      * Validates the files uploaded in the insert operations. Moves the files to the correct path and updates the file reference.
      *
-     * @param EntityInsert[] $operations
-     * @return void
+     * @param  EntityInsert[]  $operations
      */
     private function validateFilesUploaded(UserAuth $userAuth, array $operations): void
     {
@@ -318,8 +310,9 @@ class SyncQueueActions
     /**
      * Get the real user owner ID based on the entity and action type validating if the entity is primary or not.
      *
-     * @param QueueAction $action The action being performed (insert, update, delete).
+     * @param  QueueAction  $action  The action being performed (insert, update, delete).
      * @return int|string The real user owner ID.
+     *
      * @throws \Exception
      */
     private function getRealUserOwnerId(QueueAction $action, bool $isEntityIdInInsertActions, bool $parentExistsInInsertActions): int|string
@@ -339,22 +332,38 @@ class SyncQueueActions
                     return $this->entityOwnerIds[$parentId];
                 }
 
-                $parentOwner = $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray());
+                $parentOwner = $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $this->getEntityDataFromQueueAction($action));
 
-                if (!is_null($parentOwner)) {
+                if (! is_null($parentOwner)) {
                     $this->entityOwnerIds[$parentId] = $parentOwner;
+
                     return $parentOwner;
+                }
+
+                if (is_null($parentOwner)) {
+                    foreach ($this->actions as $parentAction) {
+                        if ($parentAction->operation instanceof EntityInsert && $parentAction->operation->id === $parentId) {
+                            $parentParentExists = $this->parentExistsInInsertActions($parentAction, array_map(fn (QueueAction $a) => $a->operation->id, array_filter($this->actions, fn (QueueAction $a) => $a->operation instanceof EntityInsert)));
+                            $resolvedParentOwner = $this->getRealUserOwnerId($parentAction, true, $parentParentExists);
+                            if (! is_null($resolvedParentOwner)) {
+                                $this->entityOwnerIds[$parentId] = $resolvedParentOwner;
+
+                                return $resolvedParentOwner;
+                            }
+                            break;
+                        }
+                    }
                 }
 
                 return $this->entityOwnerIds[$parentId] ?? throw new \Exception("Parent entity owner ID not found for entity {$action->entity} with ID {$parentId}");
             }
 
             if ($isEntityIdInInsertActions) {
-                return $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->ownerId;
+                return $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $this->getEntityDataFromQueueAction($action)) ?? $action->ownerId;
             }
 
             return match (true) {
-                $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $action->operation->toArray()) ?? $action->userId,
+                $action->operation instanceof EntityInsert => $this->entityRepository->getEntityParentOwner(new EntityReference($action->entity, $action->operation->id), $this->getEntityDataFromQueueAction($action)) ?? $action->userId,
                 $action->operation instanceof EntityUpdate or $action->operation instanceof EntityDelete => $this->entityRepository->getEntityOwner($action->entity, $action->entityId) ?: $action->ownerId,
                 default => $action->ownerId
             };
@@ -370,13 +379,13 @@ class SyncQueueActions
     /**
      * Checks if the parent entity exists in the insert actions.
      *
-     * @param QueueAction $action The action being checked.
-     * @param array $insertIds The IDs of the entities that are being inserted.
+     * @param  QueueAction  $action  The action being checked.
+     * @param  array  $insertIds  The IDs of the entities that are being inserted.
      * @return bool True if the parent entity exists in the insert actions, otherwise false.
      */
     private function parentExistsInInsertActions(QueueAction $action, array $insertIds): bool
     {
-        if (!is_null($parentId = $this->getParentIdFromQueueAction($action))) {
+        if (! is_null($parentId = $this->getParentIdFromQueueAction($action))) {
             return in_array($parentId, $insertIds);
         }
 
@@ -386,10 +395,10 @@ class SyncQueueActions
     /**
      * Retrieves the parent ID from the queue action.
      *
-     * @param QueueAction $action The action from which to retrieve the parent ID.
+     * @param  QueueAction  $action  The action from which to retrieve the parent ID.
      * @return string|null The parent ID of the entity.
      */
-    private function getParentIdFromQueueAction(QueueAction $action): string|null
+    private function getParentIdFromQueueAction(QueueAction $action): ?string
     {
         $entityClass = $this->entityMapper->getEntityClass($action->entity);
         $entity = null;
@@ -403,7 +412,7 @@ class SyncQueueActions
         }
 
         if ($action->operation instanceof EntityDelete) {
-            $insertActions = array_filter(array_filter($this->actions, fn(QueueAction $a) => $a->operation instanceof EntityInsert));
+            $insertActions = array_filter($this->actions, fn (QueueAction $a) => $a->operation instanceof EntityInsert);
             // Check if the insert action matches the current action's operation ID
             foreach ($insertActions as $insertAction) {
                 if ($insertAction->operation->id === $action->operation->id && $insertAction->actionedAt <= $action->actionedAt) {
@@ -420,12 +429,38 @@ class SyncQueueActions
         return null;
     }
 
+    /**
+     * Retrieves the entity attributes data array from the queue action.
+     *
+     * @param  QueueAction  $action  The action from which to retrieve entity data.
+     * @return array The entity attributes array.
+     */
+    private function getEntityDataFromQueueAction(QueueAction $action): array
+    {
+        if ($action->operation instanceof EntityInsert) {
+            return $action->operation->toArray();
+        }
+
+        if ($action->operation instanceof EntityUpdate) {
+            return array_merge(['id' => $action->operation->id], $action->operation->attributes);
+        }
+
+        if ($action->operation instanceof EntityDelete) {
+            $insertActions = array_filter($this->actions, fn (QueueAction $a) => $a->operation instanceof EntityInsert);
+            foreach ($insertActions as $insertAction) {
+                if ($insertAction->operation->id === $action->operation->id && $insertAction->actionedAt <= $action->actionedAt) {
+                    return $insertAction->operation->toArray();
+                }
+            }
+        }
+
+        return $action->operation->toArray();
+    }
 
     /**
      * Groups insert operations by their user owner ID.
      *
-     * @param EntityOperation[] $operations
-     * @return array
+     * @param  EntityOperation[]  $operations
      */
     private function groupEntityOperationsByUserOwnerId(array $operations): array
     {
@@ -433,7 +468,7 @@ class SyncQueueActions
 
         foreach ($operations as $operation) {
             $ownerId = $operation->ownerId;
-            if (!isset($groupedOperations[$ownerId])) {
+            if (! isset($groupedOperations[$ownerId])) {
                 $groupedOperations[$ownerId] = [];
             }
             $groupedOperations[$ownerId][] = $operation;
