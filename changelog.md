@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.21.0
+- Added minimum support to Laravel 12.
+
 # 0.20.3
 - Fixed sorting actions with timestamp millis in sync queue actions.
 
