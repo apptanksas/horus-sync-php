@@ -56,8 +56,8 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
             throw new \Exception('Failed to save queue actions');
         }
 
-        if (!empty($dataWithEventIds) && !$table->upsert($dataWithEventIds, [SyncQueueActionModel::ATTR_EVENT_ID])) {
-            throw new \Exception('Failed to save queue actions');
+        if (!empty($dataWithEventIds)) {
+            $table->upsert($dataWithEventIds, [SyncQueueActionModel::ATTR_EVENT_ID]);
         }
     }
 

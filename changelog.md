@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.21.2
+- Fixed eloquent entity repository upsert batch.
+
 # 0.21.1
 - Fixed get owner id in sync queue actions.
 
