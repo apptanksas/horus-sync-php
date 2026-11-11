@@ -87,6 +87,7 @@ class MigrationTest extends TestCase
         $this->assertTrue(in_array(ChildFakeWritableEntity::ATTR_FLOAT_VALUE, $childIndexes[1]["columns"]));
 
         $hasEntitySearchIndex = false;
+        $hasOwnerSearchIndex = false;
         foreach ($syncQueueActionIndexes as $index) {
             if ($index['columns'] === [
                 SyncQueueActionModel::ATTR_ENTITY,
@@ -94,10 +95,17 @@ class MigrationTest extends TestCase
                 SyncQueueActionModel::ATTR_ACTION,
             ]) {
                 $hasEntitySearchIndex = true;
-                break;
+            }
+            if ($index['columns'] === [
+                SyncQueueActionModel::FK_OWNER_ID,
+                SyncQueueActionModel::ATTR_SKIPPED,
+                'id',
+            ]) {
+                $hasOwnerSearchIndex = true;
             }
         }
         $this->assertTrue($hasEntitySearchIndex);
+        $this->assertTrue($hasOwnerSearchIndex);
     }
 
     function testRollbackMigrationParentFake()

@@ -1128,4 +1128,26 @@ class EloquentQueueActionRepositoryTest extends TestCase
         // Then
         $this->assertCount(2, $result);
     }
+
+    function testGetActionsWithMultipleFilteredAndUnrestrictedOwnersWithoutExclusions()
+    {
+        // Given
+        $ownerId1 = $this->faker->uuid;
+        $ownerId2 = $this->faker->uuid;
+        $ownerId3 = $this->faker->uuid;
+
+        $action1 = QueueActionFactory::create(userId: $ownerId1, eventId: $this->faker->uuid);
+        $action2 = QueueActionFactory::create(userId: $ownerId2, eventId: $this->faker->uuid);
+        $action3 = QueueActionFactory::create(userId: $ownerId3, eventId: $this->faker->uuid);
+        $this->repository->save($action1, $action2, $action3);
+
+        // When
+        $result = $this->repository->getActions(
+            filteredOwnerIds: [$ownerId1, $ownerId2],
+            alwaysIncludeOwnerIds: [$ownerId3]
+        );
+
+        // Then
+        $this->assertCount(3, $result);
+    }
 }
