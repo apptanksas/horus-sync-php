@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.21.3
+- Optimize query for queue actions adding new index.
+
 # 0.21.2
 - Fixed eloquent entity repository upsert batch.
 
