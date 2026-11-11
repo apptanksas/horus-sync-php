@@ -79,11 +79,33 @@ class MigrationTest extends TestCase
         // Validate parent indexing
         $parentIndexes = Schema::getIndexes(ParentFakeWritableEntity::getTableName());
         $childIndexes = Schema::getIndexes(ChildFakeWritableEntity::getTableName());
+        $syncQueueActionIndexes = Schema::getIndexes(SyncQueueActionModel::TABLE_NAME);
 
         $this->assertTrue(in_array(ParentFakeWritableEntity::ATTR_COLOR, $parentIndexes[1]["columns"]));
         $this->assertTrue(in_array(ParentFakeWritableEntity::ATTR_TIMESTAMP, $parentIndexes[1]["columns"]));
 
         $this->assertTrue(in_array(ChildFakeWritableEntity::ATTR_FLOAT_VALUE, $childIndexes[1]["columns"]));
+
+        $hasEntitySearchIndex = false;
+        $hasOwnerSearchIndex = false;
+        foreach ($syncQueueActionIndexes as $index) {
+            if ($index['columns'] === [
+                SyncQueueActionModel::ATTR_ENTITY,
+                SyncQueueActionModel::ATTR_ENTITY_ID,
+                SyncQueueActionModel::ATTR_ACTION,
+            ]) {
+                $hasEntitySearchIndex = true;
+            }
+            if ($index['columns'] === [
+                SyncQueueActionModel::FK_OWNER_ID,
+                SyncQueueActionModel::ATTR_SKIPPED,
+                'id',
+            ]) {
+                $hasOwnerSearchIndex = true;
+            }
+        }
+        $this->assertTrue($hasEntitySearchIndex);
+        $this->assertTrue($hasOwnerSearchIndex);
     }
 
     function testRollbackMigrationParentFake()

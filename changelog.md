@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.21.3
+- Optimize query for queue actions adding new index.
+- Optimized get actions query building and added compound index on [owner_id, skipped, id].
+
 # 0.21.2
 - Fixed eloquent entity repository upsert batch.
 
