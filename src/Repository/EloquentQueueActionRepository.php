@@ -165,7 +165,7 @@ readonly class EloquentQueueActionRepository implements QueueActionRepository
 
         // Global Event ID Filter (Applies to both groups)
         if ($afterEventId !== null) {
-            $afterAction = SyncQueueActionModel::query()->where(SyncQueueActionModel::ATTR_EVENT_ID, $afterEventId)->first();
+            $afterAction = SyncQueueActionModel::query()->select(['id'])->where(SyncQueueActionModel::ATTR_EVENT_ID, $afterEventId)->first();
 
             if ($afterAction) {
                 $query->where('id', '>', $afterAction->id)->orderBy("id");
