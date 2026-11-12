@@ -5,6 +5,7 @@ namespace AppTank\Horus\Illuminate\Database;
 use AppTank\Horus\Core\Entity\IEntitySynchronizable;
 use AppTank\Horus\Core\Entity\SyncParameter;
 use AppTank\Horus\Horus;
+use AppTank\Horus\Illuminate\Database\Concerns\HasSynchronizableDependencies;
 use AppTank\Horus\Illuminate\Util\DateTimeUtil;
 
 /**
@@ -19,6 +20,8 @@ use AppTank\Horus\Illuminate\Util\DateTimeUtil;
  */
 abstract class WritableEntitySynchronizable extends EntitySynchronizable implements IEntitySynchronizable
 {
+    use HasSynchronizableDependencies;
+
     public const ATTR_SYNC_OWNER_ID = "sync_owner_id";
     public const ATTR_SYNC_HASH = "sync_hash";
     public const ATTR_SYNC_CREATED_AT = "sync_created_at";
@@ -167,6 +170,41 @@ abstract class WritableEntitySynchronizable extends EntitySynchronizable impleme
     public function getRelationsOneOfOne(): array
     {
         return [];
+    }
+
+    // ------------------------------------------------------------------------
+    // INSTANCE CACHE
+    // ------------------------------------------------------------------------
+
+    /**
+     * @var array<string, static>
+     */
+    protected static array $instanceCache = [];
+
+    /**
+     * Finds an entity by ID using an in-memory instance cache for the current request lifecycle.
+     *
+     * @param string|int $id
+     * @return static|null
+     */
+    public static function findCached(string|int $id): ?static
+    {
+        $calledClass = static::class;
+        $cacheKey = "{$calledClass}:{$id}";
+
+        if (!isset(static::$instanceCache[$cacheKey])) {
+            static::$instanceCache[$cacheKey] = static::withTrashed()->find($id);
+        }
+
+        return static::$instanceCache[$cacheKey];
+    }
+
+    /**
+     * Clears the in-memory instance cache.
+     */
+    public static function clearInstanceCache(): void
+    {
+        static::$instanceCache = [];
     }
 
     // ------------------------------------------------------------------------

@@ -2,6 +2,10 @@
 
 # 0.21.4
 - Added explicit index creation for foreign keys in EntityMigrator.
+- Added in-memory memoization and parent entity reuse in `EloquentEntityRepository::getEntityPathHierarchy`.
+- Added request-level memoization in `EloquentEntityAccessValidatorRepository::canAccessEntity`.
+- Added `HasSynchronizableDependencies` concern trait and `findCached`/`clearInstanceCache` in `WritableEntitySynchronizable`.
+- Added `Horus::clearMemoryCaches` helper to reset all in-memory repository and model caches.
 
 # 0.21.3
 - Optimize query for queue actions adding new index.

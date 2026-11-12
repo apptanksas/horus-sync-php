@@ -816,6 +816,87 @@ class EloquentEntityRepositoryTest extends TestCase
         $this->assertEquals($childEntity->getId(), $result[1]->getId());
     }
 
+    function testGetEntityPathHierarchyUsesMemoryCache()
+    {
+        EloquentEntityRepository::clearMemoryCache();
+
+        $userOwnerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+        $childEntity = ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+
+        $entityReference = new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId());
+
+        // First call populates cache
+        $result1 = $this->entityRepository->getEntityPathHierarchy($entityReference);
+        $this->assertCount(2, $result1);
+
+        // Delete child from DB directly
+        ChildFakeWritableEntity::where('id', $childEntity->getId())->forceDelete();
+
+        // Second call should return cached hierarchy without failing or missing child
+        $result2 = $this->entityRepository->getEntityPathHierarchy($entityReference);
+        $this->assertCount(2, $result2);
+        $this->assertEquals($childEntity->getId(), $result2[1]->getId());
+
+        // Clearing cache
+        EloquentEntityRepository::clearMemoryCache();
+
+        // Third call after clearing cache should query DB and not find child
+        $result3 = $this->entityRepository->getEntityPathHierarchy($entityReference);
+        $this->assertCount(0, $result3);
+    }
+
+    function testWritableEntitySynchronizableFindCached()
+    {
+        WritableEntitySynchronizable::clearInstanceCache();
+
+        $userOwnerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+
+        // First call queries DB
+        $cached1 = ParentFakeWritableEntity::findCached($parentEntity->getId());
+        $this->assertNotNull($cached1);
+        $this->assertEquals($parentEntity->getId(), $cached1->getId());
+
+        // Force delete from DB
+        ParentFakeWritableEntity::where('id', $parentEntity->getId())->forceDelete();
+
+        // Second call returns cached instance from memory
+        $cached2 = ParentFakeWritableEntity::findCached($parentEntity->getId());
+        $this->assertNotNull($cached2);
+        $this->assertEquals($parentEntity->getId(), $cached2->getId());
+
+        // Clearing cache
+        ParentFakeWritableEntity::clearInstanceCache();
+
+        // Third call after clear returns null because record is deleted
+        $cached3 = ParentFakeWritableEntity::findCached($parentEntity->getId());
+        $this->assertNull($cached3);
+    }
+
+    function testHorusClearMemoryCaches()
+    {
+        $userOwnerId = $this->faker->uuid;
+        $parentEntity = ParentFakeEntityFactory::create($userOwnerId);
+        $childEntity = ChildFakeEntityFactory::create($parentEntity->getId(), $userOwnerId);
+
+        $entityReference = new EntityReference(ChildFakeWritableEntity::getEntityName(), $childEntity->getId());
+        $this->entityRepository->getEntityPathHierarchy($entityReference);
+        ParentFakeWritableEntity::findCached($parentEntity->getId());
+
+        Horus::clearMemoryCaches();
+
+        // Force delete records
+        ChildFakeWritableEntity::where('id', $childEntity->getId())->forceDelete();
+        ParentFakeWritableEntity::where('id', $parentEntity->getId())->forceDelete();
+
+        // Hierarchy and instance cache should be empty so calls query DB and return empty/null
+        $result = $this->entityRepository->getEntityPathHierarchy($entityReference);
+        $this->assertCount(0, $result);
+
+        $cached = ParentFakeWritableEntity::findCached($parentEntity->getId());
+        $this->assertNull($cached);
+    }
 
     function testGetCountIsSuccess()
     {

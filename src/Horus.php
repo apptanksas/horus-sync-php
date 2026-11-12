@@ -9,6 +9,9 @@ use AppTank\Horus\Core\Entity\EntityReference;
 use AppTank\Horus\Core\EntityMap;
 use AppTank\Horus\Core\File\IFileHandler;
 use AppTank\Horus\Core\Mapper\EntityMapper;
+use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
+use AppTank\Horus\Repository\EloquentEntityAccessValidatorRepository;
+use AppTank\Horus\Repository\EloquentEntityRepository;
 
 /**
  * Horus is a singleton class responsible for managing the application's configuration,
@@ -289,5 +292,17 @@ class Horus
     public function getFileHandler(): IFileHandler
     {
         return $this->fileHandler;
+    }
+
+    /**
+     * Clears all request-level in-memory caches across repositories and synchronizable models.
+     *
+     * @return void
+     */
+    public static function clearMemoryCaches(): void
+    {
+        EloquentEntityRepository::clearMemoryCache();
+        EloquentEntityAccessValidatorRepository::clearMemoryCache();
+        WritableEntitySynchronizable::clearInstanceCache();
     }
 }

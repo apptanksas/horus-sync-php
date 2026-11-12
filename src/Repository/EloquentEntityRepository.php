@@ -56,6 +56,27 @@ class EloquentEntityRepository implements EntityRepository
     private array $cacheEntityParameters = array();
 
     /**
+     * @var array<string, EntitySynchronizable[]>
+     */
+    private static array $pathHierarchyMemoryCache = [];
+
+    /**
+     * @var array<string, EntitySynchronizable>
+     */
+    private static array $resolvedEntitiesMemoryCache = [];
+
+    /**
+     * Clears in-memory hierarchy and entity caches.
+     *
+     * @return void
+     */
+    public static function clearMemoryCache(): void
+    {
+        self::$pathHierarchyMemoryCache = [];
+        self::$resolvedEntitiesMemoryCache = [];
+    }
+
+    /**
      * @param EntityMapper $entityMapper
      * @param IDateTimeUtil $dateTimeUtil
      * @param CacheRepository $cacheRepository
@@ -584,36 +605,55 @@ class EloquentEntityRepository implements EntityRepository
      */
     function getEntityPathHierarchy(EntityReference $entityRefChild): array
     {
+        $cacheKey = "{$entityRefChild->entityName}:{$entityRefChild->entityId}";
+
+        if (isset(self::$pathHierarchyMemoryCache[$cacheKey])) {
+            return self::$pathHierarchyMemoryCache[$cacheKey];
+        }
+
         $entityHierarchy = [];
 
         /**
          * @var EntitySynchronizable $entityClass
          */
         $entityClass = $this->entityMapper->getEntityClass($entityRefChild->entityName);
-        // Get foreign keys of the entity
-        $foreignKeys = array_map(fn(SyncParameter $parameter) => $parameter->name,
-            array_filter($entityClass::parameters(), fn(SyncParameter $parameter) => $parameter->linkedEntity != null));
 
-        $entity = $entityClass::withTrashed()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first(array_merge($foreignKeys, [EntitySynchronizable::ATTR_ID]));
+        if (isset(self::$resolvedEntitiesMemoryCache[$cacheKey])) {
+            $entity = self::$resolvedEntitiesMemoryCache[$cacheKey];
+        } else {
+            // Get foreign keys of the entity
+            $foreignKeys = array_map(fn(SyncParameter $parameter) => $parameter->name,
+                array_filter($entityClass::parameters(), fn(SyncParameter $parameter) => $parameter->linkedEntity != null));
+
+            $entity = $entityClass::withTrashed()->where(EntitySynchronizable::ATTR_ID, $entityRefChild->entityId)->first(array_merge($foreignKeys, [EntitySynchronizable::ATTR_ID]));
+
+            if ($entity !== null) {
+                self::$resolvedEntitiesMemoryCache[$cacheKey] = $entity;
+            }
+        }
 
         if ($entity instanceof EntityDependsOn) {
             /**
-             * @var WritableEntitySynchronizable $entityParent
+             * @var WritableEntitySynchronizable|null $entityParent
              */
             $entityParent = $entity->dependsOn();
 
-            $entityHierarchy = array_merge($entityHierarchy,
-                $this->getEntityPathHierarchy(
-                    new EntityReference($entityParent::class::getEntityName(), $entityParent->getId())
-                )
-            );
+            if ($entityParent !== null) {
+                $parentRef = new EntityReference($entityParent::class::getEntityName(), $entityParent->getId());
+                $parentCacheKey = "{$parentRef->entityName}:{$parentRef->entityId}";
+                self::$resolvedEntitiesMemoryCache[$parentCacheKey] = $entityParent;
+
+                $entityHierarchy = array_merge($entityHierarchy,
+                    $this->getEntityPathHierarchy($parentRef)
+                );
+            }
         }
 
         if ($entity != null) {
             $entityHierarchy[] = $entity;
         }
 
-        return $entityHierarchy;
+        return self::$pathHierarchyMemoryCache[$cacheKey] = $entityHierarchy;
     }
 
     /**

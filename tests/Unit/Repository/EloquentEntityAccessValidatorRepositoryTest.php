@@ -270,4 +270,31 @@ class EloquentEntityAccessValidatorRepositoryTest extends TestCase
         // Then
         $this->assertTrue($canAccess);
     }
+
+    function testCanAccessEntityUsesMemoryCache()
+    {
+        EloquentEntityAccessValidatorRepository::clearMemoryCache();
+
+        $userOwnerId = $this->faker->uuid;
+        $entity = ParentFakeEntityFactory::create($userOwnerId);
+        $entityName = ParentFakeWritableEntity::getEntityName();
+        $entityId = $entity->getId();
+        $userAuth = new UserAuth($userOwnerId);
+        $entityRef = new EntityReference($entityName, $entityId);
+
+        // First call validates and caches true
+        $this->assertTrue($this->repository->canAccessEntity($userAuth, $entityRef, Permission::READ));
+
+        // Delete entity from DB
+        ParentFakeWritableEntity::where('id', $entityId)->forceDelete();
+
+        // Second call returns cached true from memory
+        $this->assertTrue($this->repository->canAccessEntity($userAuth, $entityRef, Permission::READ));
+
+        // Clear cache
+        EloquentEntityAccessValidatorRepository::clearMemoryCache();
+
+        // Third call evaluates fresh against DB and returns false because entity is gone
+        $this->assertFalse($this->repository->canAccessEntity($userAuth, $entityRef, Permission::READ));
+    }
 }
