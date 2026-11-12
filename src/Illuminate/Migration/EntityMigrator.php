@@ -167,6 +167,8 @@ class EntityMigrator
                 $columnReference->cascadeOnDelete();
             }
 
+            $table->index($parameter->name);
+
             return;
         }
 

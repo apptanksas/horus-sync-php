@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.21.4
+- Added explicit index creation for foreign keys in EntityMigrator.
+
 # 0.21.3
 - Optimize query for queue actions adding new index.
 - Optimized get actions query building and added compound index on [owner_id, skipped, id].
