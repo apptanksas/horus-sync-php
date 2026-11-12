@@ -86,6 +86,15 @@ class MigrationTest extends TestCase
 
         $this->assertTrue(in_array(ChildFakeWritableEntity::ATTR_FLOAT_VALUE, $childIndexes[1]["columns"]));
 
+        $hasParentIdIndex = false;
+        foreach ($childIndexes as $index) {
+            if (in_array(ChildFakeWritableEntity::FK_PARENT_ID, $index['columns'])) {
+                $hasParentIdIndex = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasParentIdIndex);
+
         $hasEntitySearchIndex = false;
         $hasOwnerSearchIndex = false;
         foreach ($syncQueueActionIndexes as $index) {

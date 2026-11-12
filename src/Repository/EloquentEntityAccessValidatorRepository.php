@@ -22,8 +22,23 @@ use AppTank\Horus\Illuminate\Database\WritableEntitySynchronizable;
  * @author John Ospina
  * @year 2024
  */
-readonly class EloquentEntityAccessValidatorRepository implements EntityAccessValidatorRepository
+class EloquentEntityAccessValidatorRepository implements EntityAccessValidatorRepository
 {
+    /**
+     * @var array<string, bool>
+     */
+    private static array $accessValidationCache = [];
+
+    /**
+     * Clears in-memory access validation cache.
+     *
+     * @return void
+     */
+    public static function clearMemoryCache(): void
+    {
+        self::$accessValidationCache = [];
+    }
+
     /**
      * Constructor of the `EloquentEntityAccessValidatorRepository` class.
      *
@@ -32,9 +47,9 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
      * @param EntityRepository $entityRepository Repository for entity operations.
      */
     public function __construct(
-        private EntityMapper     $entityMapper,
-        private Config           $config,
-        private EntityRepository $entityRepository
+        private readonly EntityMapper     $entityMapper,
+        private readonly Config           $config,
+        private readonly EntityRepository $entityRepository
     )
     {
     }
@@ -56,22 +71,28 @@ readonly class EloquentEntityAccessValidatorRepository implements EntityAccessVa
             return true;
         }
 
+        $cacheKey = "{$userAuth->userId}:{$entityReference->entityName}:{$entityReference->entityId}:{$permission->value}";
+
+        if (isset(self::$accessValidationCache[$cacheKey])) {
+            return self::$accessValidationCache[$cacheKey];
+        }
+
         // 2. Validate if user is owner
         if ($this->isEntityOwner($entityReference->entityName, $entityReference->entityId, $userAuth->userId)) {
-            return true;
+            return self::$accessValidationCache[$cacheKey] = true;
         }
 
         // 3. Validate if user has granted permission
         if ($userAuth->hasGranted($entityReference->entityName, $entityReference->entityId, $permission)) {
-            return true;
+            return self::$accessValidationCache[$cacheKey] = true;
         }
 
         // 4. Validate if user has access on cascade by entity granted
         if ($this->canAccessOnCascade($userAuth->entityGrants, $entityReference, $permission)) {
-            return true;
+            return self::$accessValidationCache[$cacheKey] = true;
         }
 
-        return false;
+        return self::$accessValidationCache[$cacheKey] = false;
     }
 
     /**
